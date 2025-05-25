@@ -1,0 +1,13 @@
+network_dimensions,var,value
+2,vertex_default_size,5
+2,vertex_highlight_size,10
+2,spread,0.025
+2,name,No flux;Low flux;Medium flux;High flix
+2,line_color,#7f7f7f;#00B050;#00B050;#00B050
+2,line_width,0.5;0.5;1;2
+3,vertex_default_size,10
+3,vertex_highlight_size,15
+3,spread,0.05
+3,name,No flux;Low flux;Medium flux;High flix
+3,line_color,#7f7f7f;#00B050;#00B050;#00B050
+3,line_width,0.5;2;4;10
