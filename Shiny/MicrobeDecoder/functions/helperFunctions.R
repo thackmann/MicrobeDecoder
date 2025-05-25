@@ -30,11 +30,6 @@
   #'
   #' @param x The values to check.
   #' @param table The vector or list to check against.
-  #' @return A logical vector indicating if elements of `x` are not in `table`.
-  #' @export
-  #' @importFrom base Negate
-  `%nin%` = Negate(`%in%`)
-  
   
   #' Assign a Default Value if Input is Invalid
   #'
@@ -66,18 +61,6 @@
   #'
   #' @param df A dataframe to filter and select from.
   #' @param var_name A character string specifying the variable name to filter by.
-  #' @return A filtered dataframe with relevant columns selected.
-  #' @export
-  #' @importFrom dplyr filter select
-  filter_var <- function(df, var_name) {
-    if (!is.null(var_name)) {
-      df <- df %>%
-        dplyr::filter(var == var_name) %>%
-        dplyr::select(-var)
-    }
-    return(df)
-  }
-
   #' Check if Shiny App is Running Locally
   #'
   #' Determines whether a Shiny application is running locally
@@ -362,21 +345,6 @@
   #' Format sanitized IP for display
   #'
   #' @param sanitized_ip A string like "127001" or "19216811"
-  #' @return Best-effort formatted IP like "127.0.0.1"
-  #' @export
-  format_ip_for_display <- function(sanitized_ip) {
-    if (!grepl("^[0-9]+$", sanitized_ip)) return(sanitized_ip)  # fallback for unexpected input
-    
-    # Try to reformat as IPv4 (best-effort)
-    if (nchar(sanitized_ip) == 6 || nchar(sanitized_ip) == 7 || nchar(sanitized_ip) == 8) {
-      parts <- substring(sanitized_ip, c(1, 2, 4, 6), c(1, 3, 5, nchar(sanitized_ip)))
-      return(paste(parts, collapse = "."))
-    }
-    
-    # Just return original if reformatting fails
-    sanitized_ip
-  }
-  
   #' Construct a job directory path
   #'
   #' @param tab Tab name (e.g., "predictionsTaxonomy")
@@ -701,14 +669,14 @@
 	#' 
 	#' @param ... Validation conditions to check.
   #' @param session The Shiny session object.
-	#' @param errorClass A character vector of error classes to assign to the error. Default is an empty character vector.
+	#' @param error_class A character vector of error classes to assign to the error. Default is an empty character vector.
 	#' @param delay_time The delay in milliseconds before launching modal. 
 	#' @return Invisible if validation passes; otherwise, stops the reactive process with a modal error message.
 	#' @export
 	#' @importFrom shiny removeModal showModal modalDialog h4 p
 	#' @importFrom rlang list2
 	#' @importFrom stats na.omit
-	runValidationModal <- function(..., session = getDefaultReactiveDomain(), errorClass = character(0), delay_time = 250) {
+	runValidationModal <- function(..., session = getDefaultReactiveDomain(), error_class = character(0), delay_time = 250) {
 	  # Test validation conditions
 	  results <- sapply(rlang::list2(...), function(x) {
 		if (is.null(x)) 
@@ -730,7 +698,7 @@
 		shiny::removeModal()
 		
 		# Set the modal open state to FALSE
-		session$userData$modal_open(FALSE)
+		session$userData$is_modal_open(FALSE)
 		
 		# Launch modal
 		shiny::showModal(shiny::modalDialog(
@@ -741,7 +709,7 @@
 	  })
 	  
 	  # Stop reactive process
-	  reactiveStop(paste("", collapse = "\n"), c(errorClass,
+	  reactiveStop(paste("", collapse = "\n"), c(error_class,
 												 "validation"))
 	}
 
@@ -776,7 +744,7 @@
 	    }
 	  }
 	  
-	  if (isFALSE(session$userData$modal_open())) {
+	  if (isFALSE(session$userData$is_modal_open())) {
 	    # Create the modal content
 	    modal_content <- list(
 	      shiny::tags$h4(id = "modal-text", message),
@@ -796,7 +764,7 @@
 	      footer = NULL
 	    ))
 	    
-	    session$userData$modal_open(TRUE)
+	    session$userData$is_modal_open(TRUE)
 	  } else {
 	    # Update the message text
 	    shinyjs::runjs(sprintf(
@@ -865,7 +833,7 @@
 	  })
 	  
 	  # Set the modal open state to FALSE
-	  session$userData$modal_open(FALSE)
+	  session$userData$is_modal_open(FALSE)
 	}
 
 # === File reading ===
@@ -955,25 +923,6 @@
 	#'
 	#' @param data A dataframe to search for matching patterns.
 	#' @param pattern A character string specifying the regular expression pattern to match.
-	#' @return A character vector of column names that match the pattern, or NA if none are found.
-	#' @export
-	#' @importFrom base grepl
-	detect_pattern_column <- function(data, pattern) {
-	  matching_columns <- vector("character")
-	  
-	  for (col_name in colnames(data)) {
-	    if (any(grepl(pattern, data[[col_name]], perl = TRUE))) {
-	      matching_columns <- c(matching_columns, col_name)
-	    }
-	  }
-	  
-	  if (length(matching_columns) == 0) {
-	    return(NA)
-	  } else {
-	    return(matching_columns)
-	  }
-	}
-	
 	#' Check if a column name matches genome or organism identifiers
 	#'
 	#' This helper function checks if a column name is related to genome or organism identifiers.

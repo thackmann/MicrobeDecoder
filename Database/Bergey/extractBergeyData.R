@@ -60,7 +60,7 @@
     for(j in 1:length(names)) {
       species_name <- get_species_name(genus = taxonomy[5], name = names[j])
       subspecies_name <- get_subspecies_name(genus = taxonomy[5], name = names[j])
-      strain_ID <- get_strain_ID(name = names[j], species_description = species_descriptions[j],
+      strain_id <- get_strain_ID(name = names[j], species_description = species_descriptions[j],
                                  special_genus = taxonomy[5])
 
       # Append a dataframe row for each species
@@ -74,7 +74,7 @@
         Genus = taxonomy[5],
         Species = species_name,
         Subspecies = subspecies_name,
-        Strain = paste(strain_ID, collapse = ";")
+        Strain = paste(strain_id, collapse = ";")
       )
     }
 

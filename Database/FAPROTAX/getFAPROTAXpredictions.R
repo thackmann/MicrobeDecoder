@@ -34,8 +34,8 @@
     otu_table <- data.frame(`#OTU` = seq_along(taxonomy), ID = "1.0", taxonomy = taxonomy, check.names = FALSE)
 
   # Export
-    FAPROTAX_directory <- "C:\\My Directory" # Set to directory for FAPROTAX
-    setwd(FAPROTAX_directory)
+    faprotax_directory <- "C:\\My Directory" # Set to directory for FAPROTAX
+    setwd(faprotax_directory)
     write.table(otu_table, "otu_table.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 
 # === Install and run FAPROTAX ===
@@ -77,9 +77,9 @@
   # https://pages.uoregon.edu/slouca/LoucaLab/archive/FAPROTAX/SECTION_Instructions/files/example_01/otu_table.tsv
 
 # === Read in predictions from FAPROTAX ===
-  setwd(FAPROTAX_directory)
-  FAPROTAX_data = read_faprotax_report("report.txt")
+  setwd(faprotax_directory)
+  faprotax_data = read_faprotax_report("report.txt")
 
 # Export
   setwd(database_directory)
-  write.csv(FAPROTAX_data, file = "FAPROTAX\\data\\FAPROTAX_data.csv")
+  write.csv(faprotax_data, file = "FAPROTAX\\data\\FAPROTAX_data.csv")

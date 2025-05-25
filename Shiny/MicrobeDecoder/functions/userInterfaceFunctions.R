@@ -354,10 +354,10 @@ create_input_label <- function(inputId, label = NULL) {
 #' @param multiple Logical. If TRUE, allows multiple file selection. Default is TRUE.
 #' @param accept A character vector of accepted file types. Default includes csv, txt, rds, KO, xlx, and xlsx formats.
 #' @param width A character string specifying the width of the input box. Default is NULL.
-#' @param buttonLabel The label for the file browse button. Default is "Browse...".
+#' @param button_label The label for the file browse button. Default is "Browse...".
 #' @param placeholder Placeholder text for when no file is selected. Default is "No file selected".
-#' @param modalId The input ID for the modal link.
-#' @param modalLabel The label for the modal link. Default is "Download example".
+#' @param modal_id The input ID for the modal link.
+#' @param modal_label The label for the modal link. Default is "Download example".
 #'
 #' @return A Shiny UI element for the custom file input box.
 #' @export
@@ -367,29 +367,29 @@ fileInput_modal <- function(inputId, label = NULL, multiple = TRUE,
                                        "application/vnd.ms-excel", 
                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                        ".csv", ".txt", ".rds", ".ko", ".xls", ".xlsx"), 
-                            width = NULL, buttonLabel = "Browse...", 
+                            width = NULL, button_label = "Browse...", 
                             placeholder = "No file selected", 
-                            modalId, modalLabel = "Download example") {
+                            modal_id, modal_label = "Download example") {
   
-  restoredValue <- shiny::restoreInput(id = inputId, default = NULL)
+  restored_value <- shiny::restoreInput(id = inputId, default = NULL)
   
-  if (!is.null(restoredValue) && !is.data.frame(restoredValue)) {
+  if (!is.null(restored_value) && !is.data.frame(restored_value)) {
     warning("Restored value for ", inputId, " has incorrect format.")
-    restoredValue <- NULL
+    restored_value <- NULL
   }
   
-  if (!is.null(restoredValue)) {
-    restoredValue <- jsonlite::toJSON(restoredValue, strict_atomic = FALSE)
+  if (!is.null(restored_value)) {
+    restored_value <- jsonlite::toJSON(restored_value, strict_atomic = FALSE)
   }
   
-  inputTag <- shiny::tags$input(id = inputId, name = inputId, type = "file", 
-                                style = "display: none;", `data-restore` = restoredValue)
+  input_tag <- shiny::tags$input(id = inputId, name = inputId, type = "file", 
+                                style = "display: none;", `data-restore` = restored_value)
   
   if (multiple) 
-    inputTag$attribs$multiple <- "multiple"
+    input_tag$attribs$multiple <- "multiple"
   
   if (length(accept) > 0) 
-    inputTag$attribs$accept <- paste(accept, collapse = ",")
+    input_tag$attribs$accept <- paste(accept, collapse = ",")
   
   shiny::div(
     class = "form-group shiny-input-container", 
@@ -401,12 +401,12 @@ fileInput_modal <- function(inputId, label = NULL, multiple = TRUE,
       class = "input-group", 
       shiny::tags$label(class = "input-group-btn input-group-prepend", 
                         shiny::span(class = "btn btn-default btn-file", 
-                                    buttonLabel, inputTag)), 
+                                    button_label, input_tag)), 
       shiny::tags$input(type = "text", 
                         class = "form-control", placeholder = placeholder, 
                         readonly = "readonly")),
     
-    shiny::actionLink(inputId = modalId, label = modalLabel),
+    shiny::actionLink(inputId = modal_id, label = modal_label),
     
     shiny::tags$div(
       id = paste(inputId, "_progress", sep = ""), 
@@ -476,7 +476,7 @@ create_download_button <- function(inputId, label = "Download results", ...) {
 #' @param inputId The input ID for the download button.
 #' @param label Label for the button (default: "Download results").
 #' @param ns Optional namespace function (default: `identity`).
-#' @param null_inputId The input ID for the null action button (default: `"null_"` prefixed to `inputId`).
+#' @param null_input_id The input ID for the null action button (default: `"null_"` prefixed to `inputId`).
 #' @param ... Additional arguments passed to `shiny::downloadButton()`.
 #'
 #' @return A tagList with conditional download and fallback buttons.
@@ -493,7 +493,7 @@ create_download_button <- function(inputId, label = "Download results", ...) {
 #' @param inputId The input ID for the download button.
 #' @param label Label for the button (default: "Download results").
 #' @param ns Optional namespace function (default: `identity`).
-#' @param null_inputId The input ID for the null action button (default: `"null_"` prefixed to `inputId`).
+#' @param null_input_id The input ID for the null action button (default: `"null_"` prefixed to `inputId`).
 #' @param ... Additional arguments passed to `shiny::downloadButton()`.
 #'
 #' @return A tagList with conditional download and fallback buttons.
@@ -502,7 +502,7 @@ create_conditional_download_button <- function(condition,
                                                inputId,
                                                label = "Download results",
                                                ns = identity,
-                                               null_inputId = paste0("null_", inputId),
+                                               null_input_id = paste0("null_", inputId),
                                                ...) {
   tagList(
     shiny::conditionalPanel(
@@ -514,7 +514,7 @@ create_conditional_download_button <- function(condition,
       condition = paste0("!(", condition, ")"),
       ns = ns,
       shiny::actionButton(
-        inputId = ns(null_inputId),
+        inputId = ns(null_input_id),
         label = label,
         icon = icon("download"),
         class = "btn btn-default shiny-download-link"

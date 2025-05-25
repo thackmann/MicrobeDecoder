@@ -970,9 +970,9 @@
   extract_strain_ID <- function(patterns, text) {
     for (pattern in patterns) {
       matches <- gregexpr(pattern, text, perl = TRUE)
-      strain_ID <- unlist(regmatches(text, matches))
+      strain_id <- unlist(regmatches(text, matches))
       if (matches[[1]][1] != -1) {
-        return(strain_ID)
+        return(strain_id)
       }
     }
     return(NA)
@@ -982,119 +982,119 @@
   #'
   #' Cleans and standardizes the formatting of strain IDs, removing unwanted characters and correcting known issues.
   #'
-  #' @param strain_ID Character string of strain IDs to clean.
+  #' @param strain_id Character string of strain IDs to clean. (Already snake_case)
   #' @return A character vector of cleaned strain IDs or NA if no valid IDs are found.
   #' @importFrom base gsub strsplit trimws
   #' @export
-  clean_strain_ID <- function(strain_ID)
+  clean_strain_ID <- function(strain_id)
   {
     # Remove extraneous text around strain ID
-    strain_ID = gsub("character...", NA, strain_ID) #Replace case of no match ["character" or "character(0)"] with "NA"
-    strain_ID <- gsub("\\n\\s*Type strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Type strain:"
-    strain_ID <- gsub("\\n\\s*Deposited strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Deposited strain:"
-    strain_ID <- gsub("\\n\\s*Reference strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Reference strain:"
-    strain_ID <- gsub("\\n\\s*Proposed type strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Proposed type strain:"
-    strain_ID <- gsub("\\n\\s*Proposal Type strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Proposal Type strain:"
-    strain_ID <- gsub("\\n\\s*Type material\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Type material:"
-    strain_ID <- gsub("\\n\\s*Strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Strain:"
-    strain_ID <- gsub("\\n\\s*Original strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Original strain:"
-    strain_ID <- gsub("\\n\\s*Representative strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Representative strain:"
-    strain_ID <- gsub("Type strain[s]*\\n*\\s*:\\s*", "", strain_ID, perl = TRUE) # Remove "Type strain:" (without newline)
-    strain_ID <- gsub("\\n\\s*The type strain is\\n*\\s*", "", strain_ID, perl = TRUE) # Remove "The type strain is"
-    strain_ID <- gsub("\\n\\s*Type strain[s]*\\n*\\s*", "", strain_ID, perl = TRUE) # Remove "Type strain" (no colon)
+    strain_id = gsub("character...", NA, strain_id) #Replace case of no match ["character" or "character(0)"] with "NA"
+    strain_id <- gsub("\\n\\s*Type strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Type strain:"
+    strain_id <- gsub("\\n\\s*Deposited strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Deposited strain:"
+    strain_id <- gsub("\\n\\s*Reference strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Reference strain:"
+    strain_id <- gsub("\\n\\s*Proposed type strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Proposed type strain:"
+    strain_id <- gsub("\\n\\s*Proposal Type strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Proposal Type strain:"
+    strain_id <- gsub("\\n\\s*Type material\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Type material:"
+    strain_id <- gsub("\\n\\s*Strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Strain:"
+    strain_id <- gsub("\\n\\s*Original strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Original strain:"
+    strain_id <- gsub("\\n\\s*Representative strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Representative strain:"
+    strain_id <- gsub("Type strain[s]*\\n*\\s*:\\s*", "", strain_id, perl = TRUE) # Remove "Type strain:" (without newline)
+    strain_id <- gsub("\\n\\s*The type strain is\\n*\\s*", "", strain_id, perl = TRUE) # Remove "The type strain is"
+    strain_id <- gsub("\\n\\s*Type strain[s]*\\n*\\s*", "", strain_id, perl = TRUE) # Remove "Type strain" (no colon)
     
-    strain_ID <- gsub("\\(proposed\\)", "", strain_ID) # Remove "(proposed)"
+    strain_id <- gsub("\\(proposed\\)", "", strain_id) # Remove "(proposed)"
     
-    strain_ID = gsub("[.]\n.*", "", strain_ID) #Remove text after ".\n"
-    strain_ID = gsub("[.]\n", "", strain_ID) #Remove ".\n"
-    strain_ID = gsub('c[(]["]', "", strain_ID) #Remove 'c("'
-    strain_ID = gsub('")', "", strain_ID) #Remove '")'
-    strain_ID = gsub('\"', "", strain_ID) #Remove '\"'
+    strain_id = gsub("[.]\n.*", "", strain_id) #Remove text after ".\n"
+    strain_id = gsub("[.]\n", "", strain_id) #Remove ".\n"
+    strain_id = gsub('c[(]["]', "", strain_id) #Remove 'c("'
+    strain_id = gsub('")', "", strain_id) #Remove '")'
+    strain_id = gsub('\"', "", strain_id) #Remove '\"'
     
     # Remove "T" when added at end to signify a type strain
-    strain_ID = gsub('(DSM )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "DSM <strain number>T"
-    strain_ID = gsub('(ATCC )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "ATCC <strain number>T""
-    strain_ID = gsub('(JCM )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "JCM <strain number>T""
-    strain_ID = gsub('(CIP )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "CIP <strain number>T""
-    strain_ID = gsub('(NCTC )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "NCTC <strain number>T""
-    strain_ID = gsub('(NCIB )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "NCIB <strain number>T""
-    strain_ID = gsub('(KCTC )([0-9]*)T', "\\1\\2", strain_ID) #Remove 'T' in "KCTC <strain number>T""
+    strain_id = gsub('(DSM )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "DSM <strain number>T"
+    strain_id = gsub('(ATCC )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "ATCC <strain number>T""
+    strain_id = gsub('(JCM )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "JCM <strain number>T""
+    strain_id = gsub('(CIP )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "CIP <strain number>T""
+    strain_id = gsub('(NCTC )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "NCTC <strain number>T""
+    strain_id = gsub('(NCIB )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "NCIB <strain number>T""
+    strain_id = gsub('(KCTC )([0-9]*)T', "\\1\\2", strain_id) #Remove 'T' in "KCTC <strain number>T""
     
     #Replace "no culture isolated" or similar language with "NA"
-    strain_ID = gsub("[Dd]escription, not isolated in axenic culture", "None", strain_ID)
-    strain_ID = gsub("[Dd]escription, not isolated in axenic culture", "None", strain_ID)
-    strain_ID = gsub("[Dd]escriptions and illustrations serving as type", "None", strain_ID)
-    strain_ID = gsub("[Dd]escriptions and illustrations serving as type", "None", strain_ID)
-    strain_ID = gsub("[Nn]o culture", "None", strain_ID)
-    strain_ID = gsub("[Nn]o culture available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o culture has been isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]o culture has been isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]o culture isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]o longer in culture", "None", strain_ID)
-    strain_ID = gsub("[Nn]o pure culture has been isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]o pure culture", "None", strain_ID)
-    strain_ID = gsub("[Nn]o strain extant", "None", strain_ID)
-    strain_ID = gsub("[Nn]o strain isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type culture currently available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type culture is currently available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type material is available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type material available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type strain available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type strain is available", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type", "None", strain_ID)
-    strain_ID = gsub("[Nn]o type", "None", strain_ID)
-    strain_ID = gsub("[Nn]one available", "None", strain_ID)
-    strain_ID = gsub("[Nn]one cultivated", "None", strain_ID)
-    strain_ID = gsub("[Nn]one designated", "None", strain_ID)
-    strain_ID = gsub("[Nn]one has been designated", "None", strain_ID)
-    strain_ID = gsub("[Nn]one isolated", "None", strain_ID)
-    strain_ID = gsub("[Nn]one", "None", strain_ID)
-    strain_ID = gsub("[Nn]on-specified due to difficulties in cultivation", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot avialable", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot cultivated; none designated", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot cultivated", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot yet grown in pure culture", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot designated", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot established", "None", strain_ID)
-    strain_ID = gsub("[Nn]ot cultivated", "None", strain_ID)
-    strain_ID = gsub("(?<!\\S)-(?!\\S)", "None", strain_ID, perl=TRUE) #"-" if not preceded or followed by any character (except space)
+    strain_id = gsub("[Dd]escription, not isolated in axenic culture", "None", strain_id)
+    strain_id = gsub("[Dd]escription, not isolated in axenic culture", "None", strain_id)
+    strain_id = gsub("[Dd]escriptions and illustrations serving as type", "None", strain_id)
+    strain_id = gsub("[Dd]escriptions and illustrations serving as type", "None", strain_id)
+    strain_id = gsub("[Nn]o culture", "None", strain_id)
+    strain_id = gsub("[Nn]o culture available", "None", strain_id)
+    strain_id = gsub("[Nn]o culture has been isolated", "None", strain_id)
+    strain_id = gsub("[Nn]o culture has been isolated", "None", strain_id)
+    strain_id = gsub("[Nn]o culture isolated", "None", strain_id)
+    strain_id = gsub("[Nn]o longer in culture", "None", strain_id)
+    strain_id = gsub("[Nn]o pure culture has been isolated", "None", strain_id)
+    strain_id = gsub("[Nn]o pure culture", "None", strain_id)
+    strain_id = gsub("[Nn]o strain extant", "None", strain_id)
+    strain_id = gsub("[Nn]o strain isolated", "None", strain_id)
+    strain_id = gsub("[Nn]o type culture currently available", "None", strain_id)
+    strain_id = gsub("[Nn]o type culture is currently available", "None", strain_id)
+    strain_id = gsub("[Nn]o type material is available", "None", strain_id)
+    strain_id = gsub("[Nn]o type material available", "None", strain_id)
+    strain_id = gsub("[Nn]o type strain available", "None", strain_id)
+    strain_id = gsub("[Nn]o type strain is available", "None", strain_id)
+    strain_id = gsub("[Nn]o type", "None", strain_id)
+    strain_id = gsub("[Nn]o type", "None", strain_id)
+    strain_id = gsub("[Nn]one available", "None", strain_id)
+    strain_id = gsub("[Nn]one cultivated", "None", strain_id)
+    strain_id = gsub("[Nn]one designated", "None", strain_id)
+    strain_id = gsub("[Nn]one has been designated", "None", strain_id)
+    strain_id = gsub("[Nn]one isolated", "None", strain_id)
+    strain_id = gsub("[Nn]one", "None", strain_id)
+    strain_id = gsub("[Nn]on-specified due to difficulties in cultivation", "None", strain_id)
+    strain_id = gsub("[Nn]ot avialable", "None", strain_id)
+    strain_id = gsub("[Nn]ot cultivated; none designated", "None", strain_id)
+    strain_id = gsub("[Nn]ot cultivated", "None", strain_id)
+    strain_id = gsub("[Nn]ot yet grown in pure culture", "None", strain_id)
+    strain_id = gsub("[Nn]ot designated", "None", strain_id)
+    strain_id = gsub("[Nn]ot established", "None", strain_id)
+    strain_id = gsub("[Nn]ot cultivated", "None", strain_id)
+    strain_id = gsub("(?<!\\S)-(?!\\S)", "None", strain_id, perl=TRUE) #"-" if not preceded or followed by any character (except space)
     
-    strain_ID = gsub("[Ss]train", "", strain_ID) #Remove "Strain"
-    strain_ID = gsub("[(]neopathotype strain[)]", "", strain_ID) #Remove "(neopathotype strain)"
-    strain_ID = gsub("[Hh]olotype", "", strain_ID) #Remove "holotype"
-    strain_ID = gsub("[Nn]eotype", "", strain_ID) #Remove "neotype"
-    strain_ID = gsub("[Tt]ype", "", strain_ID) #Remove "type"
-    strain_ID = gsub("[Ff]ormerly", "", strain_ID) #Remove "formely"
-    strain_ID = gsub("[Nn]ow", "", strain_ID) #Remove "now"
+    strain_id = gsub("[Ss]train", "", strain_id) #Remove "Strain"
+    strain_id = gsub("[(]neopathotype strain[)]", "", strain_id) #Remove "(neopathotype strain)"
+    strain_id = gsub("[Hh]olotype", "", strain_id) #Remove "holotype"
+    strain_id = gsub("[Nn]eotype", "", strain_id) #Remove "neotype"
+    strain_id = gsub("[Tt]ype", "", strain_id) #Remove "type"
+    strain_id = gsub("[Ff]ormerly", "", strain_id) #Remove "formely"
+    strain_id = gsub("[Nn]ow", "", strain_id) #Remove "now"
     
     #Delineate strains with commas
     #Strains are already delineated with commas in most articles, but not all
     #Replace any characters that can delineate strains with commas
-    strain_ID = gsub(', "', ", ", strain_ID) #Replace ', "' with ', '
-    strain_ID = gsub("[(]", ",", strain_ID) #Replace parentheses with ","
-    strain_ID = gsub("\\[", ",", strain_ID) #Replace parentheses with ","
-    strain_ID = gsub("]", ",", strain_ID) #Replace bracket with ","
-    strain_ID = gsub("[)]", ",", strain_ID) #Replace bracket with ","
-    strain_ID = gsub("=", ",", strain_ID) #Replace "=" with ","
-    strain_ID = gsub(";", ",", strain_ID) #Replace ";" with ","
+    strain_id = gsub(', "', ", ", strain_id) #Replace ', "' with ', '
+    strain_id = gsub("[(]", ",", strain_id) #Replace parentheses with ","
+    strain_id = gsub("\\[", ",", strain_id) #Replace parentheses with ","
+    strain_id = gsub("]", ",", strain_id) #Replace bracket with ","
+    strain_id = gsub("[)]", ",", strain_id) #Replace bracket with ","
+    strain_id = gsub("=", ",", strain_id) #Replace "=" with ","
+    strain_id = gsub(";", ",", strain_id) #Replace ";" with ","
     
     #Split into list at commas
-    strain_ID = strsplit(strain_ID, ",")[[1]]
+    strain_id = strsplit(strain_id, ",")[[1]]
     
     #Clean up formatting again
-    strain_ID = gsub("[(].*[)][ ]*", "", strain_ID) #Remove any paranthetical statements not removed above
-    strain_ID = trimws(strain_ID) #Remove leading and trailing spaces
-    strain_ID = strain_ID[!strain_ID %in% ""] #Remove any empty elements
+    strain_id = gsub("[(].*[)][ ]*", "", strain_id) #Remove any paranthetical statements not removed above
+    strain_id = trimws(strain_id) #Remove leading and trailing spaces
+    strain_id = strain_id[!strain_id %in% ""] #Remove any empty elements
     
     # Remove elements with five or more spaces (likely full sentences)
-    strain_ID <- strain_ID[!grepl("^([^ ]*[ ]){5,}[^ ]*$", strain_ID)]
+    strain_id <- strain_id[!grepl("^([^ ]*[ ]){5,}[^ ]*$", strain_id)]
     
     # Handle the case where no strain ID is found
-    if (length(strain_ID) == 0) {
-      strain_ID <- NA
+    if (length(strain_id) == 0) {
+      strain_id <- NA
     }
     
-    return(strain_ID)
+    return(strain_id)
   }
   
   #' Get Strain ID
@@ -1104,7 +1104,7 @@
   #' @param name Character string representing the name of the organism.
   #' @param species_description Character string containing the species description text.
   #' @param special_genus Optional; character string for handling special formatting (default is `NULL`).
-  #' @return A character vector containing the extracted strain IDs, or `NA` if no strain ID is found.
+  #' @return A character vector containing the extracted strain IDs (now conceptually 'strain_id'), or `NA` if no strain ID is found.
   #' @details This function uses multiple patterns to locate the type strain ID within the species description.
   #' The `clean_strain_ID` function is applied to standardize and clean the extracted strain ID format.
   #' @importFrom stringr str_extract
@@ -1119,12 +1119,12 @@
                      set_strain_pattern_4(), set_strain_pattern_5(), set_strain_pattern_6(),
                      set_strain_pattern_7(), set_strain_pattern_8(), set_strain_pattern_9(),
                      set_strain_pattern_10(), set_strain_pattern_11(), set_strain_pattern_12())
-    strain_ID <- extract_strain_ID(patterns, species_description)
+    strain_id <- extract_strain_ID(patterns, species_description)
     
     # Clean up formatting
-    strain_ID = clean_strain_ID(strain_ID)
+    strain_id = clean_strain_ID(strain_id)
     
-    return(strain_ID)
+    return(strain_id)
   }
   
   #' List Files in a Directory Matching a Pattern

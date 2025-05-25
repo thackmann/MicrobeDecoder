@@ -26,7 +26,7 @@
   # Handle most strains (those that are not type subspecies)
     most_strains <- lpsn_organisms %>% dplyr::filter(Species!=Subspecies)
     addresses <- most_strains$address
-    LPSN_ID <- most_strains$LPSN_ID
+    current_lpsn_ids <- most_strains$lpsn_id # Changed from LPSN_ID
     base_url <- "https://lpsn.dsmz.de"
     download_status <- vector("character", length(addresses))
 
@@ -41,7 +41,7 @@
 
       if (length(fasta_link) > 0) {
         # Construct the file path
-        fp <- paste0("LPSN/data/16S_ribosomal_sequences", LPSN_ID[i], ".fasta")
+        fp <- paste0("LPSN/data/16S_ribosomal_sequences", current_lpsn_ids[i], ".fasta") # Changed from LPSN_ID
 
         # Download the FASTA file
         download_result <- download_fasta_file(fasta_link[1], fp)
@@ -57,7 +57,7 @@
     ## These strains do not have sequences on their own page--instead they are on the page of the parent taxon
     type_subspecies <- lpsn_organisms %>% dplyr::filter(Species==Subspecies)
     addresses <- type_subspecies$address
-    LPSN_ID <- type_subspecies$LPSN_ID
+    current_lpsn_ids_type <- type_subspecies$lpsn_id # Changed from LPSN_ID
     base_url <- "https://lpsn.dsmz.de"
     download_status <- vector("character", length(addresses))
 
@@ -82,7 +82,7 @@
 
         if (length(fasta_link) > 0) {
           # Construct the file path
-          fp <- paste0("LPSN/data/16S_ribosomal_sequences/", LPSN_ID[i], ".fasta")
+          fp <- paste0("LPSN/data/16S_ribosomal_sequences/", current_lpsn_ids_type[i], ".fasta") # Changed from LPSN_ID
 
           # Download the FASTA file
           download_result <- download_fasta_file(fasta_link[1], fp)
@@ -101,10 +101,10 @@
 # === Remove extra sequences ===
     # Type subspecies
     # Extra sequences are those that contain "subsp."
-    LPSN_ID <- type_subspecies$LPSN_ID
+    # current_lpsn_ids_type was defined above from type_subspecies$lpsn_id
 
-    for (i in 1:length(LPSN_ID)) {
-      fp <- paste0("LPSN/data/16S_ribosomal_sequences/", LPSN_ID[i], ".fasta")
+    for (i in 1:length(current_lpsn_ids_type)) {
+      fp <- paste0("LPSN/data/16S_ribosomal_sequences/", current_lpsn_ids_type[i], ".fasta")
 
       # Check if the file exists
       if (!file.exists(fp)) {
@@ -136,10 +136,10 @@
 
     # Most strains
     # Extra sequences are those that contain "subsp.", if there are two or more sequences
-    LPSN_ID <- most_strains$LPSN_ID
+    # current_lpsn_ids was defined above from most_strains$lpsn_id
 
-    for (i in 1:length(LPSN_ID)) {
-      fp <- paste0("LPSN/data/16S_ribosomal_sequences/", LPSN_ID[i], ".fasta")
+    for (i in 1:length(current_lpsn_ids)) {
+      fp <- paste0("LPSN/data/16S_ribosomal_sequences/", current_lpsn_ids[i], ".fasta")
 
       # Check if the file exists
       if (!file.exists(fp)) {
@@ -200,7 +200,7 @@
 
 
 # === Add ribosomal sequences to organism data ===
-  idx <- match(lpsn_organisms$LPSN_ID, names(seq))
+  idx <- match(lpsn_organisms$lpsn_id, names(seq)) # Changed from LPSN_ID
   lpsn_organisms$`16S_ribosomal_sequence` <- NA
   lpsn_organisms$`16S_ribosomal_sequence`[!is.na(idx)] <- as.character(seq[idx[!is.na(idx)]])
 

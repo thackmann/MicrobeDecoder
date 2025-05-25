@@ -143,7 +143,7 @@
       options(shiny.maxRequestSize=100*1024^2)
 
       # Set variables
-      session$userData$modal_open <- reactiveVal(FALSE) # For tracking if modals are open
+      session$userData$is_modal_open <- reactiveVal(FALSE) # For tracking if modals are open
       session$userData$job_id <- reactive(get_query_param(param_name = "job")) # For job id
       session$userData$user_ip <- get_user_ip() # For user IP address
       session$userData$user_id <- get_user_id(session$userData$user_ip) # For user id

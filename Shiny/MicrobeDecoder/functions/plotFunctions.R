@@ -1540,14 +1540,14 @@
   #' This helper function adds taxonomy information (e.g., Phylum, Class, Order) to a graph layout based on matching IDs.
   #' 
   #' @param layout A data frame containing the layout coordinates for the nodes.
-  #' @param layout_ID The column name in the layout data frame to match with the taxonomy data.
+  #' @param layout_id The column name in the layout data frame to match with the taxonomy data.
   #' @param taxonomy A data frame containing the taxonomy information.
-  #' @param taxonomy_ID The column name in the taxonomy data frame to match with the layout data.
+  #' @param taxonomy_id The column name in the taxonomy data frame to match with the layout data.
   #' @return A data frame containing the layout coordinates with added taxonomy information.
   #' @export
   #' @importFrom dplyr filter
-  add_taxonomy_to_layout <- function(layout, layout_ID = "label", taxonomy, taxonomy_ID = "IMG_Genome_ID_max_genes") {
-    row_match <- match(x = layout[[layout_ID]], table = taxonomy[[taxonomy_ID]])
+  add_taxonomy_to_layout <- function(layout, layout_id = "label", taxonomy, taxonomy_id = "img_genome_id_max_genes") {
+    row_match <- match(x = layout[[layout_id]], table = taxonomy[[taxonomy_id]])
     
     layout$Phylum <- taxonomy$Phylum[row_match]
     layout$Class <- taxonomy$Class[row_match]
@@ -1556,7 +1556,7 @@
     layout$Genus <- taxonomy$Genus[row_match]
     layout$Species <- taxonomy$Species[row_match]
     
-    layout <- layout %>% dplyr::filter(!!rlang::sym(layout_ID) %in% taxonomy[[taxonomy_ID]])
+    layout <- layout %>% dplyr::filter(!!rlang::sym(layout_id) %in% taxonomy[[taxonomy_id]])
     return(layout)
   }    
   

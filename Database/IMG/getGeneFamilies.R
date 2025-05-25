@@ -74,7 +74,7 @@
     genome_folders = list.dirs(paste0(genome_directory), full.names = TRUE, recursive = FALSE)
 
   # Initialize an empty list to store each dataframe
-    KO_data <- list()
+    ko_data <- list()
 
   # Initialize a vector to store missing IMG_genome_IDs
     missing_files <- c()
@@ -82,7 +82,7 @@
   # Loop over genome folders
     for (i in seq_along(genome_folders)) {
       # Extract the folder name as IMG_genome_ID
-      IMG_genome_ID <- basename(genome_folders[i])
+      img_genome_id <- basename(genome_folders[i])
 
       # Try to read the file
       data <- read_ko_tab_file(genome_folders[i])
@@ -90,33 +90,33 @@
       # Check if data is NULL, indicating the file was missing
       if (is.null(data)) {
         # Add the IMG_genome_ID to missing_files and continue to the next iteration
-        missing_files <- c(missing_files, IMG_genome_ID)
+        missing_files <- c(missing_files, img_genome_id)
         next
       }
 
       # Add the IMG_genome_ID column to the dataframe
       data <- data %>%
-        dplyr::mutate(IMG_genome_ID = IMG_genome_ID)
+        dplyr::mutate(img_genome_id = img_genome_id)
 
       # Store the dataframe in the list
-      KO_data[[i]] <- data
+      ko_data[[i]] <- data
 
       svMisc::progress(value = i, max = length(genome_folders))
     }
 
   # Combine all dataframes into one
-    KO_data <- dplyr::bind_rows(KO_data)
+    ko_data <- dplyr::bind_rows(ko_data)
 
   # Reduce size of dataframe
-    KO_data_compressed <- KO_data %>%
-      dplyr::select(IMG_genome_ID, ko_id) %>%        # Select relevant columns
+    ko_data_compressed <- ko_data %>%
+      dplyr::select(img_genome_id, ko_id) %>%        # Select relevant columns
       dplyr::distinct() %>%                          # Remove duplicates
       dplyr::mutate(ko_id = gsub(pattern = "KO:", "", x = ko_id)) %>%  # Remove 'KO:' prefix
-      dplyr::rename(Genome = IMG_genome_ID, Database_ID = ko_id) %>%  # Rename columns
+      dplyr::rename(Genome = img_genome_id, Database_ID = ko_id) %>%  # Rename columns
       dplyr::mutate(across(everything(), as.factor)) %>%  # Convert to factors
       droplevels()  # Drop unused factor levels
 
 #===  Export ===
   setwd(database_directory)
-  saveRDS(KO_data_compressed, file = paste0(database_directory, "/gene_functions_database.rds"))
+  saveRDS(ko_data_compressed, file = paste0(database_directory, "/gene_functions_database.rds"))
   

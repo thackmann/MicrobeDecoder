@@ -30,7 +30,7 @@
 
   # Rename columns
   df = df %>% dplyr::select(genus_name, sp_epithet, subsp_epithet, nomenclatural_type, status, record_no, address)
-  df = df %>% dplyr::rename(Genus = "genus_name", Species = "sp_epithet", Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
+  df = df %>% dplyr::rename(Genus = "genus_name", Species = "sp_epithet", Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, lpsn_id = record_no)
 
   # Replace blank values with NA
   df = df %>% dplyr::mutate_all(~ifelse(. == "", NA, .))

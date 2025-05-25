@@ -35,7 +35,7 @@
   #* @param query_taxa:object Table of input taxonomy
   #* @param query_string:string An optional query string to filter the database.
   #* @param traits_to_predict:array Names of traits to predict
-  #* @param ignore_NA:boolean Whether to ignore NA values
+  #* @param ignore_na:boolean Whether to ignore NA values
   #* @param simple_names:boolean Whether to use simplified names for taxa
   #* @param ignore_species:boolean Whether to ignore species rank in taxa
   #* @param system_taxonomy:string Taxonomic system to use (e.g., "LPSN")
@@ -52,7 +52,7 @@
       query_taxa = query_taxa,
       query_string = input$query_string %||% NULL,
       traits_to_predict = input$traits_to_predict,
-      ignore_NA = input$ignore_NA %||% TRUE,
+      ignore_na = input$ignore_na %||% TRUE, # Accessing input$ignore_na, API param & R var is ignore_na
       simple_names = input$simple_names %||% TRUE,
       ignore_species = input$ignore_species %||% TRUE,
       system_taxonomy = input$system_taxonomy %||% "LPSN"
@@ -186,7 +186,7 @@
         choices = choices_system_taxonomy,
         default = "LPSN"
       ),
-      ignore_NA = list(
+      ignore_na = list( # Key is already ignore_na
         choices = c(TRUE, FALSE),
         default = TRUE
       ),

@@ -623,7 +623,7 @@
   #' This function takes a vector of `PROJECT GOLD ID`s, removes missing or invalid entries,
   #' splits the IDs into batches of a specified size, and writes each batch to a separate file.
   #'
-  #' @param project_IDs A character vector of `PROJECT GOLD ID`s.
+  #' @param project_ids A character vector of `PROJECT GOLD ID`s.
   #' @param batch_size An integer specifying the number of IDs per batch. Default is 500.
   #' @param file_prefix A character string to use as the prefix for output files. Default is "project_IDs_batch".
   #'
@@ -632,15 +632,15 @@
   #'
   #' @examples
   #' \dontrun{
-  #' project_IDs <- database$`PROJECT GOLD ID`
-  #' write_project_ids_to_files(project_IDs, batch_size = 500, file_prefix = "project_IDs_batch")
+  #' project_ids <- database$`PROJECT GOLD ID`
+  #' write_project_ids_to_files(project_ids, batch_size = 500, file_prefix = "project_IDs_batch")
   #' }
-  write_project_ids_to_files <- function(project_IDs, batch_size = 500, file_prefix = "project_IDs_batch") {
+  write_project_ids_to_files <- function(project_ids, batch_size = 500, file_prefix = "project_IDs_batch") {
     # Remove missing or invalid entries
-    project_IDs <- project_IDs[!is.na(project_IDs) & project_IDs != "NA"]
+    project_ids <- project_ids[!is.na(project_ids) & project_ids != "NA"]
 
     # Split IDs into batches
-    batches <- split(project_IDs, ceiling(seq_along(project_IDs) / batch_size))
+    batches <- split(project_ids, ceiling(seq_along(project_ids) / batch_size))
 
     # Write each batch to a separate file
     for (i in seq_along(batches)) {
@@ -848,13 +848,13 @@
   # Read in data from GOLD
     # From https://gold.jgi.doe.gov/downloads
     # After downloading, open main *.xlsx file and resave tabs as *csv with names below
-    GOLD_organism_data <- readr::read_csv("GOLD\\data\\goldDataOrganism.csv",
+    gold_organism_data <- readr::read_csv("GOLD\\data\\goldDataOrganism.csv",
                                           locale = readr::locale(encoding = "ISO-8859-1"),
                                           na = "",
                                           guess_max = 1000000,
                                           name_repair = "minimal")
 
-    GOLD_sequencing_data <- readr::read_csv("GOLD\\data\\goldDataSequencing.csv",
+    gold_sequencing_data <- readr::read_csv("GOLD\\data\\goldDataSequencing.csv",
                                             locale = readr::locale(encoding = "ISO-8859-1"),
                                             na = "",
                                             guess_max = 1000000,
@@ -862,118 +862,118 @@
 
   # Read in data from IMG
     # From https://img.jgi.doe.gov/ (follow instructions below to download)
-    IMG_data <- openxlsx::read.xlsx("IMG\\data\\IMG.xlsx")
+    img_data <- openxlsx::read.xlsx("IMG\\data\\IMG.xlsx")
 
   # Read in data from NCBI
     # From https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip
-    NCBI_nodes <- load_nodes_dmp(file_path = "NCBI\\data\\nodes.dmp")
-    NCBI_names <- load_names_dmp(file_path = "NCBI\\data\\names.dmp")
+    ncbi_nodes <- load_nodes_dmp(file_path = "NCBI\\data\\nodes.dmp")
+    ncbi_names <- load_names_dmp(file_path = "NCBI\\data\\names.dmp")
 
   # Read in data from BacDive
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1
-    BacDive_data <- readr::read_csv("BacDive\\data\\advsearch_bacdive_2024-11-07.csv")
+    bacdive_data <- readr::read_csv("BacDive\\data\\advsearch_bacdive_2024-11-07.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Antibiotic+resistance&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=met_antibiotica-ab_resistant-4&fg%5B0%5D%5Bfl%5D%5B8%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Metabolite+%28antibiotic%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=met_antibiotica-metabolite_antib-4
-    Antibiotic_resistance <- readr::read_csv("BacDive\\data\\antibiotic_resistance.csv")
+    antibiotic_resistance_data <- readr::read_csv("BacDive\\data\\antibiotic_resistance.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Antibiotic+sensitivity&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=met_antibiotica-ab_sensitive-4&fg%5B0%5D%5Bfl%5D%5B8%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Metabolite+%28antibiotic%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=met_antibiotica-metabolite_antib-4
-    Antibiotic_sensitivity <- readr::read_csv("BacDive\\data\\antibiotic_sensitivity.csv")
+    antibiotic_sensitivity_data <- readr::read_csv("BacDive\\data\\antibiotic_sensitivity.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Cell+length&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=cell_morphology-cell_len-2
-    Cell_length <- readr::read_csv("BacDive\\data\\cell_length.csv")
+    cell_length_data <- readr::read_csv("BacDive\\data\\cell_length.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Cell+shape&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=cell_morphology-cell_shape-2
-    Cell_shape <- readr::read_csv("BacDive\\data\\cell_shape.csv")
+    cell_shape_data <- readr::read_csv("BacDive\\data\\cell_shape.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Cell+width&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=cell_morphology-cell_width-2
-    Cell_width <- readr::read_csv("BacDive\\data\\cell_width.csv")
+    cell_width_data <- readr::read_csv("BacDive\\data\\cell_width.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Colony+size&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=colony_morphology-colony_len-2
-    Colony_size <- readr::read_csv("BacDive\\data\\colony_size.csv")
+    colony_size_data <- readr::read_csv("BacDive\\data\\colony_size.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Enzyme+activity&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=%2B&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=enzymes-activity-4&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Enzyme&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=enzymes-enzyme-4
-    Enzyme_activity <- readr::read_csv("BacDive\\data\\enzyme_activity.csv")
+    enzyme_activity_data <- readr::read_csv("BacDive\\data\\enzyme_activity.csv")
     
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Flagellum+arrangement&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=cell_morphology-flagellum_arrangement-2
-    Flagellum_arrangement <- readr::read_csv("BacDive\\data\\flagellum_arrangement.csv")
+    flagellum_arrangement_data <- readr::read_csv("BacDive\\data\\flagellum_arrangement.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Gram+stain&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=cell_morphology-gram_stain-2
-    Gram_stain <- readr::read_csv("BacDive\\data\\gram_stain.csv")
+    gram_stain_data <- readr::read_csv("BacDive\\data\\gram_stain.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Incubation+period+%28in+days%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=colony_morphology-incubation_period-2
-    Incubation_period <- readr::read_csv("BacDive\\data\\incubation_period.csv")
+    incubation_period_data <- readr::read_csv("BacDive\\data\\incubation_period.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Indole+test+%28Indole%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=met_test-indole_test-4
-    Indole_test <- readr::read_csv("BacDive\\data\\indole_test.csv")
+    indole_test_data <- readr::read_csv("BacDive\\data\\indole_test.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Utilization+activity&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=%2B&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=met_util-ability-4&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Metabolite+%28production%29&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=met_production-metabolite_prod-4
-    Metabolite_production <- readr::read_csv("BacDive\\data\\metabolite_production.csv")
+    metabolite_production_data <- readr::read_csv("BacDive\\data\\metabolite_production.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B1%5D%5Bgc%5D=OR&fg%5B1%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B1%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B1%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B1%5D%5Bfl%5D%5B2%5D=AND&fg%5B1%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Utilization+activity&fg%5B1%5D%5Bfl%5D%5B3%5D%5Bfv%5D=%2B&fg%5B1%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=met_util-ability-4&fg%5B1%5D%5Bfl%5D%5B4%5D=AND&fg%5B1%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Metabolite+%28utilization%29&fg%5B1%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B1%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B1%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=met_util-metabolite_util-4
-    Metabolite_utilization <- readr::read_csv("BacDive\\data\\metabolite_utilization.csv")
+    metabolite_utilization_data <- readr::read_csv("BacDive\\data\\metabolite_utilization.csv")
     
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Motility&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=cell_morphology-motility-2
-    Motility <- readr::read_csv("BacDive\\data\\motility.csv")
+    motility_data <- readr::read_csv("BacDive\\data\\motility.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Oxygen+tolerance&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=oxygen_tolerance-oxygen_tol-4
-    Oxygen_tolerance <- readr::read_csv("BacDive\\data\\oxygen_tolerance.csv")
+    oxygen_tolerance_data <- readr::read_csv("BacDive\\data\\oxygen_tolerance.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Kind+of+pH&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=growth&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=culture_pH-test_type-3&fg%5B0%5D%5Bfl%5D%5B10%5D=AND&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfd%5D=Testresult+%28pH%29&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfv%5D=positive&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfvd%5D=culture_pH-ability-3&fg%5B0%5D%5Bfl%5D%5B12%5D=AND&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfd%5D=pH&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfvd%5D=culture_pH-pH-3
-    pH_for_growth <- readr::read_csv("BacDive\\data\\pH_for_growth.csv")
+    ph_for_growth_data <- readr::read_csv("BacDive\\data\\pH_for_growth.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Pathogenicity+%28animal%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=risk_assessment-pathogenicity_animal-6
-    Pathogenicity_animal <- readr::read_csv("BacDive\\data\\pathogenicity_animal.csv")
+    pathogenicity_animal_data <- readr::read_csv("BacDive\\data\\pathogenicity_animal.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Pathogenicity+%28human%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=risk_assessment-pathogenicity_human-6
-    Pathogenicity_human <- readr::read_csv("BacDive\\data\\pathogenicity_human.csv")
+    pathogenicity_human_data <- readr::read_csv("BacDive\\data\\pathogenicity_human.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Pathogenicity+%28plant%29&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=risk_assessment-pathogenicity_plant-6
-    Pathogenicity_plant <- readr::read_csv("BacDive\\data\\pathogenicity_plant.csv")
+    pathogenicity_plant_data <- readr::read_csv("BacDive\\data\\pathogenicity_plant.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Salt+conc.&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=halophily-salt_concentration-4
-    Salt_concentration <- readr::read_csv("BacDive\\data\\salt_concentration.csv")
+    salt_concentration_data <- readr::read_csv("BacDive\\data\\salt_concentration.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=salt+concentration+unit&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=halophily-salt_concentration_unit-4
-    Salt_concentration_unit <- readr::read_csv("BacDive\\data\\salt_concentration_unit.csv")
+    salt_concentration_unit_data <- readr::read_csv("BacDive\\data\\salt_concentration_unit.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B5%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B6%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Ability+of+spore+formation&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=spore_formation-ability-4
-    Spore_formation <- readr::read_csv("BacDive\\data\\spore_formation.csv")
+    spore_formation_data <- readr::read_csv("BacDive\\data\\spore_formation.csv")
 
     # https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfd%5D=Kind+of+temperature&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfv%5D=growth&fg%5B0%5D%5Bfl%5D%5B7%5D%5Bfvd%5D=culture_temp-test_type-3&fg%5B0%5D%5Bfl%5D%5B8%5D=AND&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfd%5D=Testresult+%28temperature%29&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfv%5D=positive&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfvd%5D=culture_temp-ability-3&fg%5B0%5D%5Bfl%5D%5B12%5D=AND&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfd%5D=Temperature&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfo%5D=equal&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B13%5D%5Bfvd%5D=culture_temp-temp-3
-    Temperature_for_growth <- readr::read_csv("BacDive\\data\\temperature_for_growth.csv")
+    temperature_for_growth_data <- readr::read_csv("BacDive\\data\\temperature_for_growth.csv")
 
     # From https://bacdive.dsmz.de/advsearch?fg%5B0%5D%5Bgc%5D=OR&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfd%5D=Type+strain&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfv%5D=1&fg%5B0%5D%5Bfl%5D%5B1%5D%5Bfvd%5D=strains-is_type_strain-1&fg%5B0%5D%5Bfl%5D%5B2%5D=AND&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfd%5D=Genus&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B3%5D%5Bfvd%5D=strains-genus-1&fg%5B0%5D%5Bfl%5D%5B4%5D=AND&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfd%5D=Species+epithet&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfo%5D=contains&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B9%5D%5Bfvd%5D=strains-species_epithet-1&fg%5B0%5D%5Bfl%5D%5B10%5D=AND&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfd%5D=Voges-Proskauer-test+%28Acetoin%29&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfv%5D=*&fg%5B0%5D%5Bfl%5D%5B11%5D%5Bfvd%5D=met_test-voges_proskauer-4
-    Voges_proskauer <- readr::read_csv("BacDive\\data\\voges_proskauer.csv")
+    voges_proskauer_data <- readr::read_csv("BacDive\\data\\voges_proskauer.csv")
 
     # From https://bacdive.dsmz.de/isolation-sources
-    Isolation_sources <- readr::read_csv("BacDive\\data\\isolation_sources.csv")
+    isolation_sources_data <- readr::read_csv("BacDive\\data\\isolation_sources.csv")
 
   # Read in data from Bergey's Manual
     # From Bergey/addBergeyLabels.R script
-    Bergey_data <- readr::read_csv("Bergey\\data\\Bergey_data_with_labels.csv")
+    bergey_data <- readr::read_csv("Bergey\\data\\Bergey_data_with_labels.csv")
 
   # Read in data from VPI Anaerobe Laboratory Manual
-    VPI_data <- readr::read_csv("VPI\\data\\VPI_data.csv")
+    vpi_data <- readr::read_csv("VPI\\data\\VPI_data.csv")
 
   # Read in data from primary literature
     primary_literature_data <- readr::read_csv("primary_literature\\data\\primary_literature_data.csv")
 
   # Read in data from FAPROTAX
     # From FAPROTAX/getFAPROTAXpredictions.R script
-    FAPROTAX_data <- readr::read_csv("FAPROTAX\\data\\FAPROTAX_data.csv")
+    faprotax_data <- readr::read_csv("FAPROTAX\\data\\FAPROTAX_data.csv")
 
 # === Start database using data from LPSN ===
   database = lpsn_organisms
 
   # Add phylogeny
-  matches_LPSN = match(x = lpsn_phylogeny$LPSN_ID, table = database$LPSN_ID)
+  matches_lpsn = match(x = lpsn_phylogeny$lpsn_id, table = database$lpsn_id)
 
   # Use indices to add phylogeny to database
   database <- add_columns_based_on_indices(
     target_df =  database,
     source_df = lpsn_phylogeny,
-    target_index = matches_LPSN,
-    source_index = seq_along(matches_LPSN),
+    target_index = matches_lpsn, # Already matches_lpsn
+    source_index = seq_along(matches_lpsn), # Already matches_lpsn
     source_col_names = c(
       "Domain",
       "Phylum",
@@ -986,40 +986,40 @@
       "Strain"
     ),
     target_col_names = c(
-      "LPSN_Domain",
-      "LPSN_Phylum",
-      "LPSN_Class",
-      "LPSN_Order",
-      "LPSN_Family",
-      "LPSN_Genus",
-      "LPSN_Species",
-      "LPSN_Subspecies",
-      "LPSN_Strain"
+      "lpsn_domain",
+      "lpsn_phylum",
+      "lpsn_class",
+      "lpsn_order",
+      "lpsn_family",
+      "lpsn_genus",
+      "lpsn_species",
+      "lpsn_subspecies",
+      "lpsn_strain"
     )
   )
 
   # Add 16S ribosomal sequence
-  matches_LPSN = match(x = lpsn_ribosomal_sequences$LPSN_ID, table = database$LPSN_ID)
+  matches_lpsn = match(x = lpsn_ribosomal_sequences$lpsn_id, table = database$lpsn_id) # Already matches_lpsn
 
   # Use indices to add sequences to database
   database <- add_columns_based_on_indices(
     target_df =  database,
     source_df = lpsn_ribosomal_sequences,
-    target_index = matches_LPSN,
-    source_index = seq_along(matches_LPSN),
+    target_index = matches_lpsn, # Already matches_lpsn
+    source_index = seq_along(matches_lpsn), # Already matches_lpsn
     source_col_names = c(
       "16S_ribosomal_sequence"
     ),
     target_col_names = c(
-      "LPSN_16S_Ribosomal_sequence"
+      "lpsn_16s_ribosomal_sequence"
     )
   )
 
   # Rename columns
-  database <- database %>% dplyr::rename(LPSN_Page_link = address)
-  database <- database %>% dplyr::select(-LPSN_Page_link,LPSN_Page_link)
-  database <- database %>% dplyr::rename(LPSN_status = Status)
-  database <- database %>% dplyr::select(-LPSN_status,LPSN_status)
+  database <- database %>% dplyr::rename(lpsn_page_link = address)
+  database <- database %>% dplyr::select(-lpsn_page_link,lpsn_page_link)
+  database <- database %>% dplyr::rename(lpsn_status = Status)
+  database <- database %>% dplyr::select(-lpsn_status,lpsn_status)
 
 # === Get names of culture collections ====
   # Names are used in matching strains in database to other sources of data
@@ -1042,8 +1042,8 @@
     ) %>%
     tidyr::unnest_wider(taxonomy_split)
   
-  # Find matches between database and GOLD
-  matches_GTDB = perform_matching(
+  # Find matches between database and GOLD  # Corrected comment, was GOLD, now GTDB
+  matches_gtdb = perform_matching( # Already matches_gtdb
     table_data = gtdb_data,
     table_genus_col = "Genus",
     table_species_col = "Species",
@@ -1059,7 +1059,7 @@
   )
   
   # Filter indices to keep only the best matches
-  matches_filtered <- matches_GTDB %>% dplyr::group_by(x_index) %>%
+  matches_filtered <- matches_gtdb %>% dplyr::group_by(x_index) %>% # Already matches_gtdb
     dplyr::slice_min(`Rank`, with_ties = FALSE)
   # Remove rank 8 matches (likely to contain non-type strains)
   matches_filtered <- matches_filtered %>% dplyr::filter(Rank != 8)
@@ -1084,33 +1084,33 @@
       "accession"
     ),
     target_col_names = c(
-      "GTDB_Domain",
-      "GTDB_Phylum",
-      "GTDB_Class",
-      "GTDB_Order",
-      "GTDB_Family",
-      "GTDB_Genus",
-      "GTDB_Species",
-      "GTDB_ID"
+      "gtdb_domain",
+      "gtdb_phylum",
+      "gtdb_class",
+      "gtdb_order",
+      "gtdb_family",
+      "gtdb_genus",
+      "gtdb_species",
+      "gtdb_id"
     )
   )
 
 # === Add data from GOLD database ===
   # Format GOLD organism data
     # Select only bacteria and archaea
-    GOLD_organism_data <- GOLD_organism_data %>%
+    gold_organism_data <- gold_organism_data %>%
       dplyr::filter(`ORGANISM NCBI SUPERKINGDOM` == "Bacteria" | `ORGANISM NCBI SUPERKINGDOM` == "Archaea")
     # Format genus names
-    GOLD_organism_data$`ORGANISM SPECIES` <- stringr::str_remove(GOLD_organism_data$`ORGANISM SPECIES`, "^\\S+\\s+")
+    gold_organism_data$`ORGANISM SPECIES` <- stringr::str_remove(gold_organism_data$`ORGANISM SPECIES`, "^\\S+\\s+")
 
     # Add sequencing project
-    GOLD_sequencing_data <- GOLD_sequencing_data %>% dplyr::select(`ORGANISM GOLD ID`, `PROJECT GOLD ID`) %>% dplyr::group_by(`ORGANISM GOLD ID`) %>%
+    gold_sequencing_data <- gold_sequencing_data %>% dplyr::select(`ORGANISM GOLD ID`, `PROJECT GOLD ID`) %>% dplyr::group_by(`ORGANISM GOLD ID`) %>%
       dplyr::summarize(`PROJECT GOLD ID` = paste(`PROJECT GOLD ID`, collapse = ", "))
-    GOLD_organism_data <- dplyr::left_join(x = GOLD_organism_data, y = GOLD_sequencing_data, by = "ORGANISM GOLD ID")
+    gold_organism_data <- dplyr::left_join(x = gold_organism_data, y = gold_sequencing_data, by = "ORGANISM GOLD ID")
 
   # Find matches between database and GOLD
-  matches_GOLD = perform_matching(
-    table_data = GOLD_organism_data,
+  matches_gold = perform_matching( # Already matches_gold
+    table_data = gold_organism_data,
     table_genus_col = "ORGANISM GENUS",
     table_species_col = "ORGANISM SPECIES",
     table_strain_col = "ORGANISM STRAIN",
@@ -1125,23 +1125,23 @@
   )
 
   # Filter indices to keep only the best matches
-    matches_filtered =  matches_GOLD
-    matches_filtered$Project = GOLD_organism_data$'PROJECT GOLD ID'[matches_GOLD$table_index]
+    matches_filtered =  matches_gold # Already matches_gold
+    matches_filtered$Project = gold_organism_data$'PROJECT GOLD ID'[matches_gold$table_index] # Already matches_gold
     matches_filtered = matches_filtered %>% dplyr::filter(Rank != 5) # Remove rank 5 matches (likely to contain non-type strain)
 
     # Pick the highest rank with a sequencing project
     matches_filtered <- matches_filtered %>%
       dplyr::group_by(x_index) %>%
       dplyr::arrange(Rank) %>%
-      dplyr::mutate(Project_NA = all(is.na(Project))) %>%
-      dplyr::filter(ifelse(Project_NA, Rank == min(Rank), Rank == min(Rank[!is.na(Project)], na.rm = TRUE))) %>%
+      dplyr::mutate(project_na = all(is.na(Project))) %>%
+      dplyr::filter(ifelse(project_na, Rank == min(Rank), Rank == min(Rank[!is.na(Project)], na.rm = TRUE))) %>%
       dplyr::ungroup() %>%
-      dplyr::select(-Project_NA)  # Remove the helper column
+      dplyr::select(-project_na)  # Remove the helper column
 
   # Use indices to add GOLD data to database
     database <- add_columns_based_on_indices(
       target_df =  database,
-      source_df = GOLD_organism_data,
+      source_df = gold_organism_data,
       target_index = matches_filtered$x_index,
       source_index = matches_filtered$table_index,
       source_col_names = c(
@@ -1150,16 +1150,16 @@
         "ORGANISM NCBI TAX ID"
       ),
       target_col_names = c(
-        "GOLD_Organism_ID",
-        "GOLD_Project_ID",
-        "NCBI_Taxonomy_ID"
+        "gold_organism_id",
+        "gold_project_id",
+        "ncbi_taxonomy_id"
       )
     )
 
 # === Add data from IMG ===
   # Instructions for downloading data (IMG.xlsx) from IMG
     ## Get GOLD organism IDs from database and output to file using command below (uncomment to run)
-    # write_project_ids_to_files(project_IDs = database$'PROJECT GOLD ID', batch_size = 500, file_prefix = "project_IDs_batch")
+    # write_project_ids_to_files(project_ids = database$'gold_project_id', batch_size = 500, file_prefix = "project_IDs_batch")
     ## Then navigate to IMG, log on, and then navigate to Find Genomes (https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=GenomeSearch&page=searchForm)
     ## Paste contents of each file outputted above (one at a time in search bar).  In "Search by ID (list)" field, choose "GOLD Sequencing Project ID".  Click "Search".
     ## In the screen that appears, click "Select All" and "Add Selected to Genome Cart".  Repeat for remaining files.
@@ -1168,48 +1168,48 @@
     ## Save as "IMG.xlsx" in the IMG/data folder.
 
     # Get IMG genome IDs
-    x <- IMG_data$`GOLD.Sequencing.Project.ID`
-    table <- database$`GOLD_Project_ID`
+    x <- img_data$`GOLD.Sequencing.Project.ID`
+    table <- database$`gold_project_id`
 
     # Find matches
-    matches_IMG <- find_match_indices(x, table)
-    IMG_data$match_indices <- matches_IMG
+    matches_img <- find_match_indices(x, table) # Already matches_img
+    img_data$match_indices <- matches_img # Already matches_img
 
     # Add IMG genome IDs to database
-    database$`IMG_Genome_ID` <- NA
-    database$`IMG_Genome_ID` <- update_database_column(
-      database_col = database$`IMG_Genome_ID`,
-      match_indices = IMG_data$match_indices,
-      values = IMG_data$`IMG.Genome.ID`
+    database$`img_genome_id` <- NA
+    database$`img_genome_id` <- update_database_column(
+      database_col = database$`img_genome_id`,
+      match_indices = img_data$match_indices, # Already matches_img
+      values = img_data$`IMG.Genome.ID`
     )
 
     # Get IMG genome ID for genome with max genes
-    IMG_data_filtered <- IMG_data %>%
+    img_data_filtered <- img_data %>%
       dplyr::group_by(match_indices) %>%
       dplyr::slice_max(`Gene.Count.*.assembled`, with_ties = FALSE)
 
     # All genome IDs with max genes database
-    database$`IMG_Genome_ID_max_genes` <- NA
-    database$`IMG_Genome_ID_max_genes` <- update_database_column(
-      database_col = database$`IMG_Genome_ID_max_genes`,
-      match_indices = IMG_data_filtered$match_indices,
-      values = IMG_data_filtered$`IMG.Genome.ID`
+    database$`img_genome_id_max_genes` <- NA
+    database$`img_genome_id_max_genes` <- update_database_column(
+      database_col = database$`img_genome_id_max_genes`,
+      match_indices = img_data_filtered$match_indices,
+      values = img_data_filtered$`IMG.Genome.ID`
     )
 
 # === Add data from NCBI ===
     # Format data
-    tax_ids <- extract_first_value(vec = database$`NCBI_Taxonomy_ID`)
-    NCBI_data = get_multiple_lineages(tax_ids = tax_ids, nodes_df = NCBI_nodes, names_df = NCBI_names)
+    tax_ids <- extract_first_value(vec = database$`ncbi_taxonomy_id`)
+    ncbi_data = get_multiple_lineages(tax_ids = tax_ids, nodes_df = ncbi_nodes, names_df = ncbi_names)
 
     # Find matches between database and NCBI
-    matches_NCBI = match(x =  NCBI_data$tax_id, table = database$`NCBI_Taxonomy_ID`)
+    matches_ncbi = match(x =  ncbi_data$tax_id, table = database$`ncbi_taxonomy_id`) # Already matches_ncbi
 
     # Add NCBI data to database
     database <- add_columns_based_on_indices(
       target_df =  database,
-      source_df = NCBI_data,
-      target_index = seq_along(matches_NCBI),
-      source_index = matches_NCBI,
+      source_df = ncbi_data,
+      target_index = seq_along(matches_ncbi), # Already matches_ncbi
+      source_index = matches_ncbi, # Already matches_ncbi
       source_col_names = c(
         "phylum",
         "class",
@@ -1219,23 +1219,23 @@
         "species"
       ),
       target_col_names = c(
-        "NCBI_Phylum",
-        "NCBI_Class",
-        "NCBI_Order",
-        "NCBI_Family",
-        "NCBI_Genus",
-        "NCBI_Species"
+        "ncbi_phylum",
+        "ncbi_class",
+        "ncbi_order",
+        "ncbi_family",
+        "ncbi_genus",
+        "ncbi_species"
       )
     )
 
 # === Add data from BacDive ===
     # Format BacDive data
-      BacDive_data <- BacDive_data %>%
+      bacdive_data <- bacdive_data %>%
         tidyr::separate(col = species, into = c("genus", "species"), sep = " ", extra = "merge")
 
     # Find matches between database and BacDive
-      matches_BacDive = perform_matching(
-        table_data = BacDive_data,
+      matches_bacdive = perform_matching( # Already matches_bacdive
+        table_data = bacdive_data,
         table_genus_col = "genus",
         table_species_col = "species",
         table_strain_col = "strain_number_header",
@@ -1250,20 +1250,20 @@
       )
 
     # Filter indices to keep only the best matches
-      matches_filtered = matches_BacDive %>% dplyr::group_by(x_index) %>%
+      matches_filtered = matches_bacdive %>% dplyr::group_by(x_index) %>% # Already matches_bacdive
         dplyr::slice_min(`Rank`, with_ties = FALSE)
 
     # Use indices to add BacDive data to database
       database <- add_columns_based_on_indices(
         target_df =  database,
-        source_df = BacDive_data,
+        source_df = bacdive_data,
         target_index = matches_filtered$x_index,
         source_index = matches_filtered$table_index,
         source_col_names = c(
           "ID"
         ),
         target_col_names = c(
-          "BacDive_ID"
+          "bacdive_id"
         )
       )
 
@@ -1284,44 +1284,46 @@
                            "Voges_proskauer")
 
       for (phenotype in phenotype_names) {
-        source_df <- get(phenotype)
+        # Construct the snake_case data frame name, e.g., "antibiotic_resistance_data"
+        data_frame_name <- paste0(tolower(phenotype), "_data")
+        source_df <- get(data_frame_name)
         database <- add_BacDive_phenotypes(
           target_df = database,
           source_df = source_df,
-          source_col_names = NULL,
-          target_col_names = paste0("BacDive_", phenotype)
+          source_col_names = NULL, # Assuming add_BacDive_phenotypes handles this correctly
+          target_col_names = paste0("bacdive_", tolower(phenotype)) # Ensure new column is snake_case
         )
       }
 
       # Add isolation categories
-      source_df <- Isolation_sources
+      source_df <- isolation_sources_data # Use already renamed variable
       database <- add_BacDive_phenotypes(
         target_df = database,
-        source_df = source_df,
+        source_df = source_df, # This was already isolation_sources_data
         source_col_names = c(
           "Category 1",
           "Category 2",
           "Category 3"
           ),
         target_col_names = c(
-          "BacDive_Isolation_category_1",
-          "BacDive_Isolation_category_2",
-          "BacDive_Isolation_category_3"
+          "bacdive_isolation_category_1",
+          "bacdive_isolation_category_2",
+          "bacdive_isolation_category_3"
           )
       )
 
 # === Add data from Bergey's Manual ===
   # Clean strain IDs in Bergey data
-  Bergey_data$Strain <- gsub(pattern = "DSMZ", replacement = "DSM", x = Bergey_data$Strain)
+  bergey_data$Strain <- gsub(pattern = "DSMZ", replacement = "DSM", x = bergey_data$Strain)
 
   # Find matches between database and Bergey's Manual
-  matches_Bergey = perform_matching(
+  matches_bergey = perform_matching( # Already matches_bergey
     table_data = database,
     table_genus_col = "Genus",
     table_species_col = "Species",
     table_subspecies_col = "Subspecies",
     table_strain_col = "Strain",
-    x_data = Bergey_data,
+    x_data = bergey_data,
     x_genus_col = "Genus",
     x_species_col = "Species",
     x_subspecies_col = "Subspecies",
@@ -1333,7 +1335,7 @@
   )
 
   # Filter indices to keep only the best matches
-  matches_filtered = matches_Bergey %>% dplyr::group_by(x_index) %>%
+  matches_filtered = matches_bergey %>% dplyr::group_by(x_index) %>% # Already matches_bergey
     dplyr::slice_min(`Rank`, with_ties = FALSE)
 
   # Remove any multiple matches still remaining
@@ -1345,7 +1347,7 @@
   # Use indices to add data from Bergey's Manual to database
   database <- add_columns_based_on_indices(
     target_df =  database,
-    source_df = Bergey_data,
+    source_df = bergey_data,
     target_index = matches_filtered$table_index,
     source_index = matches_filtered$x_index,
     source_col_names = c(
@@ -1366,32 +1368,32 @@
       "Substrates_for_end_products"
     ),
     target_col_names = c(
-      "Bergey_Phylum",
-      "Bergey_Class",
-      "Bergey_Order",
-      "Bergey_Family",
-      "Bergey_Genus",
-      "Bergey_Species",
-      "Bergey_Subspecies",
-      "Bergey_Strain",
-      "Bergey_Article_link",
-      "Bergey_Type_of_metabolism",
-      "Bergey_Text_for_end_products",
-      "Bergey_Major_end_products",
-      "Bergey_Minor_end_products",
-      "Bergey_Text_for_substrates",
-      "Bergey_Substrates_for_end_products"
+      "bergey_phylum",
+      "bergey_class",
+      "bergey_order",
+      "bergey_family",
+      "bergey_genus",
+      "bergey_species",
+      "bergey_subspecies",
+      "bergey_strain",
+      "bergey_article_link",
+      "bergey_type_of_metabolism",
+      "bergey_text_for_end_products",
+      "bergey_major_end_products",
+      "bergey_minor_end_products",
+      "bergey_text_for_substrates",
+      "bergey_substrates_for_end_products"
     )
   )
 
 # === Add data from VPI Anaerobe Manual ===
     # Find matches between database and primary literature
-    matches_VPI = perform_matching(
+    matches_vpi = perform_matching( # Already matches_vpi
       table_data = database,
       table_genus_col = "Genus",
       table_species_col = "Species",
       table_strain_col = "Strain",
-      x_data = VPI_data,
+      x_data = vpi_data,
       x_genus_col = "Genus",
       x_species_col = "Species",
       x_strain_col = "Strains",
@@ -1402,7 +1404,7 @@
     )
 
     # Filter indices to keep only the best matches
-    matches_filtered <- matches_VPI %>% dplyr::group_by(x_index) %>%
+    matches_filtered <- matches_vpi %>% dplyr::group_by(x_index) %>% # Already matches_vpi
       dplyr::slice_min(`Rank`, with_ties = FALSE)
     # Remove rank 8 matches (likely to contain non-type strains)
     matches_filtered <- matches_filtered %>% dplyr::filter(Rank != 8)
@@ -1413,7 +1415,7 @@
     # Use indices to add VPI data to database
     database <- add_columns_based_on_indices(
       target_df =  database,
-      source_df = VPI_data,
+      source_df = vpi_data,
       target_index = matches_filtered$table_index,
       source_index = matches_filtered$x_index,
       source_col_names = c(
@@ -1425,12 +1427,12 @@
         "Minor_end_products"
       ),
       target_col_names = c(
-        "VPI_Genus",
-        "VPI_Species",
-        "VPI_Subspecies",
-        "VPI_Type_of_metabolism",
-        "VPI_Major_end_products",
-        "VPI_Minor_end_products"
+        "vpi_genus",
+        "vpi_species",
+        "vpi_subspecies",
+        "vpi_type_of_metabolism",
+        "vpi_major_end_products",
+        "vpi_minor_end_products"
       )
     )
 
@@ -1490,26 +1492,26 @@
       "Substrates_for_end_products"
     ),
     target_col_names = c(
-      "Literature_Genus",
-      "Literature_Species",
-      "Literature_Subspecies",
-      "Literature_Strain",
-      "Literature_Citation",
-      "Literature_Type_of_metabolism",
-      "Literature_Major_end_products",
-      "Literature_Minor_end_products",
-      "Literature_Text_for_end_products",
-      "Literature_Substrates_for_end_products"
+      "literature_genus",
+      "literature_species",
+      "literature_subspecies",
+      "literature_strain",
+      "literature_citation",
+      "literature_type_of_metabolism",
+      "literature_major_end_products",
+      "literature_minor_end_products",
+      "literature_text_for_end_products",
+      "literature_substrates_for_end_products"
     )
   )
 
 # === Add data from FAPROTAX ===
   # Format names of columns
-  FAPROTAX_data$Genus = sapply(FAPROTAX_data$taxonomy, get_nth_element, delimiter = ";", n = 5)
-  FAPROTAX_data$Species = sapply(FAPROTAX_data$taxonomy, get_nth_element, delimiter = ";", n = 6)
+  faprotax_data$Genus = sapply(faprotax_data$taxonomy, get_nth_element, delimiter = ";", n = 5)
+  faprotax_data$Species = sapply(faprotax_data$taxonomy, get_nth_element, delimiter = ";", n = 6)
 
   # Find matches between database and FAPROTAX
-  matches_FAPROTAX = FAPROTAX_data %>%
+  matches_faprotax = faprotax_data %>% # Already matches_faprotax
     dplyr::mutate(
       index = match(
         paste(Genus, Species),
@@ -1521,14 +1523,14 @@
   # Use indices to add primary literature data to database
   database <- add_columns_based_on_indices(
     target_df =  database,
-    source_df = FAPROTAX_data,
-    target_index = matches_FAPROTAX,
-    source_index = seq_along(matches_FAPROTAX),
+    source_df = faprotax_data,
+    target_index = matches_faprotax, # Already matches_faprotax
+    source_index = seq_along(matches_faprotax), # Already matches_faprotax
     source_col_names = c(
       "group"
     ),
     target_col_names = c(
-      "FAPROTAX_Type_of_metabolism"
+      "faprotax_type_of_metabolism"
     )
   )
 
