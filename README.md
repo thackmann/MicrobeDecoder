@@ -1,6 +1,6 @@
 <p align="center"> <a href="https://microbe-decorder.org"><img src="https://github.com/thackmann/MicrobeDecoder/blob/main/logo.svg" width="400"/></a> </p>
 
-## Uncover the function of microbes in biological systems
+## Uncover what microbes are doing in your system
 
 ### Web version
 Click [here](https://microbe-decorder.org) to access.
