@@ -251,6 +251,28 @@ add_spinner <- function(ui_element, color = "#3C8DBC", proxy.height = 400, use_f
   spinner
 }
 
+#' Create a Plot Container
+#' 
+#' This function generates a standardized plot container with a loading spinner
+#' 
+#' @param ns The namespace function for the module.
+#' @param plot_type A character string specifying the type of plot (e.g., "treemap", "heatmap").
+#' @param width The width of the plot (default: "100%").
+#' @param height The height of the plot (default: "40vh").
+#' 
+#' @return A `div` container for the plot.
+#' 
+#' @examples
+#' create_plot_div(ns, "treemap")
+#' create_plot_div(ns, "heatmap", width = "80%", height = "50vh")
+create_plot_div <- function(ns, plot_type, width = "100%", height = "40vh") {
+  div(
+    id = ns(paste0(plot_type, "-container")),
+    class = paste0(plot_type, "-container-style"),
+    plotly::plotlyOutput(ns(paste0(plot_type, "_plot")), width = width, height = height)
+  )
+}
+
 #' Create a Plot Panel
 #' 
 #' This function generates a standardized nav panel with a plot inside a styled card.
