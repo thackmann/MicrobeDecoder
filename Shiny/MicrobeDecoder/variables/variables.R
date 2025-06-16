@@ -67,6 +67,7 @@
   url_IMG <- shiny::a("IMG/M", href="https://img.jgi.doe.gov/m/", target="_blank")
   url_JGI <- shiny::a("this notice", href="https://jgi.doe.gov/disclaimer/", target="_blank")
   url_KAAS <- shiny::a("KAAS", href="https://www.genome.jp/kegg/kaas/", target="_blank")
+  url_KEGG <- shiny::a("KEGG pathways", href="https://www.genome.jp/kegg/pathway.html", target="_blank") 
   url_LPSN <- shiny::a("LPSN", href="https://www.bacterio.net/", target="_blank")
   url_MIT <- shiny::a("MIT license", href="https://opensource.org/license/mit", target="_blank")
   url_NCBI <- shiny::a("NCBI", href="https://www.ncbi.nlm.nih.gov/taxonomy", target="_blank")

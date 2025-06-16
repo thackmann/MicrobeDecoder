@@ -9,22 +9,22 @@
   #' This function adds one enzymatic reaction to a metabolic network model
   #' 
   #' @param df A data frame of the metabolic network model
-  #' @param abbreviation A character vector of abbreviations for each reaction
+  #' @param name A character vector of names for each reaction
   #' @param lowbnd A numeric vector of lower bounds for each reaction
   #' @param uppbnd A numeric vector of upper bounds for each reaction
   #' @param obj_coef A numeric vector of objective coefficients for each reaction
-  #' @param equation A character vector of enzymatic reactions
-  #' @param officialName A character vector of the full name of the reaction
-  #' @param geneAssociation A character vector of genes that control the reaction
-  #' @param subsystem A character vector of subsystems for each reaction
+  #' @param eq A character vector of equation for the reaction
+  #' @param ec A character vector of the EC number for the reaction
+  #' @param ko A character vector of KO IDs for the reaction
+  #' @param md A character vector of modules corresponding to the reaction
   #' @return A data frame of the metabolic network model with the reaction added
   #' @export
-  add_one_reaction = function(df = NULL, abbreviation = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation, officialName = NA, geneAssociation = NA, subsystem = NA) {
+  add_one_reaction = function(df = NULL, name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, ec = NA, ko = NA, md = NA) {
     #Add a reaction
-    append = data.frame(abbreviation, lowbnd, uppbnd, obj_coef, equation, officialName, geneAssociation, subsystem)
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
     
     #Format equations
-    append$equation = format_metabolite_name(name = append$equation, remove_coefficient = FALSE)
+    append$eq = format_metabolite_name(name = append$eq, remove_coefficient = FALSE)
     
     if (is.null(df) | is.function(df) | length(df) == 0) {
       df = append
@@ -40,12 +40,12 @@
   #' This function deletes one enzymatic reaction to a metabolic network model
   #' 
   #' @param df A data frame of the metabolic network model
-  #' @param officialName A character vector of the full name of the reaction
+  #' @param ec A character vector of the EC number for the reaction
   #' @return A data frame of the metabolic network model with the reaction deleted
   #' @export
-  delete_one_reaction = function(df, officialName) {
+  delete_one_reaction = function(df, ec) {
     #Delete a reaction
-    df = df[-which(df$officialName == officialName),]
+    df = df[-which(df$ec == ec),]
     
     return(df)
   }
@@ -91,14 +91,14 @@
   #' Remove Redundant Reactions
   #' 
   #' This function removes redundant reactions from a metabolic network model.
-  #' It keeps only one reaction for each unique equation and geneAssociation.
+  #' It keeps only one reaction for each unique eq and ko.
   #' 
   #' @param df A data frame of the metabolic network model
   #' @return A data frame of the metabolic network model with redundant reactions removed
   #' @export
   #' @importFrom dplyr distinct
   remove_redundant_reactions = function(df) {
-    df <- df %>% dplyr::distinct(equation, geneAssociation, .keep_all = TRUE)
+    df <- df %>% dplyr::distinct(eq, ko, .keep_all = TRUE)
     
     return(df)
   }
@@ -113,7 +113,7 @@
   #' @export
   #' @importFrom stringr str_split
   remove_null_reactions <- function(df) {
-    eq_split <- stringr::str_split(df$equation, pattern = "<=>", simplify = TRUE)
+    eq_split <- stringr::str_split(df$eq, pattern = "<=>", simplify = TRUE)
     lhs <- trimws(eq_split[, 1])
     rhs <- trimws(eq_split[, 2])
     
@@ -137,18 +137,18 @@
   #' @return A data frame of the metabolic network model with glycolysis reactions added
   #' @export
   add_glycolysis = function(df = NULL) {
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_1", lowbnd = 0, uppbnd = 1000, obj_coef = 0, equation = "ATP + D-Glucose <=> ADP + D-Glucose 6-phosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_2", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "D-Glucose 6-phosphate <=> D-Fructose 6-phosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_3", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "ATP + D-Fructose 6-phosphate <=> ADP + D-Fructose 1,6-bisphosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_4", lowbnd = 0, uppbnd = 1000, obj_coef = 0, equation = "D-Fructose 1,6-bisphosphate <=> Glycerone phosphate + D-Glyceraldehyde 3-phosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_5", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "D-Glyceraldehyde 3-phosphate <=> Glycerone phosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_6", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "D-Glyceraldehyde 3-phosphate + Orthophosphate + NAD+ <=> 3-Phospho-D-glyceroyl phosphate + NADH + H+", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_7", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "ATP + 3-Phospho-D-glycerate <=> ADP + 3-Phospho-D-glyceroyl phosphate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_8", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "2-Phospho-D-glycerate <=> 3-Phospho-D-glycerate", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_9", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation = "2-Phospho-D-glycerate <=> Phosphoenolpyruvate + H2O", officialName = NA, geneAssociation = NA, subsystem = NA)
-    df = add_one_reaction(df, abbreviation = "Extra_reaction_10", lowbnd = -1000, uppbnd = 0, obj_coef = 0, equation = "ATP + Pyruvate <=> ADP + Phosphoenolpyruvate", officialName = NA, geneAssociation = NA, subsystem = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_1", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Glucose <=> ADP + D-Glucose 6-phosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_2", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glucose 6-phosphate <=> D-Fructose 6-phosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_3", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Fructose 6-phosphate <=> ADP + D-Fructose 1,6-bisphosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_4", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "D-Fructose 1,6-bisphosphate <=> Glycerone phosphate + D-Glyceraldehyde 3-phosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_5", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate <=> Glycerone phosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_6", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate + Orthophosphate + NAD+ <=> 3-Phospho-D-glyceroyl phosphate + NADH + H+", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_7", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + 3-Phospho-D-glycerate <=> ADP + 3-Phospho-D-glyceroyl phosphate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_8", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> 3-Phospho-D-glycerate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_9", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> Phosphoenolpyruvate + H2O", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_10", lowbnd = -1000, uppbnd = 0, obj_coef = 0, eq = "ATP + Pyruvate <=> ADP + Phosphoenolpyruvate", ec = NA, ko = NA, md = NA)
     
-    df$equation = format_metabolite_name(name = df$equation, remove_coefficient = FALSE)
+    df$eq = format_metabolite_name(name = df$eq, remove_coefficient = FALSE)
     
     return(df)
   }
@@ -171,7 +171,7 @@
   add_unbalanced_metabolites = function(df, names, lowbnd = -10^6, uppbnd = 10^6) {
     #Get names of all metabolites
     metabolites = df
-    metabolites = stringr::str_split(string = metabolites$equation, pattern = "<=>", simplify = TRUE)
+    metabolites = stringr::str_split(string = metabolites$eq, pattern = "<=>", simplify = TRUE)
     metabolites = as.character(metabolites)
     metabolites = stringr::str_split(string = metabolites, pattern = " \\+", simplify = TRUE)
     metabolites = as.character(metabolites)
@@ -183,15 +183,15 @@
     names = names[index]
     
     #Format equations for unbalanced metabolites
-    abbreviation = paste0("Unbalanced_metabolite_", seq_len(length(names)))
+    name = paste0("Unbalanced_metabolite_", seq_len(length(names)))
     lowbnd = lowbnd[index]
     uppbnd = uppbnd[index]
     obj_coef = 0
-    equation = paste0(names, " <=>")
-    officialName = NA
-    geneAssociation = NA
-    subsystem = NA
-    append = data.frame(abbreviation, lowbnd, uppbnd, obj_coef, equation, officialName, geneAssociation, subsystem)
+    eq = paste0(names, " <=>")
+    ec = NA
+    ko = NA
+    md = NA
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
     
     df = rbind(df, append)
     
@@ -213,22 +213,22 @@
   #' @export
   #' @importFrom dplyr filter distinct
   add_target_metabolites = function(df, starting_metabolite, ending_metabolite, lowbnd = -1000, uppbnd = 10^6) {
-    abbreviation = c("Starting_metabolite", "Ending_metabolite")
+    name = c("Starting_metabolite", "Ending_metabolite")
     lowbnd = c(lowbnd, 0)
     uppbnd = c(0, uppbnd)
     obj_coef = c(0, 1)
-    equation = c(paste0(starting_metabolite, " <=>"), paste0(ending_metabolite, " <=>"))
-    officialName = NA
-    geneAssociation = NA
-    subsystem = NA
+    eq = c(paste0(starting_metabolite, " <=>"), paste0(ending_metabolite, " <=>"))
+    ec = NA
+    ko = NA
+    md = NA
     
-    match = match(x = equation, table = df$equation)
+    match = match(x = eq, table = df$eq)
     match = match[!is.na(match)]
     if (length(match) > 0) {
       df = df[-match,]
     }
     
-    append = data.frame(abbreviation, lowbnd, uppbnd, obj_coef, equation, officialName, geneAssociation, subsystem)
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
     df = rbind(df, append)
     
     return(df)
@@ -239,14 +239,14 @@
   #' This function finds which enzyme reactions in a metabolic network are present in an organism's genome.
   #' The user provides a metabolic network model along with database IDs for the organism's genes.
   #' 
-  #' @param df A data frame of the metabolic network model. Must include a column `geneAssociation`.
+  #' @param df A data frame of the metabolic network model. Must include a column `ko`.
   #' @param gene_functions A character vector of database IDs for the organism's genes.
   #' @param all_subunits A logical indicating if enzymes are considered present only if all subunits match (default TRUE).
   #' @return A character vector of reaction IDs for enzymes present in the genome.
   #' @export
   #' @importFrom stringr str_split
   find_enzymes = function(df, gene_functions, all_subunits = TRUE) {
-    x = stringr::str_split(df$geneAssociation, pattern = ", ")
+    x = stringr::str_split(df$ko, pattern = ", ")
     for (i in seq_along(x)) {
       for (j in seq_along(x[[i]])) {
         x[[i]][j] = x[[i]][j] %in% gene_functions
@@ -265,7 +265,7 @@
     
     x = unlist(x)
     
-    enzymes = df$geneAssociation[x]
+    enzymes = df$ko[x]
     
     return(enzymes)
   }
@@ -274,45 +274,45 @@
   #' Create Initial Dataframe for Metabolic Network Model
   #' 
   #' This function creates an initial dataframe for the metabolic network model
-  #' The user specifies the abbreviation, lower bound, upper bound, objective coefficient, equation, 
-  #' official name, gene association, and subsystem for each reaction
+  #' The user specifies the name, lower bound, upper bound, objective coefficient, eq, 
+  #' official name, gene association, and md for each reaction
   #' 
-  #' @param abbreviation A character vector of abbreviations for each reaction
+  #' @param name A character vector of names for each reaction
   #' @param lowbnd A numeric vector of lower bounds for each reaction
   #' @param uppbnd A numeric vector of upper bounds for each reaction
   #' @param obj_coef A numeric vector of objective coefficients for each reaction
-  #' @param equation A character vector of enzymatic reactions
-  #' @param officialName A character vector of the full name of the reaction
-  #' @param geneAssociation A character vector of genes that control the reaction
-  #' @param subsystem A character vector of subsystems for each reaction
+  #' @param eq A character vector of equation for the reaction
+  #' @param ec A character vector of the EC number for the reaction
+  #' @param ko A character vector of KO IDs for the reaction
+  #' @param md A character vector of modules corresponding to the reaction
   #' @return A data frame of the formatted data
   #' @export
   #' @importFrom dplyr distinct
-  create_network_dataframe = function(abbreviation = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, equation, officialName = NA, geneAssociation = NA, subsystem = NA) {
+  create_network_dataframe = function(name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, ec = NA, ko = NA, md = NA) {
     # Create dataframe
-    df = data.frame(abbreviation, lowbnd, uppbnd, obj_coef, equation, officialName, geneAssociation, subsystem)
+    df = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
     
     # Format equations  
-    df$equation = format_metabolite_name(name = df$equation, remove_coefficient = FALSE)
+    df$eq = format_metabolite_name(name = df$eq, remove_coefficient = FALSE)
     
     # Remove extra rows
     df = dplyr::distinct(df)
-    df = df[which(df$equation != ""),]
+    df = df[which(df$eq != ""),]
     
     return(df)
   }
   
   #' Build Metabolic Network Model
   #' This function builds a metabolic network model from a set of enzymatic reactions
-  #' The user specifies the equation, direction, abbreviation, official name, gene association, and subsystem for each reaction
-  #' If no equation is provided, the function will create a model with reactions of glycolysis as an example 
+  #' The user specifies the eq, way, name, official name, gene association, and md for each reaction
+  #' If no eq is provided, the function will create a model with reactions of glycolysis as an example 
   #' 
-  #' @param equation A character vector of enzymatic reactions
-  #' @param direction A character vector of the direction of each reaction (Forward, Reverse, or Bidirectional)
-  #' @param abbreviation A character vector of abbreviations for each reaction
-  #' @param officialName A character vector of the full name of the reaction
-  #' @param geneAssociation A character vector of genes that control the reaction
-  #' @param subsystem A character vector of subsystems for each reaction
+  #' @param eq A character vector of equation for the reaction
+  #' @param way A character vector of the way of each reaction (Forward, Reverse, or Biwayal)
+  #' @param name A character vector of names for each reaction
+  #' @param ec A character vector of the EC number for the reaction
+  #' @param ko A character vector of KO IDs for the reaction
+  #' @param md A character vector of modules corresponding to the reaction
   #' @param starting_metabolite A character vector of the starting metabolite in the network
   #' @param ending_metabolite A character vector of the ending metabolite in the network
   #' @param unbalanced_intermediates A character vector of metabolites that are unbalanced and can accumulate
@@ -325,24 +325,24 @@
   #' build_network_model()
   #' @export
   #' @importFrom dplyr if_else
-  build_network_model = function(equation = NULL, direction = "Bidirectional", 
-                                 abbreviation = NA, officialName = NA, geneAssociation = NA, 
-                                 subsystem = NA, starting_metabolite = "D-Glucose", 
+  build_network_model = function(eq = NULL, way = "Biwayal", 
+                                 name = NA, ec = NA, ko = NA, 
+                                 md = NA, starting_metabolite = "D-Glucose", 
                                  ending_metabolite = "Pyruvate", 
                                  unbalanced_intermediates = c("NAD+", "NADH", "ATP", "ADP", "Orthophosphate", "H2O", "H+", "CO2"), 
                                  unbalanced_products = NULL, remove_redundant_reactions = TRUE, 
                                  remove_null_reactions = TRUE, add_glycolysis = FALSE) {
-    if (is.null(equation)) {
-      equation = add_glycolysis()$equation
+    if (is.null(eq)) {
+      eq = add_glycolysis()$eq
     }
     
     # Create Initial Dataframe For Network Model
-    uppbnd = vector(length = length(equation))
-    lowbnd = vector(length = length(equation))
-    uppbnd = dplyr::if_else(direction == "Reverse", 0, 1000)
-    lowbnd = dplyr::if_else(direction == "Forward", 0, -1000)
-    df = create_network_dataframe(abbreviation, lowbnd = lowbnd, uppbnd = uppbnd, obj_coef = 0, equation = equation, officialName = officialName, geneAssociation = geneAssociation, subsystem = subsystem)
-    df$abbreviation = paste0("Enzyme_", seq_len(nrow(df)))
+    uppbnd = vector(length = length(eq))
+    lowbnd = vector(length = length(eq))
+    uppbnd = dplyr::if_else(way == "Reverse", 0, 1000)
+    lowbnd = dplyr::if_else(way == "Forward", 0, -1000)
+    df = create_network_dataframe(name, lowbnd = lowbnd, uppbnd = uppbnd, obj_coef = 0, eq = eq, ec = ec, ko = ko, md = md)
+    df$name = paste0("Enzyme_", seq_len(nrow(df)))
 
     # Add Enzymes of Glycolysis
     if (add_glycolysis == TRUE) {
@@ -361,11 +361,9 @@
     
     # Add Target Metabolites
     if (!is.null(starting_metabolite) & !is.null(ending_metabolite)) {
-      lowbnd = -1000
-      uppbnd = 10^6
       starting_metabolite = format_metabolite_name(starting_metabolite)
       ending_metabolite = format_metabolite_name(ending_metabolite)
-      df = add_target_metabolites(df = df, starting_metabolite = starting_metabolite, ending_metabolite = ending_metabolite, lowbnd = lowbnd, uppbnd = uppbnd)
+      df = add_target_metabolites(df = df, starting_metabolite = starting_metabolite, ending_metabolite = ending_metabolite)
     }
     
     # Add Unbalanced Metabolites
@@ -386,29 +384,29 @@
   #' Simplify Network Model
   #' 
   #' This function removes extra reactions from a network model
-  #' The user specifies which reactions to keep (according to geneAssociation)
+  #' The user specifies which reactions to keep (according to ko)
   #' The rest are removed (or have flux is constrained to 0)
   #' The reactions that are removed are usually ones that are absent from a specific organism
   #' 
   #' @param df A data frame of the metabolic network model
-  #' @param geneAssociation A character vector of genes that control the reaction
-  #' @param remove_NA A logical indicating whether to remove reactions that have NA for geneAssociation
+  #' @param ko A character vector of KO IDs for the reaction
+  #' @param remove_NA A logical indicating whether to remove reactions that have NA for ko
   #' @param constrain_flux A logical indicating whether to constrain flux to 0 for removed reactions
   #' @param remove_reactions A logical indicating whether to remove reactions
   #' @return A data frame of the simplified metabolic network model
   #' @export
   #' @importFrom dplyr filter
-  simplify_network_model <- function(df, geneAssociation = NULL, remove_NA = FALSE, constrain_flux = TRUE, remove_reactions = FALSE) {
+  simplify_network_model <- function(df, ko = NULL, remove_NA = FALSE, constrain_flux = TRUE, remove_reactions = FALSE) {
     # Identify which reactions to remove
     to_remove <- df %>% 
-      dplyr::filter(!grepl(pattern = "Unbalanced_metabolite", abbreviation)) %>% 
-      dplyr::pull(geneAssociation)
+      dplyr::filter(!grepl(pattern = "Unbalanced_metabolite", name)) %>% 
+      dplyr::pull(ko)
     
     if(remove_NA)
     {
-      to_remove <- which(to_remove %nin% geneAssociation)
+      to_remove <- which(to_remove %nin% ko)
     }else{
-      to_remove <- which(!is.na(to_remove) & (to_remove %nin% geneAssociation))
+      to_remove <- which(!is.na(to_remove) & (to_remove %nin% ko))
     }
     
     # Constrain flux
@@ -423,6 +421,41 @@
     }
     
     return(df)
+  }
+  
+  #' Find Fluxes for a Metabolic Model
+  #'
+  #' This function is a wrapper around fbar::find_fluxes_df.  It solves a 
+  #' metabolic network model, renaming the columns to be compatible with functions
+  #' of fbar.
+  #'
+  #' @param df  A data frame of the metabolic network model
+  #' @return A solved network model
+  #' @export
+  #' @importFrom fbar find_fluxes_df
+  find_fluxes <- function(df) {
+    # Rename columns
+    reaction_table <- df %>% dplyr::rename(
+      abbreviation = "name",
+      equation = "eq",
+      officialName = "ec",
+      geneAssociation = "ko",
+      subsystem = "md"
+    )
+    
+    # Solve model
+    s <- fbar::find_fluxes_df(reaction_table)
+
+    # Rename columns
+    s <- s %>% dplyr::rename(
+      name = "abbreviation",
+      eq = "equation",
+      ec = "officialName",
+      ko = "geneAssociation",
+      md = "subsystem"
+    )
+
+    return(s)
   }
   
   #' Solve Metabolic Network Models for An Organism
@@ -442,10 +475,10 @@
   #' @importFrom fbar find_fluxes_df
   solve_network_model <- function(df, gene_functions, substrates, products, all_subunits = TRUE) {
     # Find Enzymes
-    geneAssociation <- find_enzymes(df = df, gene_functions = gene_functions, all_subunits = all_subunits)
+    ko <- find_enzymes(df = df, gene_functions = gene_functions, all_subunits = all_subunits)
     
     # Simplify Model
-    df <- simplify_network_model(df = df, geneAssociation = geneAssociation)
+    df <- simplify_network_model(df = df, ko = ko)
     
     # Initialize named list for substrates
     s <- setNames(vector("list", length(substrates)), substrates)
@@ -459,14 +492,16 @@
       
       for (k in seq_along(products)) {
         product <- products[k]
-        # Add target metabolites and find fluxes
-        s[[substrate]][[product]] <- add_target_metabolites(
+        
+        # Add target metabolites
+        reaction_table <- add_target_metabolites(
           df = df,
           starting_metabolite = format_metabolite_name(starting_metabolite[k]),
-          ending_metabolite = format_metabolite_name(product),
-          lowbnd = -1000,
-          uppbnd = 1e6
-        ) |> fbar::find_fluxes_df()
+          ending_metabolite = format_metabolite_name(product)
+        )
+        
+        # Find fluxes
+        s[[substrate]][[product]] <- find_fluxes(reaction_table)
       }
     }
     
@@ -540,7 +575,7 @@
     # Map over combinations and extract flux
     purrr::pmap_dfr(combos, function(i, j, k) {
       df <- solved_models[[i]][[j]][[k]]
-      match_index <- which(df$abbreviation == "Ending_metabolite")
+      match_index <- which(df$name == "Ending_metabolite")
       flux_value <- if (length(match_index) > 0) df$flux[match_index] else NA_real_
       
       tibble::tibble(
@@ -573,12 +608,12 @@
     
     # Get reference network model
     reference_network_model <- build_network_model(
-      equation = reference_reactions$equation,
-      direction = reference_reactions$direction,
-      abbreviation = reference_reactions$abbreviation,
-      officialName = reference_reactions$officialName,
-      geneAssociation = reference_reactions$geneAssociation,
-      subsystem = reference_reactions$subsystem,
+      eq = reference_reactions$eq,
+      way = reference_reactions$way,
+      name = reference_reactions$name,
+      ec = reference_reactions$ec,
+      ko = reference_reactions$ko,
+      md = reference_reactions$md,
       starting_metabolite = NULL,
       ending_metabolite = NULL,
       unbalanced_intermediates = unbalanced_intermediates,
@@ -660,7 +695,7 @@
   #' @export
   get_reference_reactions_from_database <- function(selected_reactions) {
     network_config <- load_config_networks_reference_reactions()
-    
+
     file_name <- network_config %>%
       dplyr::filter(reference_reaction == selected_reactions) %>%
       dplyr::pull(file_name)
@@ -669,11 +704,9 @@
     if (length(file_name) == 0 || is.na(file_name)) {
       stop(paste("No file name found for reference reaction:", selected_reactions))
     }
-    
-    data_fp <- paste0("data/", file_name)
-    
+
     # Load the object from file
-    obj <- check_and_load(data_fp)
+    obj <- check_and_load(file_name)
     
     return(obj)
   }
@@ -794,7 +827,7 @@
   #' @param s A data frame of a solved metabolic network model
   #' @param add_flux A logical indicating whether to add fluxes to the graph
   #' @param to_remove A character vector of metabolites not to be displayed in the graph
-  #' @param keep_missing_names A logical indicating whether to keep reactions where \code{officialName} is \code{NA}.
+  #' @param keep_missing_names A logical indicating whether to keep reactions where \code{ec} is \code{NA}.
   #' @return An igraph object of the metabolic network
   #' @export
   #' @importFrom igraph graph_from_data_frame
@@ -808,7 +841,7 @@
     df <- s
     
     # Get names of reactants and products
-    df <- tidyr::separate(df, col = equation, into = c("reactant", "product"), sep = "<=>")
+    df <- tidyr::separate(df, col = eq, into = c("reactant", "product"), sep = "<=>")
     df <- df[which(df$reactant != ""), ] # Remove reactions with no reactants
     df <- df[which(df$product != ""), ] # Remove reactions with no products
     df <- tidyr::separate_rows(df, reactant, sep = " \\+ ")
@@ -824,19 +857,19 @@
     df = df[!(df$reactant %in% to_remove), ]
     df = df[!(df$product %in% to_remove), ]
     
-    # Remove enzymes with no officialName
+    # Remove enzymes with no ec
     if(!keep_missing_names)
     {
-      df = df[!is.na(df$officialName),] 
+      df = df[!is.na(df$ec),] 
     }
     
     if(add_flux){
       # Add fluxes
-      match <- match(x = paste0(df$abbreviation), table = paste0(s$abbreviation))
+      match <- match(x = paste0(df$name), table = paste0(s$name))
       df$flux <- s$flux[match]
-      df <- dplyr::select(df, reactant, product, officialName, subsystem, flux, lowbnd, uppbnd)
+      df <- dplyr::select(df, reactant, product, ec, md, flux, lowbnd, uppbnd)
     }else{
-      df <- dplyr::select(df, reactant, product, officialName, subsystem, lowbnd, uppbnd)
+      df <- dplyr::select(df, reactant, product, ec, md, lowbnd, uppbnd)
     }
     
     #Get graph
@@ -901,7 +934,7 @@
   #'
   #' @param graph An igraph object of the metabolic network
   #' @param show_flux A logical indicating whether to show fluxes
-  #' @param show_subsystems A logical indicating whether to show subsystems
+  #' @param show_modules A logical indicating whether to show modules
   #' @param vertex_default_color A character vector of the default color for vertices
   #' @param vertex_highlight_color A character vector of the color for highlighted vertices
   #' @param vertex_missing_reaction_color A character vector of the color for missing reaction vertices
@@ -937,7 +970,7 @@
   #' @importFrom colorspace lighten
   #' @importFrom dplyr bind_rows filter full_join group_by pull rename select summarize ungroup
   #' @importFrom igraph V as_data_frame
-  format_network_graph <- function(graph, show_flux = FALSE, show_subsystems = FALSE,
+  format_network_graph <- function(graph, show_flux = FALSE, show_modules = FALSE,
                                    vertex_default_color = "#7f7f7f",
                                    vertex_highlight_color = "#ff0000",
                                    vertex_missing_reaction_color = "#ffffff",
@@ -1008,38 +1041,38 @@
       active_vertices = NULL
     }
     
-    # Modify attributes based on subsystems
-    if (show_subsystems) {
-      most_common_subsystem <- df %>%
-        dplyr::select(from, subsystem) %>%
+    # Modify attributes based on mds
+    if (show_modules) {
+      most_common_md <- df %>%
+        dplyr::select(from, md) %>%
         dplyr::rename(name = from) %>%
         dplyr::bind_rows(
           df %>%
-            dplyr::select(to, subsystem) %>%
+            dplyr::select(to, md) %>%
             dplyr::rename(name = to)
         ) %>%
-        dplyr::group_by(name, subsystem) %>%
+        dplyr::group_by(name, md) %>%
         dplyr::summarise(count = dplyr::n(), .groups = 'drop') %>%
         dplyr::group_by(name) %>%
         dplyr::slice_max(order_by = count, n = 1, with_ties = FALSE) %>%
         dplyr::ungroup() %>%
-        dplyr::select(name, subsystem)
+        dplyr::select(name, md)
       
       vertices <- vertices %>%
-        dplyr::full_join(most_common_subsystem, by = "name")
+        dplyr::full_join(most_common_md, by = "name")
       
-      n <- length(unique(vertices$subsystem))
+      n <- length(unique(vertices$md))
       color_palette <- colorspace::qualitative_hcl(n, h = c(15, 375 * (n - 1) / n), c = 100, l = 65, fixup = TRUE, alpha = 1)
       
-      vertices$subsystem <- as.factor(vertices$subsystem)
-      levels(vertices$subsystem) <- color_palette
-      vertices$subsystem <- as.character(vertices$subsystem)
-      vertices$frame.color <- vertices$subsystem
+      vertices$md <- as.factor(vertices$md)
+      levels(vertices$md) <- color_palette
+      vertices$md <- as.character(vertices$md)
+      vertices$frame.color <- vertices$md
       
-      vertices$color <- vertices$subsystem
+      vertices$color <- vertices$md
       vertices$color = colorspace::lighten(vertices$color, amount = vertex_color_lighten)
       
-      vertices <- vertices %>% dplyr::select(-subsystem)
+      vertices <- vertices %>% dplyr::select(-md)
     }
     
     # Highlight specific vertices
@@ -1096,8 +1129,7 @@
   #' @export
   #' @importFrom dplyr select
   validate_reference_reactions <- function(reference_reactions) {
-    required_columns <- c("abbreviation", "equation", "direction", "officialName", 
-                          "geneAssociation", "subsystem")
+    required_columns <- c("name", "eq", "way", "ec", "ko", "md")
     
     if (!all(required_columns %in% colnames(reference_reactions))) {
       return("")
@@ -1133,16 +1165,16 @@
   
   #' Get Metabolite Names
   #' 
-  #' This function gets names of metabolites from a reaction equation
+  #' This function gets names of metabolites from a reaction eq
   #' It is designed to work with reactions from KEGG database
   #' 
-  #' @param equation A character vector of enzymatic reactions
+  #' @param eq A character vector of equation for the reaction
   #' @param to_remove A character vector of metabolites to remove
   #' @return A character vector of metabolite names
   #' @export
   #' @importFrom stringr str_split
-  get_metabolite_names = function(equation, to_remove = NULL) {
-    name_list <- stringr::str_split(equation, pattern = "<=>")
+  get_metabolite_names = function(eq, to_remove = NULL) {
+    name_list <- stringr::str_split(eq, pattern = "<=>")
     name <- unlist(lapply(name_list, function(part) {
       stringr::str_split(part, pattern = "[ ]\\+")
     }))

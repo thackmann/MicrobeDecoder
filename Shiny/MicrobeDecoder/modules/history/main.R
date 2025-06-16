@@ -197,10 +197,10 @@ historyServer <- function(input, output, session, x, selected_tab, show_all_user
     selected_ids <- input$job_table_selected_jobs
     
     user_id <- session$userData$user_id()
-    user_dirs <- file.path("jobs", user_id)
+    user_jobs_dir <- file.path("jobs", user_id)
     
     for (id in selected_ids) {
-      matches <- list.files(ip_dir, recursive = TRUE, full.names = TRUE, pattern = paste0("^", id, "\\.rds$"))
+      matches <- list.files(user_jobs_dir, recursive = TRUE, full.names = TRUE, pattern = paste0("^", id, "\\.rds$"))
       file.remove(matches)
     }
     

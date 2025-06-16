@@ -16,11 +16,12 @@
 # === Load external R files ===
   setwd(database_directory)
   source("functions\\helperFunctions.R", local = TRUE)
-  source("IMG\\functionsTemp.R", local = TRUE) # debug
+  source("IMG\\functions.R", local = TRUE)
 
 # ===  Use files with IMG genome IDs to download genomes from IMG ===
   ## Navigate to IMG, log on, and then navigate to Find Genomes (https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=GenomeSearch&page=searchForm)
-  ## Get values of IMG genomes_ID_max_genes from database.csv
+  ## Get values of IMG genomes_ID_max_quality from database.csv using command below (uncomment to run)
+  ## write_project_ids_to_files(project_IDs = database$'IMG_Genome_ID_max_quality', batch_size = 500, file_prefix = "genome_IDs_batch")
   ## Paste these values into search bar.  In "Search by ID (list)" field, choose "IMG Genome ID (IMG Taxon ID)".  Click "Search".
   ## In the screen that appears, click "Select All" and "Add Selected to Genome Cart".  Repeat for remaining files.
   ## In the Genome Cart screen that appears, click the check box in the left corner (to select all genomes).
@@ -30,8 +31,7 @@
 
 #=== Process genome files ===
   # Set directory
-    # genome_directory <- "C:\\My Directory" # Set to directory where files above were downloaded
-    genome_directory <- "C:\\Users\\tjhackma\\Downloads\\download.20250424.074746\\img_cart" # debug
+    # genome_directory <- "C:\\My Directory\\img_cart" # Set to directory where files above were downloaded
     
   # Create manifest of files
     files <- list.files(genome_directory, pattern = "\\.tar\\.gz$", full.names = FALSE)

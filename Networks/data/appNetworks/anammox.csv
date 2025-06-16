@@ -1,0 +1,5 @@
+md,name,eq,way,ec,ko,rn,symbol,map,mdk
+Anammox,nitrite reductase (NO-forming) / hydroxylamine reductase [EC:1.7.2.1 1.7.99.1],Nitric oxide + H2O + Ferricytochrome c <=> Nitrite + Ferrocytochrome c + H+,Revere,1.7.2.1,K15864,R00783,nirS,map00910,"M00529, M00973"
+Anammox,nitrite reductase (NO-forming) [EC:1.7.2.1],Nitric oxide + H2O + Ferricytochrome c <=> Nitrite + Ferrocytochrome c + H+,Revere,1.7.2.1,K00368,R00783,nirK,map00910,"M00529, M00973"
+Anammox,hydrazine synthase subunit [EC:1.7.2.7],Nitric oxide + Ammonia + 3 Ferrocytochrome c <=> Hydrazine + H2O + 3 Ferricytochrome c,Forward,1.7.2.7,"K20932, K20933, K20934",R09799,"K20932, K20933, K20934",map00910,M00973
+Anammox,hydrazine dehydrogenase [EC:1.7.2.8],Hydrazine + 4 Ferricytochrome c <=> Nitrogen + 4 Ferrocytochrome c,Forward,1.7.2.8,K20935,R07174,hdh,map00910,M00973

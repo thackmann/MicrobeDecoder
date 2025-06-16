@@ -2,12 +2,6 @@
 # This defines a single function for sourcing R files from specified subdirectories
 # After calling it, files with all remaining functions can be sourced.
 # Timothy Hackmann
-# 14 May 25
-
-# Read R Files from Source 
-# This defines a single function for sourcing R files from specified subdirectories
-# After calling it, files with all remaining functions can be sourced.
-# Timothy Hackmann
 # Modified: 14 May 25
 
 #' Source R Files in Specified Subdirectories

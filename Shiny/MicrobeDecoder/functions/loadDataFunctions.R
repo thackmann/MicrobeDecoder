@@ -117,12 +117,15 @@
   #' @export
   #' @importFrom readr read_csv
   load_database <- function(force_reload = FALSE) {
-    data_fp <- "data/database_clean.zip"
+    data_fp <- "data/database/database_clean.zip"
     
     obj <- check_and_load(
       file_path = data_fp, 
       force_reload = force_reload,
-      col_types = readr::cols(`IMG Genome ID` = readr::col_character())
+      col_types = readr::cols(
+        `IMG Genome ID` = readr::col_character(),
+        `NCBI Taxonomy ID` = readr::col_character(),
+      )
     )
     
     return(obj)
@@ -135,9 +138,16 @@
   #'
   #' @return A data frame containing the raw database
   #' @export
-  load_raw_database <- function() {
-    data_fp <- "data/database.zip"
-    obj <- check_and_load(data_fp)
+  load_raw_database <- function(force_reload = FALSE) {
+    data_fp <- "data/database/database.zip"
+    obj <- check_and_load(
+      data_fp, 
+      force_reload = force_reload,
+      col_types = readr::cols(
+        IMG_Genome_ID = readr::col_character(),
+        NCBI_Taxonomy_ID = readr::col_character()
+        )
+    )
     
     return(obj)
   }
@@ -151,7 +161,7 @@
   #' @export
   #' @importFrom readr read_csv
   load_gene_functions <- function() {
-    data_fp <- "data/gene_functions_database.rds" 
+    data_fp <- "data/gene_functions/gene_functions_database.rds" 
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -165,7 +175,7 @@
   #' @return A list containing the query filters
   #' @export
   load_query_filters <- function() {
-    data_fp <- "data/query_filters.rds"
+    data_fp <- "data/query_filters/query_filters.rds"
     
     obj <- check_and_load(data_fp)
     
@@ -182,7 +192,7 @@
   #' @return A list containing the query filters
   #' @export
   load_placeholder_filters <- function() {
-    data_fp <- "data/query_filters_simple.rds"
+    data_fp <- "data/query_filters/query_filters_simple.rds"
     
     obj <- check_and_load(data_fp)
     
@@ -197,7 +207,7 @@
   #' @return A list containing the query filters
   #' @export
   load_taxa_uncharacterized <- function() {
-    data_fp <- "data/taxa_uncharacterized.zip"
+    data_fp <- "data/taxa/taxa_uncharacterized.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -212,7 +222,7 @@
   #' @return A list containing the query filters
   #' @export
   load_taxa_rumen_cultured <- function() {
-    data_fp <- "data/taxa_rumen_cultured.zip"
+    data_fp <- "data/taxa/taxa_rumen_cultured.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -227,7 +237,7 @@
   #' @return A list containing the query filters
   #' @export
   load_taxa_rumen_MAGs <- function() {
-    data_fp <- "data/taxa_rumen_MAGs.zip"
+    data_fp <- "data/taxa/taxa_rumen_MAGs.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -242,7 +252,7 @@
   #' @return A list containing the query filters
   #' @export
   load_taxa_infant <- function() {
-    data_fp <- "data/taxa_infant.zip"
+    data_fp <- "data/taxa/taxa_infant.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -257,7 +267,7 @@
   #' @return A list containing the query filters
   #' @export
   load_gene_functions_e_coli <- function() {
-    data_fp <- "data/gene_functions_e_coli.zip"
+    data_fp <- "data/gene_functions/gene_functions_e_coli.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -272,7 +282,7 @@
   #' @return A list containing the query filters
   #' @export
   load_gene_functions_uncharacterized <- function() {
-    data_fp <- "data/gene_functions_uncharacterized.zip"
+    data_fp <- "data/gene_functions/gene_functions_uncharacterized.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -287,7 +297,37 @@
   #' @return A list containing the query filters
   #' @export
   load_gene_functions_rumen_cultured <- function() {
-    data_fp <- "data/gene_functions_rumen_cultured.zip"
+    data_fp <- "data/gene_functions/gene_functions_rumen_cultured.zip"
+    
+    obj <- check_and_load(data_fp)
+    
+    return(obj)
+  }
+  
+  #' Load Reference Reactions for Glucose Fermentation
+  #'
+  #' This function loads an example dataset from an zip file.
+  #' The data is loaded and stored in the environment if it is not already present.
+  #'
+  #' @return A list containing the query filters
+  #' @export
+  load_reference_reactions_glucose_fermentation <- function() {
+    data_fp <- "data/reference_reactions/glucose_fermentation.zip"
+    
+    obj <- check_and_load(data_fp)
+    
+    return(obj)
+  }
+  
+  #' Load Reference Reactions for Methanogenesis
+  #'
+  #' This function loads an example dataset from an zip file.
+  #' The data is loaded and stored in the environment if it is not already present.
+  #'
+  #' @return A list containing the query filters
+  #' @export
+  load_reference_reactions_methanogenesis <- function() {
+    data_fp <- "data/reference_reactions/methanogenesis.zip"
     
     obj <- check_and_load(data_fp)
     
@@ -302,7 +342,37 @@
   #' @return A list containing the query filters
   #' @export
   load_gene_functions_rumen_MAGs <- function() {
-    data_fp <- "data/gene_functions_rumen_MAGs.zip"
+    data_fp <- "data/gene_functions/gene_functions_rumen_MAGs.zip"
+    
+    obj <- check_and_load(data_fp)
+    
+    return(obj)
+  }
+  
+  #' Load Reference Reactions for Glucose Fermentation
+  #'
+  #' This function loads an example dataset from an zip file.
+  #' The data is loaded and stored in the environment if it is not already present.
+  #'
+  #' @return A list containing the query filters
+  #' @export
+  load_reference_reactions_glucose_fermentation <- function() {
+    data_fp <- "data/reference_reactions/fermentation_of_glucose.csv"
+    
+    obj <- check_and_load(data_fp)
+    
+    return(obj)
+  }
+  
+  #' Load Reference Reactions for Methanogenesis
+  #'
+  #' This function loads an example dataset from an zip file.
+  #' The data is loaded and stored in the environment if it is not already present.
+  #'
+  #' @return A list containing the query filters
+  #' @export
+  load_reference_reactions_methanogenesis <- function() {
+    data_fp <- "data/reference_reactions/methanogenesis.csv"
     
     obj <- check_and_load(data_fp)
     
@@ -317,7 +387,7 @@
   #' @return A data frame of the predictor variables
   #' @export
   load_model_fermentation <- function() {
-    data_fp <- "data/random_forest_fermentation.rds"
+    data_fp <- "data/random_forest_models/fermentation.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -331,7 +401,7 @@
   #' @return A data frame of the predictor variables
   #' @export
   load_model_methanogenesis <- function() {
-    data_fp <- "data/random_forest_methanogenesis.rds"
+    data_fp <- "data/random_forest_models/methanogenesis.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -345,7 +415,7 @@
   #' @return A data frame containing the layout tree data in daylight format.
   #' @export
   load_layout_tree_daylight <- function() {
-    data_fp <- "data/layout_tree_daylight.rds"
+    data_fp <- "data/tree/layout_tree_daylight.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -359,7 +429,7 @@
   #' @return A data frame containing the layout tree data in equal angle format.
   #' @export
   load_layout_tree_equal_angle <- function() {
-    data_fp <- "data/layout_tree_equal_angle.rds"
+    data_fp <- "data/tree/layout_tree_equal_angle.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -373,7 +443,7 @@
   #' @return A data frame containing the layout tree data in rectangular format.
   #' @export
   load_layout_tree_rectangular <- function() {
-    data_fp <- "data/layout_tree_rectangular.rds"
+    data_fp <- "data/tree/layout_tree_rectangular.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -387,7 +457,7 @@
   #' @return An object containing the plot branches data in daylight format.
   #' @export
   load_plot_branches_all_daylight <- function() {
-    data_fp <- "data/plot_branches_all_daylight.rds"
+    data_fp <- "data/tree/plot_branches_all_daylight.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -401,7 +471,7 @@
   #' @return An object containing the plot branches data in equal angle format.
   #' @export
   load_plot_branches_all_equal_angle <- function() {
-    data_fp <- "data/plot_branches_all_equal_angle.rds"
+    data_fp <- "data/tree/plot_branches_all_equal_angle.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -415,7 +485,7 @@
   #' @return An object containing the plot branches data in rectangular format.
   #' @export
   load_plot_branches_all_rectangular <- function() {
-    data_fp <- "data/plot_branches_all_rectangular.rds"
+    data_fp <- "data/tree/plot_branches_all_rectangular.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -429,7 +499,7 @@
   #' @return An object containing the plot tips data in daylight format.
   #' @export
   load_plot_tips_all_daylight <- function() {
-    data_fp <- "data/plot_tips_all_daylight.rds"
+    data_fp <- "data/tree/plot_tips_all_daylight.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -443,7 +513,7 @@
   #' @return An object containing the plot tips data in equal angle format.
   #' @export
   load_plot_tips_all_equal_angle <- function() {
-    data_fp <- "data/plot_tips_all_equal_angle.rds"
+    data_fp <- "data/tree/plot_tips_all_equal_angle.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -457,7 +527,7 @@
   #' @return An object containing the plot tips data in rectangular format.
   #' @export
   load_plot_tips_all_rectangular <- function() {
-    data_fp <- "data/plot_tips_all_rectangular.rds"
+    data_fp <- "data/tree/plot_tips_all_rectangular.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -471,7 +541,7 @@
   #' @return A data frame containing the t-SNE layout data.
   #' @export
   load_layout_tsne <- function() {
-    data_fp <- "data/layout_tsne.rds"
+    data_fp <- "data/tsne/layout_tsne.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -485,7 +555,7 @@
   #' @return An object containing the t-SNE plot data.
   #' @export
   load_plot_tsne_all <- function() {
-    data_fp <- "data/plot_tsne_all.rds"
+    data_fp <- "data/tsne/plot_tsne_all.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -499,7 +569,7 @@
   #' @return A data frame containing the nodes to root data.
   #' @export
   load_nodes_to_root <- function() {
-    data_fp <- "data/nodes_to_root.rds"
+    data_fp <- "data/tree/nodes_to_root.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -515,7 +585,7 @@
   #' @return A list containing the query filters
   #' @export
   load_query_filters_simple <- function() {
-    data_fp <- "data/query_filters_simple.rds"
+    data_fp <- "data/query_filters/query_filters_simple.rds"
     
     obj <- check_and_load(data_fp)
     
@@ -530,7 +600,7 @@
   #' @return A list containing the query filters
   #' @export
   load_config_networks_reference_reactions <- function() {
-    data_fp <- "data/config_networks_reference_reactions.csv"
+    data_fp <- "data/config/config_networks_reference_reactions.csv"
     
     obj <- check_and_load(data_fp)
     
@@ -545,7 +615,7 @@
   #' @return A list containing the query filters
   #' @export
   load_config_networks_plots <- function() {
-    data_fp <- "data/config_networks_plots.csv"
+    data_fp <- "data/config/config_networks_plots.csv"
     
     obj <- check_and_load(data_fp)
     

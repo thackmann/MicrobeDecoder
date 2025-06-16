@@ -30,7 +30,7 @@
             width = "30%",
             
             # Select data
-            div("Choose organisms (taxa)"),
+            div("Organisms (taxa)", class = "tight-heading"),
             bslib::navset_tab(id = ns("taxonomy_tabs"),
                               bslib::nav_panel(title = "Database",
                                                create_selectize_input(inputId = ns("taxonomy_database"))
@@ -41,7 +41,7 @@
             ),
     
             # Select traits
-            div("Choose traits"),
+            div("Traits", class = "tight-heading"),
             bslib::navset_tab(id = ns("trait_tabs"),
                               bslib::nav_panel(title = "Standard traits",
                                                create_selectize_input(inputId = ns("set_traits")),

@@ -86,5 +86,5 @@
   lpsn_organisms <- cbind(lpsn_organisms, phylogeny_df)
 
 # === Export ===
-  fp <- paste0(app_directory, "LPSN\\data\\lpsn_phylogeny.csv")
+  fp <- paste0(database_directory, "/LPSN/data/lpsn_phylogeny.csv")
   write.csv(lpsn_organisms, file = fp, row.names = FALSE)

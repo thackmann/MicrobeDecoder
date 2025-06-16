@@ -54,7 +54,7 @@
   #'
   #' @export
   assign_if_invalid <- function(x, default) {
-    if (is.null(x) || is.na(x) || !nzchar(x)) {
+    if (is.null(x) || length(x) == 0 || is.na(x[1]) || !nzchar(x[1])) {
       return(default)
     }
     return(x)
@@ -1562,7 +1562,6 @@
     return(df)
   }
   
-  
   #' Ensure unique organism names in a dataframe
   #'
   #' This function ensures that names in a specified column are unique by appending numeric suffixes when duplicates exist.
@@ -1688,7 +1687,7 @@
   #' "Genus Species Subspecies", with missing subspecies values properly handled.
   #'
   #' @param database A dataframe containing organism data, including columns for genome IDs, genus, species, and subspecies.
-  #' @param genome_id_col A character string specifying the column name that contains genome IDs. Defaults to `"IMG Genome ID max genes"`.
+  #' @param genome_id_col A character string specifying the column name that contains genome IDs. Defaults to `"IMG Genome ID max quality"`.
   #' @param genus_col A character string specifying the column name that contains genus information. Defaults to `"Genus"`.
   #' @param species_col A character string specifying the column name that contains species information. Defaults to `"Species"`.
   #' @param subspecies_col A character string specifying the column name that contains subspecies information. Defaults to `"Subspecies"`.
@@ -1708,7 +1707,7 @@
   #' @importFrom dplyr filter mutate rename select
   #' @export
   get_organism_by_genome <- function(database, 
-                                     genome_id_col = "IMG Genome ID max genes", 
+                                     genome_id_col = "IMG Genome ID max quality", 
                                      genus_col = "Genus", 
                                      species_col = "Species", 
                                      subspecies_col = "Subspecies",
@@ -1736,7 +1735,7 @@
   #' @param database A dataframe containing organism data, including columns 
   #'   for genome IDs, genus, species, and subspecies.
   #' @param genome_id_col A character string specifying the column name that 
-  #'   contains genome IDs. Defaults to `"IMG Genome ID max genes"`.
+  #'   contains genome IDs. Defaults to `"IMG Genome ID max quality"`.
   #' @param genus_col A character string specifying the column name that contains 
   #'   genus information. Defaults to `"Genus"`.
   #' @param species_col A character string specifying the column name that contains 
@@ -1761,7 +1760,7 @@
   #' @importFrom dplyr filter mutate pull
   #' @export
   get_organism_choices <- function(database, 
-                                   genome_id_col = "IMG Genome ID max genes", 
+                                   genome_id_col = "IMG Genome ID max quality", 
                                    genus_col = "Genus", 
                                    species_col = "Species", 
                                    subspecies_col = "Subspecies", 
@@ -1816,7 +1815,6 @@
     
     return(choices)
   }
-  
   
   #' Count Traits and Organisms with Predictions
   #'

@@ -20,7 +20,7 @@
   setwd(database_directory)
 
   # From https://lpsn.dsmz.de/downloads
-  lpsn_data =  read.csv(paste0(app_directory, "LPSN\\data\\lpsn_gss_2024-10-17.csv"))
+  lpsn_data =  read.csv(paste0(database_directory, "\\LPSN\\data\\lpsn_gss_2025-05-26.csv"))
 
 # === Format data ===
   # Select type strains with correct name
@@ -39,4 +39,4 @@
   df <- df %>% dplyr::group_by(Genus, Species) %>% dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) %>% dplyr::ungroup()
 
 # === Export ===
-  write.csv(df, paste0(app_directory, "LPSN\\data\\lpsn_organisms.csv"), row.names = FALSE)
+  write.csv(df, paste0(database_directory, "\\LPSN\\data\\lpsn_organisms.csv"), row.names = FALSE)

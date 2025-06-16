@@ -32,7 +32,7 @@ curl -X POST https://api.microbe-decoder.org/compute/networks \
   -H "Content-Type: application/json" \
   -d '{
     "selected_organisms": ["Escherichia coli"],
-    "reference_reactions": "Fermentation (glucose)",
+    "reference_reactions": "Fermentation of glucose",
     "substrates": ["D-Glucose"],
     "products": [
       "Acetate", "(S)-Lactate", "(R)-Lactate", "Ethanol", "Succinate",
@@ -70,7 +70,7 @@ curl -X POST https://api.microbe-decoder.org/compute/networks \
         "KO:K03777 - dld; D-lactate dehydrogenase (quinone) [EC:1.1.5.12]"
       ]
     },
-    "reference_reactions": "Fermentation (glucose)",
+    "reference_reactions": "Fermentation of glucose",
     "substrates": ["Pyruvate"],
     "products": ["(S)-Lactate", "(R)-Lactate"],
     "unbalanced_intermediates": ["NAD+", "NADH", "H+"],
@@ -121,7 +121,7 @@ curl https://api.microbe-decoder.org/parameters/taxonomy
 ```
 ```
 curl -G https://api.microbe-decoder.org/parameters/networks \
-  --data-urlencode "selected_reaction=Fermentation (glucose)"
+  --data-urlencode "selected_reaction=Fermentation of glucose"
 ```
 ```
 curl -G https://api.microbe-decoder.org/parameters/networks \

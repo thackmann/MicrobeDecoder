@@ -12,7 +12,7 @@
   options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 # === Load external R files ===
-  # Load file with helper function first
+  # Load file with function for loading additional files
   source("functions/sourceFunctions.R")
   
   # Load all remaining files

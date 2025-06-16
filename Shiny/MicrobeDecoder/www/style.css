@@ -432,6 +432,14 @@
 }
 
 /* Other styles */
+.tight-heading {
+  margin-bottom: -16px !important;
+}
+
+.form-group {
+  margin-bottom: 0px !important;  /* Default is ~15px; reduce it */
+}
+
 .vertical-container > * {
   display: block;
 }

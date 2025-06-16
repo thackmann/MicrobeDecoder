@@ -7,7 +7,6 @@
 #' @author Timothy Hackmann
 #' @date 22 February 2025
 
-
 #' Create Loading Screen with Fading SVG
 #'
 #' Generates a centered loading screen that fades an SVG logo and text in a loop,
