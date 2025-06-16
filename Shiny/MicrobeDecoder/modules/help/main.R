@@ -21,16 +21,6 @@ helpUI <- function(id) {
                                     id = "Video tutorials"
                           ),
                           bslib::nav_panel(
-                                    title = "Search database",
-                                    value = "Search database",
-                                    id = "Search database"
-                          ),
-                          bslib::nav_panel(
-                                    title = "Download database",
-                                    value = "Download database",
-                                    id = "Download database"
-                          ),
-                          bslib::nav_panel(
                                     title = "Predict traits from taxonomy",
                                     value = "Predict traits from taxonomy",
                                     id = "Predict traits from taxonomy"
@@ -44,6 +34,16 @@ helpUI <- function(id) {
                                     title = "Predict traits with machine learning",
                                     value = "Predict traits with machine learning",
                                     id = "Predict traits with machine learning"
+                          ),
+                          bslib::nav_panel(
+                            title = "Search database",
+                            value = "Search database",
+                            id = "Search database"
+                          ),
+                          bslib::nav_panel(
+                            title = "Download database",
+                            value = "Download database",
+                            id = "Download database"
                           ),
                           bslib::nav_panel(
                             title = "History",
@@ -76,23 +76,10 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h5("How to predict traits with metabolic networks:")),
              p(shiny::uiOutput(ns("video_predictionsNetwork")))
            ),
-           "Search database" = div(
-             p(h3("Search database")),
-             p("This tool allows the user to search the internal database."),
-             p(h4("Build query")),
-             p("The user can generate simple or complex queries with the query builder at the left. Note that capitalization and spaces matter."),
-             p(h4("Output format")),
-             p("The *csv for matching organisms can be downloaded."),
-             p("Matching organisms are also shown in a phylogenetic tree and t-SNE plot of gene functions. The phylogenetic tree is of n = 14 ribosomal genes from n = 3,822 prokaryotes. The t-SNE plot is of n = 30,805 gene functions from n = 4,301 prokaryotes. Organisms that cluster together in this plot have similar functions.")
-           ),
-           "Download database" = div(
-             p(h3("Download database")),
-             p("This tool allows the user to download the internal database. The *csv includes all organisms and all information available.")
-           ),
            "Predict traits from taxonomy" = div(
              p(h3("Predict traits from taxonomy")),
              p("This tool predicts traits for organisms given their taxonomy. After the user selects organisms for prediction, the tool finds organisms with matching taxonomy in the internal database. The tool then calculates the fraction (0 to 1) of matching taxa positive for a trait.  This fraction is the probability of the trait.  This approach is similar to that used by ", url_FAPROTAX, ", except the latter reports only traits with probability of 1."),
-             p(h4("Choose organisms (taxa)")),
+             p(h4("Organisms (taxa)")),
              p("The user chooses organisms from the database or by uploading a file."),
              p("An uploaded file should be a *csv and follow one of two formats."),
              tags$i("Column-separated format"),
@@ -110,7 +97,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_4"), label = "OTUs from infant gut"))
              ),
-             p(h4("Choose traits")),
+             p(h4("Traits")),
              p("The user specifies the traits to predict here.  For the Other traits tab, the user can specific detailed traits using a query builder."),
              p(h4("Show advanced settings")),
              tags$i("Probability threshold"),
@@ -128,7 +115,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
            "Predict traits with metabolic networks" = div(
              p(h3("Predict traits with metabolic networks")),
              p("This tool predicts traits for an organism by building a metabolic network from the genome. After the user selects gene functions for a genome, the tool builds a network of biochemical reactions.  It then uses flux balance analysis (FBA) to determine if the network is complete and can metabolize a chosen substrate to end products."),
-             p(h4("Choose gene functions")),
+             p(h4("Organisms (gene functions)")),
              p("The user chooses gene functions from the database or by uploading a file."),  
              p(shiny::tagList("An uploaded file should be a *csv or a *ko file.  It should follow the output of KEGG Automatic Annotation Server (", url_KAAS, "). The rows are KO IDs for the gene functions. To analyze more than one genome, include a column named \"Genome\" with rows containing genome IDs.")),
              p(shiny::tagList("Gene carts from ", url_IMG, " are also accepted.")),
@@ -140,9 +127,9 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "MAGs from rumen"))
              ),
              
-             p(h4("Choose reference reactions")),
+             p(h4("Type of metabolism (reference reactions)")),
              p("The user chooses reference reactions from the database or by uploading a file.  The tool will check if these reactions are in the genome and if so add them to the biochemical network.  All reactions needed to metabolize a chosen substrate to end products should be included."),
-             p(shiny::tagList("An uploaded file should be a *csv and follow the format of the ", url_fbar, " package of R.")),
+             p(shiny::tagList("An uploaded file should be a *csv and follow the format below.  Information can come from ", url_KEGG, ".")), # debug
              p("Example files:"),
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadReference_1"), label = "Glucose fermentation")),
@@ -153,10 +140,12 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h4("End products")),
              p("The user specifies end products to check here. Any metabolite in the reference reactions can be chosen."),
              p(h4("Show advanced settings")),
-             tags$i("Flux threshold"),
-             p("When this slider is set to 1, only end products with a flux of at least 1 are shown."),
              tags$i("Unbalanced intermediates"),
              p("Metabolites chosen here are allowed to be produced (or consumed) in infinite quantities. NADH and ATP are examples of metabolites usually chosen to be unbalanced. In the metabolic model, these can accumulate without needing to be regenerated to NAD+ or ADP. This simplifies the model, as reactions for consuming NADH and ATP do not have to be included."),
+             tags$i("Flux threshold"),
+             p("When this slider is set to 1, only end products with a flux of at least 1 are shown."),
+             tags$i("Enzymes must have all subunits"),
+             p("When turned on, a biochemical reaction is included in the network only if its enzyme has all subunits (KO IDs).  Turning it off will lead to more reactions being included."),
              p(h4("Output format")),
              p("The *csv for fluxes and for network model can be downloaded. The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000.")
            ),
@@ -164,7 +153,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h3("Predict traits with machine learning")),
              p("This tool predicts traits for an organism from its genome using machine learning.  After the user selects gene functions for a genome, the tool uses a machine learning algorithm (random forest classifier) to predict traits.  The tool calculates the fraction of trees (0 to 1) of trees giving a positive prediction.  This fraction is the probability of the trait."),
              p("The user can predict simple traits using pre-trained models.  They can also train their own models to predict more complex traits."),
-             p(h4("Choose gene functions")),
+             p(h4("Organisms (gene functions)")),
              p("The user chooses gene functions from the database or by uploading a file."),
              p(shiny::tagList("An uploaded file should be a *csv or a *ko file.  It should follow the output of KEGG Automatic Annotation Server (", url_KAAS, "). The rows are KO IDs for the gene functions. To analyze more than one genome, include a column named \"Genome\" with rows containing genome IDs.")),
              p(shiny::tagList("Gene carts from ", url_IMG, " are also accepted.")),
@@ -175,24 +164,12 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_3"), label = "Cultured prokaryotes from rumen")),
                      tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "MAGs from rumen"))
              ),
-             p(h4("Choose traits, data, or models")),
+             p(h4("Traits or models")),
              p("The user has several options for predicting traits."),
              tags$i("Standard traits"),
              p("The user chooses a trait from a list, and the tool loads a pre-trained random forest classifier for it."),
              tags$i("Other traits"),
              p("The user chooses a trait using a query builder, and the tool trains a random forest model for it."),
-             tags$i("Data upload"),
-             p("The user uploads files with response and predictor variables. They should be *csv files a follow the format of examples below.  Under the Response column, only two values (classes) are allowed (e.g., 0 and 1)."),
-             p("Example response variable files:"),
-             tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadResponse_1"), label = "Fermentation")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadResponse_2"), label = "Methanogenesis"))
-             ),
-             p("Example predictor variable files:"),
-             tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadPredictors_1"), label = "Fermentation")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadPredictors_2"), label = "Methanogenesis"))
-             ),
              tags$i("Model upload"),
              p("The user uploads one or more *rds files of random forest models.  These files typically come from other tabs."),
              p("Example files:"),
@@ -201,7 +178,6 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadModel_2"), label = "Methanogenesis"))
              ),
              p(h4("Show advanced settings")),
-             tags$i("Probability threshold"),
              p("When this slider is set to 0.5, only traits with predicted probability of at least 0.5 are shown."),
              tags$i("Enable saving of models"),
              p("When turned on, random forest models are saved and available for download.  For speed, this is turned off by default."),
@@ -217,8 +193,8 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("This sets the seed for randomly subsampling predictors and responses.  If kept at the default (123), subsampling will be identical each time the model is trained."),
              tags$i("Set number of trees"),
              p("This sets the number of trees in the random forest model.  Higher values will increase training time but may improve predictive performance."),
-             tags$i("Set number of nodes"),
-             p("This sets the number of nodes in the random forest model.  Higher values will increase training time but may improve predictive performance."),
+             tags$i("Set maximum nodes"),
+             p("This sets the number of maximum nodes in the random forest model.  Higher values will increase training time but may improve predictive performance."),
              tags$i("Weight for positive classes of responses."),
              p("When this slider is set to 0.5, positive and negative responses receive equal weight during training.  Increasing it will give more weight to positive responses."),
              tags$i("Name of trait"),
@@ -226,6 +202,19 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h4("Output format")),
              p("The *csv for probabilities of predicted traits can be downloaded."),
              p("Additionally, an *rds file for the random forest can be downloaded. It can be re-uploaded using the Model upload tab.")
+           ),
+           "Search database" = div(
+             p(h3("Search database")),
+             p("This tool allows the user to search the internal database."),
+             p(h4("Build query")),
+             p("The user can generate simple or complex queries with the query builder at the left. Note that capitalization and spaces matter."),
+             p(h4("Output format")),
+             p("The *csv for matching organisms can be downloaded."),
+             p("Matching organisms are also shown in a phylogenetic tree and t-SNE plot of gene functions. The phylogenetic tree is of n = 14 ribosomal genes from n = 3,822 prokaryotes. The t-SNE plot is of n = 30,805 gene functions from n = 4,301 prokaryotes. Organisms that cluster together in this plot have similar functions.")
+           ),
+           "Download database" = div(
+             p(h3("Download database")),
+             p("This tool allows the user to download the internal database. The *csv includes all organisms and all information available.")
            ),
            "History" = div(
              p(h3("History")),

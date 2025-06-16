@@ -22,7 +22,7 @@ make_binary <- function(x) {
 #' @param genome_column The column containing genome IDs.
 #' @return A vector of unique genome IDs.
 #' @export
-extract_genomes <- function(data, genome_column = "IMG Genome ID max genes") {
+extract_genomes <- function(data, genome_column = "IMG Genome ID max quality") {
   # Select the genome column, filter out NA and "NA", and get unique values
   genomes <- data %>%
     dplyr::select(!!rlang::sym(genome_column)) %>%

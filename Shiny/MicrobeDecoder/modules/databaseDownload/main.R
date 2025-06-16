@@ -29,7 +29,8 @@
     output$download_data <- create_download_handler(
       filename_prefix = "database",
       data_source = function() {
-        load_database()
+        load_database() %>%
+          dplyr::select(-dplyr::ends_with("link"))
       }
     )
   }

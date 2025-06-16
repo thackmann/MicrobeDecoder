@@ -10,7 +10,7 @@ enzyme_cofactors <- c(
   "Ubiquinone", "Ubiquinol", "Quinone", "Hydroquinone", "Menaquinone", "Menaquinol",
   "Oxidized hydrogenase", "Reduced hydrogenase",
   "Acceptor", "Reduced acceptor",
-  "Ferricytochrome c", "Ferrocytochrome c", "2 Ferricytochrome cL", "Ferrocytochrome cL",
+  "Ferricytochrome c", "Ferrocytochrome c", "Ferricytochrome cL", "Ferrocytochrome cL",
   "ATP", "ADP", "AMP", "GTP", "GDP", "NDP", "Nucleoside triphosphate",
   "Orthophosphate", "Diphosphate", "Polyphosphate",
   
@@ -24,7 +24,9 @@ enzyme_cofactors <- c(
   # "2-(alpha-Hydroxyethyl)thiamine diphosphate",
   # "[Dihydrolipoyllysine-residue acetyltransferase] S-acetyldihydrolipoyllysine",
    
-  "Enzyme N6-(lipoyl)lysine"
+  "Enzyme N6-(lipoyl)lysine",
   # "3-Carboxy-1-hydroxypropyl-ThPP",
   # "[Dihydrolipoyllysine-residue succinyltransferase] S-succinyldihydrolipoyllysine"
+  
+  "H+", "H2O"
 )

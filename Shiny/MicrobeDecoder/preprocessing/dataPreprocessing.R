@@ -4,7 +4,7 @@
 # Requirements
 # - Packages in install//installPackages.R
 # Author: Timothy Hackmann
-# Date: 26 February 2025
+# Date: 13 June 2025
 
 # === Set system locale ===
 Sys.setlocale("LC_ALL", "C")
@@ -17,7 +17,7 @@ Sys.setlocale("LC_ALL", "C")
   # Load external R files
   setwd(app_directory)
   source("functions//helperFunctions.R", local = TRUE) 
-  source("functions//loadDataFunctions.R", local = TRUE) 
+  source("functions//loadDataFunctions.R", local = TRUE)
   source("functions//plotFunctions.R", local = TRUE) 
   source("modules//predictionsMachineLearning//functions.R", local = TRUE) 
   source("preprocessing//functions.R", local = TRUE) 
@@ -25,7 +25,7 @@ Sys.setlocale("LC_ALL", "C")
 # === Preprocess data ===
   # --- Clean database file and add links ---
     # Get data
-      data <- load_raw_database()
+      data <- load_raw_database(force_reload = TRUE)
 
     # Clean data
       data[] <- lapply(data, as.character)
@@ -155,7 +155,7 @@ Sys.setlocale("LC_ALL", "C")
         "GTDB_ID", "GTDB_ID_link", "GTDB_Taxonomy",
         "GOLD_Organism_ID", "GOLD_Organism_ID_link", "GOLD_Project_ID", "GOLD_Project_ID_link",
         "NCBI_Taxonomy_ID", "NCBI_Taxonomy_ID_link", "NCBI_Taxonomy",
-        "IMG_Genome_ID", "IMG_Genome_ID_link", "IMG_Genome_ID_max_genes",
+        "IMG_Genome_ID", "IMG_Genome_ID_link", "IMG_Genome_ID_max_quality",
         "BacDive_ID", "BacDive_ID_link",
         "BacDive_Antibiotic_resistance", "BacDive_Antibiotic_sensitivity", "BacDive_Cell_length", "BacDive_Cell_shape",
         "BacDive_Cell_width", "BacDive_Colony_size", "BacDive_Enzyme_activity", 
@@ -194,7 +194,7 @@ Sys.setlocale("LC_ALL", "C")
       data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], as.factor)
 
     # Save file
-      fp <- "data//database_clean.csv"
+      fp <- "data/database/database_clean.csv"
       save_as_zip(data = data, fp = fp)
 
   # --- Generate query filters ---
@@ -221,7 +221,7 @@ Sys.setlocale("LC_ALL", "C")
         create_query_filter("GOLD Organism ID", data, delimited = TRUE, delimiter = ","),
         create_query_filter("GOLD Project ID", data, delimited = TRUE, delimiter = ","),
         create_query_filter("IMG Genome ID", data, delimited = TRUE, delimiter = ","),
-        create_query_filter("IMG Genome ID max genes", data),
+        create_query_filter("IMG Genome ID max quality", data),
         create_query_filter("BacDive ID", data),
         
         # Physiology/Function
@@ -264,7 +264,7 @@ Sys.setlocale("LC_ALL", "C")
       )  
 
     # Save object to file
-    data_fp = paste0("data/query_filters.rds")
+    data_fp = paste0("data/query_filters/query_filters.rds")
     saveRDS(query_filters, file = data_fp)
 
     # Generate placeholder filters (simple filters to load at app startup)
@@ -273,32 +273,34 @@ Sys.setlocale("LC_ALL", "C")
     )
     
     # Save object to file
-    data_fp = paste0("data/query_filters_simple.rds")
+    data_fp = paste0("data/query_filters/query_filters_simple.rds")
     saveRDS(query_filters_simple, file = data_fp)
     
   # --- Generate files for phylogenetic tree ---
     # Load tree
-    data_fp <- "data/tree.tre"
-    tree <- ape::read.tree(data_fp)
+    data_fp <- "data/tree/tree.zip"
+    unzip(data_fp, exdir = tempdir())
+    tree_file <- list.files(tempdir(), pattern = "\\.tre$|\\.tree$|\\.nwk$", full.names = TRUE)
+    tree <- ape::read.tree(tree_file)
 
     # Get layouts for phylogenetic tree
       layout_types <- c("rectangular", "daylight", "equal_angle")
 
       for (layout_type in layout_types) {
         layout <- get_tree_layout(tree, layout_type = layout_type)
-        data_fp <- paste0("data/layout_tree_", layout_type, ".rds")
+        data_fp <- paste0("data/tree/layout_tree_", layout_type, ".rds")
         saveRDS(layout, data_fp)
       }
 
     # Get nodes from tips to root
         nodes_to_root = get_nodes_to_root(tree = tree)
-        data_fp = "data/nodes_to_root.rds"
+        data_fp = "data/tree/nodes_to_root.rds"
         saveRDS(nodes_to_root, file = data_fp)
 
     # Plot branches for all organisms
       for (layout_type in layout_types) {
         # Load layout
-        data_fp = paste0("data/layout_tree_", layout_type, ".rds")
+        data_fp = paste0("data/tree/layout_tree_", layout_type, ".rds")
         layout <- readRDS(data_fp)
 
         # Plot branches
@@ -310,20 +312,20 @@ Sys.setlocale("LC_ALL", "C")
         }
 
         # Save plot to file
-        data_fp = paste0("data/plot_branches_all_", layout_type, ".rds")
+        data_fp = paste0("data/tree/plot_branches_all_", layout_type, ".rds")
         saveRDS(plot, file = data_fp)
       }
 
     # Plot tip points for all organisms
       for (layout_type in layout_types) {
         # Load layout and data
-        data_fp = paste0("data/layout_tree_", layout_type, ".rds")
+        data_fp = paste0("data/tree/layout_tree_", layout_type, ".rds")
         layout <- readRDS(data_fp)
         data <- load_database()
 
         # Format layout
         layout_tips <- layout %>% dplyr::filter(isTip == TRUE)
-        layout_tips <- add_taxonomy_to_layout(layout = layout_tips, layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG_Genome_ID_max_genes")
+        layout_tips <- add_taxonomy_to_layout(layout = layout_tips, layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG_Genome_ID_max_quality")
         layout_tips <- add_fill_to_layout(layout = layout_tips, group = "Phylum", lighten_amount = 0.95)
         layout_tips <- add_color_to_layout(layout = layout_tips, group = "Phylum", lighten_amount = 0.9)
 
@@ -343,7 +345,7 @@ Sys.setlocale("LC_ALL", "C")
         }
 
         # Save plot to file
-        data_fp = paste0("data/plot_tips_all_", layout_type, ".rds")
+        data_fp = paste0("data/tree/plot_tips_all_", layout_type, ".rds")
         saveRDS(plot, file = data_fp)
       }
 
@@ -354,7 +356,7 @@ Sys.setlocale("LC_ALL", "C")
         data <- load_database()
 
         #Format layout
-        layout <- add_taxonomy_to_layout(layout = layout, layout_ID = "IMG_Genome_ID_max_genes", taxonomy = data, taxonomy_ID = "IMG_Genome_ID_max_genes")
+        layout <- add_taxonomy_to_layout(layout = layout, layout_ID = "IMG_Genome_ID_max_quality", taxonomy = data, taxonomy_ID = "IMG_Genome_ID_max_quality")
         layout <- add_fill_to_layout(layout = layout, group = "Phylum", lighten_amount = 0.95)
         layout <- add_color_to_layout(layout = layout, group = "Phylum", lighten_amount = 0.9)
 
@@ -366,7 +368,7 @@ Sys.setlocale("LC_ALL", "C")
                          coord_fixed=TRUE, x_to_y_ratio=1)
 
         # Save plot to file
-        data_fp = paste0("data/plot_tsne_all.rds")
+        data_fp = paste0("data/tnse/plot_tsne_all.rds")
         saveRDS(plot, file = data_fp)
 
   # --- Generate random forest models ---
@@ -374,54 +376,54 @@ Sys.setlocale("LC_ALL", "C")
         variables <- list(
           
           # Type of metabolism
-          "fermentation" = "grepl(\"Fermentation\", `Type of metabolism`)",
-          "methanogenesis" = "grepl(\"Methanogenesis\", `Type of metabolism`)",
+          "fermentation" = "grepl(\"(?<=^|;)Fermentation(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
+          "methanogenesis" = "grepl(\"(?<=^|;)Methanogenesis(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
+
+          # Metabolites utilized
+          "nitrate" = "grepl(\"(?<=^|;)nitrate(?=;|$)\", `Metabolites utilized (BacDive)`, perl = TRUE)",
           
-          # Substrates for end products
-          "glucose" = "grepl(\"glucose\", `Substrates for end products`)",
-          
-          # End products
-          "acetate" = "grepl(\"acetate\", `End products`)",
-          "butyrate" = "grepl(\"butyrate\", `End products`)",
-          "CO2" = "grepl(\"CO2\", `End products`)",
-          "CH4" = "grepl(\"CH4\", `End products`)",
-          "ethanol" = "grepl(\"ethanol\", `End products`)",
-          "formate" = "grepl(\"formate\", `End products`)",
-          "H2" = "grepl(\"H2\", `End products`)",
-          "isobutyrate" = "grepl(\"isobutyrate\", `End products`)",
-          "isovalerate" = "grepl(\"isovalerate\", `End products`)",
-          "lactate" = "grepl(\"lactate\", `End products`) | grepl(\"D-lactate\", `End products`) | grepl(\"L-lactate\", `End products`)",
-          "propionate" = "grepl(\"propionate\", `End products`)",
-          "pyruvate" = "grepl(\"pyruvate\", `End products`)",
-          "succinate" = "grepl(\"succinate\", `End products`)",
+          # Metabolites produced
+          "acetate" = "grepl(\"(?<=^|;)acetate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "butyrate" = "grepl(\"(?<=^|;)butyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "CO2" = "grepl(\"(?<=^|;)CO2(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "CH4" = "grepl(\"(?<=^|;)CH4(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "ethanol" = "grepl(\"(?<=^|;)ethanol(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "formate" = "grepl(\"(?<=^|;)formate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "H2" = "grepl(\"(?<=^|;)H2(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "isobutyrate" = "grepl(\"(?<=^|;)isobutyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "isovalerate" = "grepl(\"(?<=^|;)isovalerate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "lactate" = "grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Major metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "propionate" = "grepl(\"(?<=^|;)propionate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "pyruvate" = "grepl(\"(?<=^|;)pyruvate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+          "succinate" = "grepl(\"(?<=^|;)succinate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
           
           # Physiology/morphology
-          "anaerobe" = "grepl(\"anaerobe\", `Oxygen tolerance`) | grepl(\"obligate anaerobe\", `Oxygen tolerance`)",
-          "gram_positive" = "grepl(\"positive\", `Gram stain`)",
-          "spore_formation" = "grepl(\"positive\", `Spore formation`)",
-          "motility" = "grepl(\"positive\", `Motility`)",
-          "motility_non_gliding" = "grepl(\"positive\", `Motility`) & !grepl(\"gliding\", `Flagellum arrangement`)",
+          "anaerobe" = "grepl(\"(?<=^|;)anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)obligate anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE)",
+          "gram_positive" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Gram stain (BacDive)`, perl = TRUE)",
+          "spore_formation" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Spore formation (BacDive)`, perl = TRUE)",
+          "motility" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE)",
+          "motility_non_gliding" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE) & grepl(\"(?<=^|;)gliding(?=;|$)\", `Flagellum arrangement (BacDive)`, perl = TRUE)",
           
           # Growth
-          "thermophile" = "`Temperature for growth in degrees` > 45",
-          "halophile" = "`Salt for growth in moles per liter` > 3",
-          "slow_growth" = "`Incubation period in days` > 7",
+          "thermophile" = "`Temperature for growth in degrees (BacDive)`> 45",
+          "halophile" = "`Salt for growth in moles per liter (BacDive)` > 3",
+          "slow_growth" = "`Incubation period in days (BacDive)` > 7",
           
           # Pathogenecity
-          "animal_pathogen" = "grepl(\"animal\", `Pathogenicity`)",
-          "plant_pathogen" = "grepl(\"plant\", `Pathogenicity`)"
-
+          "animal_pathogen" = "grepl(\"(?<=^|;)animal(?=;|$)\", `Pathogenicity (BacDive)`, perl = TRUE)",
+          "plant_pathogen" = "grepl(\"(?<=^|;)plant(?=;|$)\", `Pathogenicity (BacDive)`, perl = TRUE)"
         )
         
       # Process each variable
-      purrr::walk2(
-        .x = names(variables),
-        .y = variables,
-        .f = ~ generate_rf(
-          var_name = .x, 
-          query_string = .y,
+      for (i in seq_along(variables)) {
+        var_name <- names(variables)[i]
+        query_string <- variables[[i]]
+        
+        generate_rf(
+          var_name = var_name,
+          query_string = query_string,
           predictors_to_keep = 1
         )
-      )
-      
-      
+        
+        svMisc::progress(i, max.value = length(variables))
+      }

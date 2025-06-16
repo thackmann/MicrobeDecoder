@@ -280,7 +280,7 @@
                                   inputId, choices = NULL, selected = NULL, server = TRUE) {
     if (is.null(choices)) choices <- character(0)
     if (is.null(selected)) selected <- head(choices, 1)
-    
+
     shiny::updateSelectizeInput(session, inputId = inputId, choices = choices, selected = selected, server = server)
   }
   

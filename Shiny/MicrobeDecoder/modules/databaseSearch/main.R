@@ -255,7 +255,7 @@
       # Get matching data and filter layout
       data <- get_results()$filter_data
       nodes_to_root <- load_nodes_to_root()
-      layout_filtered <- filter_tree_layout(layout, data, nodes_to_root, id_column = "IMG Genome ID max genes")
+      layout_filtered <- filter_tree_layout(layout, data, nodes_to_root, id_column = "IMG Genome ID max quality")
       
       # Parameters for matching plots
       layout_param <- get_layout_param(layout_type)
@@ -275,7 +275,7 @@
       # Format tips layout
       tips_matching_layout <- layout %>%
         dplyr::filter(isTip == TRUE) %>%
-        add_taxonomy_to_layout(layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG Genome ID max genes") %>%
+        add_taxonomy_to_layout(layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG Genome ID max quality") %>%
         add_fill_to_layout(group = "Phylum", lighten_amount = 0.2) %>%
         add_color_to_layout(group = "Phylum", lighten_amount = 0)
       
@@ -308,7 +308,8 @@
       data <- get_results()$filter_data
       
       # Format layout with taxonomy and colors
-      layout <- add_taxonomy_to_layout(layout = layout, layout_ID = "IMG_Genome_ID_max_genes", taxonomy = data, taxonomy_ID = "IMG Genome ID max genes")
+      layout <- add_taxonomy_to_layout(layout = layout, layout_ID = "IMG_Genome_ID_max_genes", # debug
+                                       taxonomy = data, taxonomy_ID = "IMG Genome ID max quality")
       layout <- add_fill_to_layout(layout = layout, group = "Phylum", lighten_amount = 0.2)
       layout <- add_color_to_layout(layout = layout, group = "Phylum", lighten_amount = 0)
       

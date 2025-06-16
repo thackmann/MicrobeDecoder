@@ -480,13 +480,7 @@ generate_rf <- function(
   # Print model evaluation
   print(rf$evaluation_results$table)
   print(rf$evaluation_results$byClass)
-  
-  # Save response variable
-  save_as_zip(data = response, fp = paste0("data/response_", var_name, ".csv"))
-  
-  # Save predictor variables
-  save_as_zip(data = predictors, fp = paste0("data/predictors_", (var_name), ".csv"))
-  
+
   # Save random forest model
-  save_rf(rf = rf, data_fp = paste0("data/random_forest_", var_name, ".rds"))
+  save_rf(rf = rf, data_fp = paste0("data/random_forest_models/", var_name, ".rds"))
 }

@@ -27,7 +27,7 @@
     					  width = "30%",
     					  
     					  # Select data
-    					  div("Choose organisms (gene functions)"),
+    					  div("Organisms (gene functions)", class = "tight-heading"),
     					  bslib::navset_tab(id = ns("function_tabs"),
     										bslib::nav_panel(title = "Database",
     														 create_selectize_input(inputId = ns("gene_functions_database"))
@@ -37,7 +37,7 @@
     										)
     					  ),
     					  
-    					  div("Choose traits, data, or models"),
+    					  div("Traits or models", class = "tight-heading"),
     					  bslib::navset_tab(id = ns("subtabs"),
     										bslib::nav_panel(title = "Standard traits",
     														 create_selectize_input(inputId = ns("model_names"), choices = NULL, selected = NULL),
@@ -216,7 +216,7 @@
 	      data <- load_database()
 	      
 	      query_string <- process_query_string(query_string)
-	      
+
 	      runValidationModal(need(query_string != "", "Please build a valid query."))
 	      
 	      response <- format_response(data = data, 

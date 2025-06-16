@@ -24,7 +24,8 @@
 
 # === Download ribosomal sequences ===
   # Handle most strains (those that are not type subspecies)
-    most_strains <- lpsn_organisms %>% dplyr::filter(Species!=Subspecies)
+    most_strains <- lpsn_organisms %>%
+      dplyr::filter(is.na(Species) | is.na(Subspecies) | Species != Subspecies)
     addresses <- most_strains$address
     LPSN_ID <- most_strains$LPSN_ID
     base_url <- "https://lpsn.dsmz.de"
@@ -41,7 +42,7 @@
 
       if (length(fasta_link) > 0) {
         # Construct the file path
-        fp <- paste0("LPSN/data/16S_ribosomal_sequences", LPSN_ID[i], ".fasta")
+        fp <- paste0("LPSN/data/16S_ribosomal_sequences/", LPSN_ID[i], ".fasta")
 
         # Download the FASTA file
         download_result <- download_fasta_file(fasta_link[1], fp)
@@ -169,17 +170,41 @@
       })
     }
 
-# === Put ribosomal sequences in a single object ===
-  # Get names of FASTA files downloaded above
-  fasta_files <- list.files(paste0("LPSN/data/16S_ribosomal_sequences/"),
-                            pattern = "\\.fasta$", full.names = TRUE)
-
+# === Zip files and remove originals ===
+  # List all individual FASTA files
+  fasta_files <- list.files("LPSN/data/16S_ribosomal_sequences/", pattern = "\\.fasta$", full.names = TRUE)
+  
+  # Zip them
+  zip(zipfile = "LPSN/data/16S_ribosomal_sequences/16S_ribosomal_sequences.zip", files = fasta_files, flags = "-j")  # -j = strip directory
+  
+  # Delete the originals
+  # file.remove(fasta_files)
+  # message("FASTA files zipped and originals removed.")    
+  
+# === Reload files from zip ===
+  temp_dir <- tempfile("unzipped_fasta_")
+  dir.create(temp_dir)
+  
+  # Unzip all files to temp_dir
+  unzip("LPSN/data/16S_ribosomal_sequences/16S_ribosomal_sequences.zip", exdir = temp_dir)
+  
+  # List unzipped FASTA files
+  fasta_files <- list.files(temp_dir, pattern = "\\.fasta$", full.names = TRUE)
+  
   # Read each FASTA file and return as a list
   fasta_list <- lapply(seq_along(fasta_files), function(i) {
     svMisc::progress(i, max.value = length(fasta_files))
-    return(ShortRead::readFasta(fasta_files[i]))
+    ShortRead::readFasta(fasta_files[i])
   })
-
+  
+  # Derive fasta_names from file names
+  fasta_names <- basename(fasta_files)
+  fasta_names <- gsub("\\.fasta$", "", fasta_names)
+  
+  # Clean up temp_dir at the end
+  # unlink(temp_dir, recursive = TRUE)  
+  
+# === Put ribosomal sequences in a single object ===
   # Rename FASTA files according to file name (record)
   fasta_names <- list.files(paste0("LPSN/data/16S_ribosomal_sequences/"),
                             pattern = "\\.fasta$", full.names = FALSE)
@@ -197,7 +222,6 @@
   # Put in DNAStringSet
   seq = ShortRead::sread(combined_fasta)
   names(seq) = ShortRead::id(combined_fasta)
-
 
 # === Add ribosomal sequences to organism data ===
   idx <- match(lpsn_organisms$LPSN_ID, names(seq))

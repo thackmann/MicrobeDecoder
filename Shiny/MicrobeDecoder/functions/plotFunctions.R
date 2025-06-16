@@ -1546,7 +1546,7 @@
   #' @return A data frame containing the layout coordinates with added taxonomy information.
   #' @export
   #' @importFrom dplyr filter
-  add_taxonomy_to_layout <- function(layout, layout_ID = "label", taxonomy, taxonomy_ID = "IMG_Genome_ID_max_genes") {
+  add_taxonomy_to_layout <- function(layout, layout_ID = "label", taxonomy, taxonomy_ID = "IMG_Genome_ID_max_quality") {
     row_match <- match(x = layout[[layout_ID]], table = taxonomy[[taxonomy_ID]])
     
     layout$Phylum <- taxonomy$Phylum[row_match]

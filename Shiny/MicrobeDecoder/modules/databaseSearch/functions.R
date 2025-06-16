@@ -69,13 +69,13 @@ search_results_to_plot <- function(df, plot_type, var_name = NULL) {
 #' @param nodes_to_root A dataframe mapping tip nodes to their parent nodes, 
 #'        containing columns `tip_node`, `parent_node`, and `child_node`.
 #' @param id_column A string specifying the column in `data` that contains the organism IDs.
-#'        Defaults to `"IMG Genome ID max genes"`.
+#'        Defaults to `"IMG Genome ID max quality"`.
 #'
 #' @return A filtered version of `layout` containing only the branches leading 
 #'         to the selected organisms, along with root nodes.
 #' 
 #' @export
-filter_tree_layout <- function(layout, data, nodes_to_root, id_column = "IMG Genome ID max genes") {
+filter_tree_layout <- function(layout, data, nodes_to_root, id_column = "IMG Genome ID max quality") {
   if (!id_column %in% names(data)) {
     stop(glue::glue("Column '{id_column}' not found in data"))
   }

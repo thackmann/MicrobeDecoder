@@ -28,16 +28,21 @@
                 width = "30%",
                 
                 # Select data
-                div("Choose gene functions"),
+                div("Organisms (gene functions)", class = "tight-heading"),
                 bslib::navset_tab(id = ns("function_tabs"),
                                   bslib::nav_panel(title = "Database",
-                                                   create_selectize_input(inputId = ns("gene_functions_database")),
+                                                   div(
+                                                     create_selectize_input(inputId = ns("gene_functions_database")),
+                                                     shiny::actionLink(ns("update_gene_function_choices"), 
+                                                                       label = "Load examples",
+                                                                       style = "margin-top: -6px; display: block;")
+                                                   )
                                   ),
                                   bslib::nav_panel(title = "File upload",
                                                    fileInput_modal(ns("gene_functions_upload"), modalId = ns("gene_functions_modal"))
                                   )
                 ),
-                div("Choose reference reactions"),
+                div("Type of metabolism (reference reactions)", class = "tight-heading"),
                 bslib::navset_tab(id = ns("reaction_tabs"),
                                   bslib::nav_panel(title = "Database",
                                                    create_selectize_input(inputId = ns("reference_reactions_database"), multiple = FALSE),
@@ -203,16 +208,14 @@
     
     url_change_trigger <- make_url_trigger(tab_name = "predictionsNetwork")
 
+    update_metabolite_choices_trigger <- or_trigger(
+      tab_selected_trigger, 
+      updated_reference_reactions_trigger
+    )
+    
     get_graph_trigger <- make_other_trigger(
       url_change_trigger(),
       input$substrate_to_display, input$product_to_display,
-      input$set_network_layout, input$set_network_dimensions,
-      input$organism_to_display,
-      input$hide_cofactors
-    )
-    
-    get_layout_trigger <- make_other_trigger(
-      url_change_trigger(),
       input$set_network_layout, input$set_network_dimensions,
       input$organism_to_display,
       input$hide_cofactors
@@ -328,7 +331,7 @@
       
     }, label = "create_job")
     
-    # --- Peform compuations ---
+    # --- Perform computations ---
     # Perform computations
     compute_job <- shiny::eventReactive({make_predictions_trigger()},
     {
@@ -400,7 +403,7 @@
       s = s[[organism]][[substrate]][[product]]
       
       # Change fluxes to 0 if product has flux less than threshold
-      if (s$flux[which(s$abbreviation == "Ending_metabolite")] < threshold) {
+      if (s$flux[which(s$name == "Ending_metabolite")] < threshold) {
         s$flux = 0
       }
       
@@ -410,35 +413,35 @@
         "TRUE"  = setdiff(union(unbalanced_intermediates, enzyme_cofactors), c(product, substrate)),
         "FALSE" = unbalanced_intermediates
       )
-
+      
       # Make graph
       g = make_network_graph(s = s, to_remove = to_remove)
-      
+
       return(g)
     }, 
     label="get_network_graph")
   
     # Set layout for graph
-    get_network_layout <- shiny::eventReactive(get_layout_trigger(),
+    get_network_layout <- shiny::eventReactive(get_graph_trigger(),
     {
       g <- get_network_graph()
 
       layout <- set_network_layout(graph = g, type = input$set_network_layout, dimensions = input$set_network_dimensions)
-
+      
       return(layout)
     },
     label="get_network_layout")
 
     # --- Update user interface (UI) elements ---
     # Update choices for gene functions (organisms)
-    shiny::observeEvent({list(tab_selected_trigger(),
-                              input$reference_reactions_database)}, {
+    shiny::observeEvent({list(tab_selected_trigger(), input$update_gene_function_choices)}, {
       # Load data
       database <- load_database()
       
       # Get choices
       choices <- get_organism_choices(database = database)
       selected <- get_organism_selections(input$reference_reactions_database)
+      selected <- assign_if_invalid(selected, "Escherichia coli")
       
       update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
       
@@ -455,17 +458,21 @@
     }, label = "update_reference_reactions_choices")
     
     # Update choices for metabolites (substrates, products, and unbalanced intermediates)
-    observeEvent({list(tab_selected_trigger(), updated_reference_reactions_trigger())}, {
+    observeEvent({update_metabolite_choices_trigger()}, {
       # Get choices for metabolites
       selected_reaction <- if (input$reaction_tabs == "Database") input$reference_reactions_database else "Other"
       req(selected_reaction)
       if (input$reaction_tabs == "Database") {
         reference_reactions <- get_reference_reactions_from_database(selected_reaction)
       } else if (input$reaction_tabs == "File upload") {
+        req(input$reference_reactions_upload$datapath)
         reference_reactions <- validate_and_read_file(file_path = input$reference_reactions_upload$datapath)
         reference_reactions <- validate_reference_reactions(reference_reactions)
+        runValidationModal(need(reference_reactions != "", 
+                                "Please check the format of the reference reactions file and try again."))
       }
-      choices <- get_metabolite_names(reference_reactions$equation)
+
+      choices <- get_metabolite_names(reference_reactions$eq)
       
       # Get choices for substrates
       inputId <- if (input$reaction_tabs == "Database") "substrates_database" else "substrates_upload"
@@ -486,9 +493,11 @@
       metabolite_col <- "default_unbalanced_intermediates"
       selected <- get_metabolite_selections(selected_reaction = selected_reaction, 
                                             metabolite_col = metabolite_col)
+      selected <- selected[selected %in% choices]
+
       update_select_input(inputId = inputId, choices = choices, selected = selected)
-    }, ignoreInit = TRUE, label = "update_metabolite_choices") # Must have ignoreInit = TRUE, or module runs on app start up
-    
+    }, label = "update_metabolite_choices")
+  
     # Update choices for substrates, products, and organisms to display
     shiny::observeEvent(url_change_trigger(), {
       results <- get_results()
@@ -672,7 +681,7 @@
     g <- format_network_graph(
       graph = g,
       show_flux = TRUE,
-      show_subsystems = TRUE,
+      show_modules = TRUE,
       vertices_to_highlight = vertices_to_highlight,
       vertex_default_size = vertex_default_size,
       vertex_highlight_size = vertex_highlight_size
