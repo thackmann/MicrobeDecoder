@@ -6,7 +6,7 @@
 Click [here](https://microbe-decorder.org) to access.
 
 ### Download as R Shiny app
-1)  In the menu above, click `Code` -> `Download ZIP`.
+1) Click [here](https://github.com/thackmann/MicrobeDecoder/archive/refs/heads/main.zip) to download the ZIP file
 2) Upzip the downloaded folder, locate `app.R`, open in [R Studio](https://posit.co/download/rstudio-desktop/), and click `Run App`.
 
 ### More information
