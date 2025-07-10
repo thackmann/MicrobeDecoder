@@ -1,9 +1,9 @@
-<p align="center"> <a href="https://microbe-decorder.org"><img src="https://github.com/thackmann/MicrobeDecoder/blob/main/logo.svg" width="400"/></a> </p>
+<p align="center"> <a href="https://microbe-decoder.org"><img src="https://github.com/thackmann/MicrobeDecoder/blob/main/logo.svg" width="400"/></a> </p>
 
 ## Uncover the function of microbes in biological systems
 
 ### Web version
-Click [here](https://microbe-decorder.org) to access.
+Click [here](https://microbe-decoder.org) to access.
 
 ### Download as R Shiny app
 1) Click [here](https://github.com/thackmann/MicrobeDecoder/archive/refs/heads/main.zip) to download the ZIP file
