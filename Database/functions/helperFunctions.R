@@ -301,69 +301,53 @@
 
   #' Split Taxonomy String into Taxonomic Ranks
   #'
-  #' This function processes a single Greengenes-like taxonomy string and splits it into
-  #' individual taxonomic ranks. By default, it extracts the species epithet
-  #' (e.g., "coli" in "Escherichia coli").
+  #' This function splits a string containing an organism's full taxonomy into
+  #' individual ranks. It can accommodate both QIIME2 and MetaPhlAn-style
+  #' strings. By default, it extracts the species epithet
+  #' (e.g., "coli" in "Escherichia coli" or "epidermidis" from "Staphylococcus_epidermidis").
   #'
-  #' @param taxonomy A character string representing a GTDB taxonomy, e.g.,
+  #' @param taxonomy A character string with the organism's taxonomy, e.g.,
   #'   "d__Bacteria;p__Pseudomonadota;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Bordetella;s__Bordetella pseudohinzii".
+  #' @param rank_sep The delimiter between ranks (e.g., ";" for QIIME2, "|" for MetaPhlAn).
+  #' @param ranks Vector of rank names.
+  #' @param prefixes Vector of corresponding prefixes.
   #' @param extract_species_epithet Logical. If `TRUE` (default), the species
   #'   column contains only the epithet (e.g., "coli" from "Escherichia coli").
   #'   If `FALSE`, the full species name is returned.
-  #'
-  #' @return A named character vector with elements for each taxonomic rank:
-  #'   `Domain`, `Phylum`, `Class`, `Order`, `Family`, `Genus`, and `Species`.
-  #'
-  #' @examples
-  #' taxonomy <- "d__Bacteria;p__Bacillota;c__Bacilli;o__Staphylococcales;f__Staphylococcaceae;g__Staphylococcus;s__Staphylococcus epidermidis"
-  #' split_taxonomy(taxonomy)
-  #' split_taxonomy(taxonomy, extract_species_epithet = FALSE)
-  #' Split Taxonomy String into Taxonomic Ranks
-  #'
-  #' This function processes a single Greengenes-like taxonomy string and splits it into
-  #' individual taxonomic ranks. By default, it extracts the species epithet
-  #' (e.g., "coli" in "Escherichia coli").
-  #'
-  #' @param taxonomy A character string representing a GTDB taxonomy, e.g.,
-  #'   "d__Bacteria;p__Pseudomonadota;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Bordetella;s__Bordetella pseudohinzii".
-  #' @param extract_species_epithet Logical. If `TRUE` (default), the species
-  #'   column contains only the epithet (e.g., "coli" from "Escherichia coli").
-  #'   If `FALSE`, the full species name is returned.
-  #'
-  #' @return A named character vector with elements for each taxonomic rank:
-  #'   `Domain`, `Phylum`, `Class`, `Order`, `Family`, `Genus`, and `Species`.
+  #' @param sp_sep The delimiter between genus and species (e.g., " " for QIIME2, "_" for MetaPhlAn).
+  #' 
+  #' @return A named character vector with taxonomic ranks.
   #'
   #' @examples
-  #' taxonomy <- "d__Bacteria;p__Bacillota;c__Bacilli;o__Staphylococcales;f__Staphylococcaceae;g__Staphylococcus;s__Staphylococcus epidermidis"
-  #' split_taxonomy(taxonomy)
-  #' split_taxonomy(taxonomy, extract_species_epithet = FALSE)
-  split_taxonomy <- function(
+  #' split_taxonomy_string("k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; f__Streptococcaceae; g__Streptococcus; s__Streptococcus pneumoniae", rank_sep = ";", sp_sep = " ")
+  #' split_taxonomy_string("k__Bacteria|p__Firmicutes|c__Bacilli|o__Lactobacillales|f__Streptococcaceae|g__Streptococcus|s__Streptococcus_pneumoniae", rank_sep = "|", sp_sep = "_")
+  split_taxonomy_string <- function(
     taxonomy,
-    ranks = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+    rank_sep = ";",
+    ranks = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
     prefixes = paste0(substr(tolower(ranks), 1, 1), "__"),
-    extract_species_epithet = TRUE
+    extract_species_epithet = TRUE,
+    sp_sep = " "
   ) {
-    # Split the taxonomy string by semicolon
-    taxon_split <- strsplit(taxonomy, ";")[[1]]
+    parts <- strsplit(taxonomy, rank_sep, fixed = TRUE)[[1]]
+    out <- setNames(rep(NA_character_, length(ranks)), ranks)
     
-    # Create a named vector from prefix to taxon
-    taxon_named <- setNames(rep(NA_character_, length(ranks)), ranks)
-    for (item in taxon_split) {
+    for (item in parts) {
+      item <- trimws(item)  # remove leading/trailing spaces
       for (i in seq_along(prefixes)) {
         prefix <- prefixes[i]
         if (startsWith(item, prefix)) {
-          taxon_named[ranks[i]] <- sub(paste0("^", prefix), "", item)
+          val <- sub(paste0("^", prefix), "", item)
+          if (ranks[i] == "Species" && extract_species_epithet) {
+            val <- sub(paste0(".*", sp_sep), "", val)
+          }
+          out[ranks[i]] <- val
           break
         }
       }
     }
     
-    # Optionally extract the species epithet
-    if (extract_species_epithet && "Species" %in% ranks && !is.na(taxon_named["Species"])) {
-      taxon_named["Species"] <- sub(".*\\s", "", taxon_named["Species"])
-    }
-    
-    return(taxon_named)
+    return(out)
   }
 
   #' Match an organism to a table based on genus, species, subspecies, and strain.

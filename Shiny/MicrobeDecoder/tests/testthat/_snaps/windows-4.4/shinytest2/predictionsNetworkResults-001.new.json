@@ -1,0 +1,449 @@
+{
+  "output": {
+    "predictionsNetwork-heatmap_plot": {
+      "x": {
+        "layout": {
+          "margin": {
+            "b": 40,
+            "l": 60,
+            "t": 25,
+            "r": 200
+          },
+          "xaxis": {
+            "domain": [
+              0,
+              1
+            ],
+            "automargin": true,
+            "title": false,
+            "showgrid": false,
+            "zeroline": false,
+            "showticklabels": true,
+            "ticklen": 4,
+            "showline": false,
+            "type": "category",
+            "categoryorder": "array",
+            "categoryarray": [
+              "(R)-Lactate",
+              "(S)-Lactate",
+              "Acetate",
+              "Butanoic acid",
+              "Ethanol",
+              "Formate",
+              "Hydrogen",
+              "Propanoate",
+              "Succinate"
+            ]
+          },
+          "yaxis": {
+            "domain": [
+              0,
+              1
+            ],
+            "automargin": true,
+            "title": false,
+            "showgrid": false,
+            "zeroline": false,
+            "showticklabels": true,
+            "ticklen": 4,
+            "showline": false,
+            "type": "category",
+            "categoryorder": "array",
+            "categoryarray": "Escherichia coli"
+          },
+          "paper_bgcolor": "rgba(0,0,0,0)",
+          "plot_bgcolor": "rgba(0,0,0,0)",
+          "shapes": [
+            {
+              "type": "rect",
+              "xref": "paper",
+              "yref": "paper",
+              "x0": 1.05,
+              "x1": 1.0700000000000001,
+              "y0": 0.55499999999999994,
+              "y1": 0.57499999999999996,
+              "fillcolor": "#000000",
+              "line": {
+                "color": "#000000"
+              }
+            },
+            {
+              "type": "rect",
+              "xref": "paper",
+              "yref": "paper",
+              "x0": 1.05,
+              "x1": 1.0700000000000001,
+              "y0": 0.52499999999999991,
+              "y1": 0.54499999999999993,
+              "fillcolor": "#003F00",
+              "line": {
+                "color": "#003F00"
+              }
+            },
+            {
+              "type": "rect",
+              "xref": "paper",
+              "yref": "paper",
+              "x0": 1.05,
+              "x1": 1.0700000000000001,
+              "y0": 0.49499999999999988,
+              "y1": 0.5149999999999999,
+              "fillcolor": "#007F00",
+              "line": {
+                "color": "#007F00"
+              }
+            },
+            {
+              "type": "rect",
+              "xref": "paper",
+              "yref": "paper",
+              "x0": 1.05,
+              "x1": 1.0700000000000001,
+              "y0": 0.46499999999999991,
+              "y1": 0.48499999999999993,
+              "fillcolor": "#00BF00",
+              "line": {
+                "color": "#00BF00"
+              }
+            },
+            {
+              "type": "rect",
+              "xref": "paper",
+              "yref": "paper",
+              "x0": 1.05,
+              "x1": 1.0700000000000001,
+              "y0": 0.43499999999999989,
+              "y1": 0.4549999999999999,
+              "fillcolor": "#00FF00",
+              "line": {
+                "color": "#00FF00"
+              }
+            }
+          ],
+          "annotations": [
+            {
+              "x": 1.05,
+              "y": 0.57699999999999996,
+              "text": "Flux",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "bottom",
+              "font": {
+                "size": 14,
+                "color": "black"
+              },
+              "xshift": 0,
+              "yshift": 0
+            },
+            {
+              "x": 1.075,
+              "y": 0.56499999999999995,
+              "text": "0",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "middle",
+              "font": {
+                "size": 12
+              },
+              "xshift": 5
+            },
+            {
+              "x": 1.075,
+              "y": 0.53499999999999992,
+              "text": "250",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "middle",
+              "font": {
+                "size": 12
+              },
+              "xshift": 5
+            },
+            {
+              "x": 1.075,
+              "y": 0.50499999999999989,
+              "text": "500",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "middle",
+              "font": {
+                "size": 12
+              },
+              "xshift": 5
+            },
+            {
+              "x": 1.075,
+              "y": 0.47499999999999992,
+              "text": "750",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "middle",
+              "font": {
+                "size": 12
+              },
+              "xshift": 5
+            },
+            {
+              "x": 1.075,
+              "y": 0.4449999999999999,
+              "text": "1000",
+              "showarrow": false,
+              "xref": "paper",
+              "yref": "paper",
+              "xanchor": "left",
+              "yanchor": "middle",
+              "font": {
+                "size": 12
+              },
+              "xshift": 5
+            }
+          ],
+          "scene": {
+            "zaxis": {
+              "title": [
+
+              ]
+            }
+          },
+          "hovermode": "closest",
+          "showlegend": true
+        },
+        "source": "A",
+        "config": {
+          "modeBarButtonsToAdd": [
+            "hoverclosest",
+            "hovercompare"
+          ],
+          "showSendToCloud": false
+        },
+        "data": [
+          {
+            "colorbar": {
+              "title": "",
+              "ticklen": 2
+            },
+            "colorscale": [
+              [
+                "0",
+                "#1B1B1B"
+              ],
+              [
+                "1",
+                "#0EE30E"
+              ]
+            ],
+            "showscale": false,
+            "type": "heatmap",
+            "z": [
+              [
+                2333.3333333321089,
+                1999.9999999955928,
+                2333.3333333311616,
+                0,
+                2000.0000000006739,
+                1000.0000000000911,
+                1000.0000000001567,
+                0,
+                2000.0000000001367
+              ]
+            ],
+            "x": [
+              "(R)-Lactate",
+              "(S)-Lactate",
+              "Acetate",
+              "Butanoic acid",
+              "Ethanol",
+              "Formate",
+              "Hydrogen",
+              "Propanoate",
+              "Succinate"
+            ],
+            "y": "Escherichia coli",
+            "zmin": 0,
+            "zmax": 1000,
+            "hoverinfo": "none",
+            "xaxis": "x",
+            "yaxis": "y",
+            "frame": null
+          },
+          {
+            "colorbar": {
+              "title": "",
+              "ticklen": 2
+            },
+            "colorscale": [
+              [
+                "0",
+                "#000000"
+              ],
+              [
+                "1",
+                "#00FF00"
+              ]
+            ],
+            "showscale": false,
+            "type": "heatmap",
+            "z": [
+              [
+                2333.3333333321089,
+                1999.9999999955928,
+                2333.3333333311616,
+                0,
+                2000.0000000006739,
+                1000.0000000000911,
+                1000.0000000001567,
+                0,
+                2000.0000000001367
+              ]
+            ],
+            "x": [
+              "(R)-Lactate",
+              "(S)-Lactate",
+              "Acetate",
+              "Butanoic acid",
+              "Ethanol",
+              "Formate",
+              "Hydrogen",
+              "Propanoate",
+              "Succinate"
+            ],
+            "y": "Escherichia coli",
+            "zmin": 0,
+            "zmax": 1000,
+            "xgap": 2,
+            "ygap": 0,
+            "text": [
+              "structure(function (x, ...) ",
+              "UseMethod(\"text\"), apiSrc = TRUE)"
+            ],
+            "hovertemplate": "<b>Endproduct: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>Flux: %{z:.0f}<\/b><br><extra><\/extra>",
+            "xaxis": "x",
+            "yaxis": "y",
+            "frame": null
+          }
+        ],
+        "highlight": {
+          "on": "plotly_click",
+          "persistent": false,
+          "dynamic": false,
+          "selectize": false,
+          "opacityDim": 0.20000000000000001,
+          "selected": {
+            "opacity": 1
+          },
+          "debounce": 0
+        },
+        "shinyEvents": [
+          "plotly_hover",
+          "plotly_click",
+          "plotly_selected",
+          "plotly_relayout",
+          "plotly_brushed",
+          "plotly_brushing",
+          "plotly_clickannotation",
+          "plotly_doubleclick",
+          "plotly_deselect",
+          "plotly_afterplot",
+          "plotly_sunburstclick"
+        ],
+        "base_url": "https://plot.ly"
+      },
+      "evals": [
+
+      ],
+      "jsHooks": [
+
+      ],
+      "deps": [
+        {
+          "name": "setprototypeof",
+          "version": "0.1",
+          "src": {
+            "href": "setprototypeof-0.1"
+          },
+          "meta": null,
+          "script": "setprototypeof.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "typedarray",
+          "version": "0.1",
+          "src": {
+            "href": "typedarray-0.1"
+          },
+          "meta": null,
+          "script": "typedarray.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "jquery",
+          "version": "3.5.1",
+          "src": {
+            "href": "jquery-3.5.1"
+          },
+          "meta": null,
+          "script": "jquery.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        },
+        {
+          "name": "crosstalk",
+          "version": "1.2.1",
+          "src": {
+            "href": "crosstalk-1.2.1"
+          },
+          "meta": null,
+          "script": "js/crosstalk.min.js",
+          "stylesheet": "css/crosstalk.min.css",
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        },
+        {
+          "name": "plotly-htmlwidgets-css",
+          "version": "2.11.1",
+          "src": {
+            "href": "plotly-htmlwidgets-css-2.11.1"
+          },
+          "meta": null,
+          "script": null,
+          "stylesheet": "plotly-htmlwidgets.css",
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "plotly-main",
+          "version": "2.11.1",
+          "src": {
+            "href": "plotly-main-2.11.1"
+          },
+          "meta": null,
+          "script": "plotly-latest.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        }
+      ]
+    }
+  }
+}

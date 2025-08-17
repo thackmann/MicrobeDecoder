@@ -12,7 +12,7 @@ choices_traits_search = c(
   growth_var,
   morphology_var,
   isolation_var
-  )
+)
 
 # Choices for checkboxes
 choices_checkboxes_search <- list(

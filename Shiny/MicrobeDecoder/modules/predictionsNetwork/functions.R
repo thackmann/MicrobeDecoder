@@ -14,14 +14,15 @@
   #' @param uppbnd A numeric vector of upper bounds for each reaction
   #' @param obj_coef A numeric vector of objective coefficients for each reaction
   #' @param eq A character vector of equation for the reaction
+  #' @param rn A character vector of reaction ID for each reaction
   #' @param ec A character vector of the EC number for the reaction
   #' @param ko A character vector of KO IDs for the reaction
   #' @param md A character vector of modules corresponding to the reaction
   #' @return A data frame of the metabolic network model with the reaction added
   #' @export
-  add_one_reaction = function(df = NULL, name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, ec = NA, ko = NA, md = NA) {
+  add_one_reaction = function(df = NULL, name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, rn = NA, ec = NA, ko = NA, md = NA) {
     #Add a reaction
-    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, rn, ec, ko, md)
     
     #Format equations
     append$eq = format_metabolite_name(name = append$eq, remove_coefficient = FALSE)
@@ -137,16 +138,16 @@
   #' @return A data frame of the metabolic network model with glycolysis reactions added
   #' @export
   add_glycolysis = function(df = NULL) {
-    df = add_one_reaction(df, name = "Extra_reaction_1", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Glucose <=> ADP + D-Glucose 6-phosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_2", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glucose 6-phosphate <=> D-Fructose 6-phosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_3", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Fructose 6-phosphate <=> ADP + D-Fructose 1,6-bisphosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_4", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "D-Fructose 1,6-bisphosphate <=> Glycerone phosphate + D-Glyceraldehyde 3-phosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_5", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate <=> Glycerone phosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_6", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate + Orthophosphate + NAD+ <=> 3-Phospho-D-glyceroyl phosphate + NADH + H+", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_7", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + 3-Phospho-D-glycerate <=> ADP + 3-Phospho-D-glyceroyl phosphate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_8", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> 3-Phospho-D-glycerate", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_9", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> Phosphoenolpyruvate + H2O", ec = NA, ko = NA, md = NA)
-    df = add_one_reaction(df, name = "Extra_reaction_10", lowbnd = -1000, uppbnd = 0, obj_coef = 0, eq = "ATP + Pyruvate <=> ADP + Phosphoenolpyruvate", ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_1", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Glucose <=> ADP + D-Glucose 6-phosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_2", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glucose 6-phosphate <=> D-Fructose 6-phosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_3", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + D-Fructose 6-phosphate <=> ADP + D-Fructose 1,6-bisphosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_4", lowbnd = 0, uppbnd = 1000, obj_coef = 0, eq = "D-Fructose 1,6-bisphosphate <=> Glycerone phosphate + D-Glyceraldehyde 3-phosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_5", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate <=> Glycerone phosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_6", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "D-Glyceraldehyde 3-phosphate + Orthophosphate + NAD+ <=> 3-Phospho-D-glyceroyl phosphate + NADH + H+", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_7", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "ATP + 3-Phospho-D-glycerate <=> ADP + 3-Phospho-D-glyceroyl phosphate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_8", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> 3-Phospho-D-glycerate", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_9", lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq = "2-Phospho-D-glycerate <=> Phosphoenolpyruvate + H2O", rn  = NA, ec = NA, ko = NA, md = NA)
+    df = add_one_reaction(df, name = "Extra_reaction_10", lowbnd = -1000, uppbnd = 0, obj_coef = 0, eq = "ATP + Pyruvate <=> ADP + Phosphoenolpyruvate", rn  = NA, ec = NA, ko = NA, md = NA)
     
     df$eq = format_metabolite_name(name = df$eq, remove_coefficient = FALSE)
     
@@ -188,10 +189,11 @@
     uppbnd = uppbnd[index]
     obj_coef = 0
     eq = paste0(names, " <=>")
+    rn = NA
     ec = NA
     ko = NA
     md = NA
-    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, rn, ec, ko, md)
     
     df = rbind(df, append)
     
@@ -218,6 +220,7 @@
     uppbnd = c(0, uppbnd)
     obj_coef = c(0, 1)
     eq = c(paste0(starting_metabolite, " <=>"), paste0(ending_metabolite, " <=>"))
+    rn = NA
     ec = NA
     ko = NA
     md = NA
@@ -228,7 +231,7 @@
       df = df[-match,]
     }
     
-    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
+    append = data.frame(name, lowbnd, uppbnd, obj_coef, eq, rn, ec, ko, md)
     df = rbind(df, append)
     
     return(df)
@@ -277,20 +280,21 @@
   #' The user specifies the name, lower bound, upper bound, objective coefficient, eq, 
   #' official name, gene association, and md for each reaction
   #' 
-  #' @param name A character vector of names for each reaction
+  #' @param name A character vector of names for enzyme for the reaction
   #' @param lowbnd A numeric vector of lower bounds for each reaction
   #' @param uppbnd A numeric vector of upper bounds for each reaction
   #' @param obj_coef A numeric vector of objective coefficients for each reaction
   #' @param eq A character vector of equation for the reaction
+  #' @param rn A character vector of reaction ID for each reaction
   #' @param ec A character vector of the EC number for the reaction
   #' @param ko A character vector of KO IDs for the reaction
   #' @param md A character vector of modules corresponding to the reaction
   #' @return A data frame of the formatted data
   #' @export
   #' @importFrom dplyr distinct
-  create_network_dataframe = function(name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, ec = NA, ko = NA, md = NA) {
+  create_network_dataframe = function(name = NA, lowbnd = -1000, uppbnd = 1000, obj_coef = 0, eq, rn = NA, ec = NA, ko = NA, md = NA) {
     # Create dataframe
-    df = data.frame(name, lowbnd, uppbnd, obj_coef, eq, ec, ko, md)
+    df = data.frame(name, lowbnd, uppbnd, obj_coef, rn, eq, ec, ko, md)
     
     # Format equations  
     df$eq = format_metabolite_name(name = df$eq, remove_coefficient = FALSE)
@@ -308,8 +312,9 @@
   #' If no eq is provided, the function will create a model with reactions of glycolysis as an example 
   #' 
   #' @param eq A character vector of equation for the reaction
-  #' @param way A character vector of the way of each reaction (Forward, Reverse, or Biwayal)
-  #' @param name A character vector of names for each reaction
+  #' @param way A character vector of the way of each reaction (Forward, Reverse, or Bidirectional)
+  #' @param name A character vector of names for enzyme for the reaction
+  #' @param rn A character vector of reaction ID for each reaction
   #' @param ec A character vector of the EC number for the reaction
   #' @param ko A character vector of KO IDs for the reaction
   #' @param md A character vector of modules corresponding to the reaction
@@ -325,9 +330,14 @@
   #' build_network_model()
   #' @export
   #' @importFrom dplyr if_else
-  build_network_model = function(eq = NULL, way = "Biwayal", 
-                                 name = NA, ec = NA, ko = NA, 
-                                 md = NA, starting_metabolite = "D-Glucose", 
+  build_network_model = function(eq = NULL, 
+                                 way = "Bidirectional", 
+                                 name = NA, 
+                                 rn = NA,
+                                 ec = NA, 
+                                 ko = NA, 
+                                 md = NA, 
+                                 starting_metabolite = "D-Glucose", 
                                  ending_metabolite = "Pyruvate", 
                                  unbalanced_intermediates = c("NAD+", "NADH", "ATP", "ADP", "Orthophosphate", "H2O", "H+", "CO2"), 
                                  unbalanced_products = NULL, remove_redundant_reactions = TRUE, 
@@ -341,7 +351,7 @@
     lowbnd = vector(length = length(eq))
     uppbnd = dplyr::if_else(way == "Reverse", 0, 1000)
     lowbnd = dplyr::if_else(way == "Forward", 0, -1000)
-    df = create_network_dataframe(name, lowbnd = lowbnd, uppbnd = uppbnd, obj_coef = 0, eq = eq, ec = ec, ko = ko, md = md)
+    df = create_network_dataframe(name, lowbnd = lowbnd, uppbnd = uppbnd, obj_coef = 0, eq = eq, rn = rn, ec = ec, ko = ko, md = md)
     df$name = paste0("Enzyme_", seq_len(nrow(df)))
 
     # Add Enzymes of Glycolysis
@@ -438,6 +448,7 @@
     reaction_table <- df %>% dplyr::rename(
       abbreviation = "name",
       equation = "eq",
+      rn = "rn",
       officialName = "ec",
       geneAssociation = "ko",
       subsystem = "md"
@@ -450,6 +461,7 @@
     s <- s %>% dplyr::rename(
       name = "abbreviation",
       eq = "equation",
+      rn = "rn",
       ec = "officialName",
       ko = "geneAssociation",
       md = "subsystem"
@@ -592,7 +604,7 @@
   #'
   #' This is the main function for predicting traits in the modules
   #'
-  #' @param reference_reactions A data frame of reference reactions.
+  #' @param reference_network A data frame of reference network.
   #' @param gene_functions A data frame of gene functions.
   #' @param substrates Character vector of substrates.
   #' @param products Character vector of products.
@@ -602,25 +614,26 @@
   #'
   #' @return A named list with solved models and fluxes.
   #' @export
-  compute_network_predictions <- function(reference_reactions, gene_functions, substrates, products, unbalanced_intermediates, all_subunits, ns = NULL) {
+  compute_network_predictions <- function(reference_network, gene_functions, substrates, products, unbalanced_intermediates, all_subunits, ns = NULL) {
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Getting reference network model")
     
     # Get reference network model
     reference_network_model <- build_network_model(
-      eq = reference_reactions$eq,
-      way = reference_reactions$way,
-      name = reference_reactions$name,
-      ec = reference_reactions$ec,
-      ko = reference_reactions$ko,
-      md = reference_reactions$md,
+      eq = reference_network$eq,
+      way = reference_network$way,
+      name = reference_network$name,
+      rn = reference_network$rn,
+      ec = reference_network$ec,
+      ko = reference_network$ko,
+      md = reference_network$md,
       starting_metabolite = NULL,
       ending_metabolite = NULL,
       unbalanced_intermediates = unbalanced_intermediates,
       unbalanced_products = products[products %nin% unbalanced_intermediates],
       remove_redundant_reactions = FALSE
     )
-    
+
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 0)  
     cat(file = stderr(), paste0("Started prediction at ", Sys.time(), "\n"))
@@ -634,15 +647,124 @@
                                        all_subunits, 
                                        ns)
     fluxes <- get_fluxes(solved_models, organism_names, substrates, products)
-    
+
     # Update progress
     cat(file = stderr(), paste0("Ended prediction at ", Sys.time(), "\n"))
     
     return(list(solved_models = solved_models, fluxes = fluxes))
   }
 
+# === Get inputs ===
+  #' Get Reference Network
+  #'
+  #' This function returns the reference network from a database, built-in session data, or uploaded file.
+  #'
+  #' @param network_from_database Logical. Use database source?
+  #' @param network_from_builder Logical. Use in-session network builder?
+  #' @param network_from_upload Logical. Use uploaded file?
+  #' @param selected_network A character string indicating the selected reference network
+  #' @param session The Shiny session (needed for accessing userData).
+  #' @param upload_path File path to the uploaded network file (if using upload source).
+  #'
+  #' @return A validated reference network dataframe
+  get_reference_network <- function(network_from_database,
+                                    network_from_builder,
+                                    network_from_upload,
+                                    selected_network = NULL,
+                                    session = shiny::getDefaultReactiveDomain(),
+                                    upload_path = NULL) {
+    if (network_from_database) {
+      reference_network <- get_reference_network_from_database(selected_network)
+    } else if (network_from_builder) {
+      reference_network <- session$userData$network_data()
+    } else if (network_from_upload) {
+      reference_network <- validate_and_read_file(file_path = upload_path)
+      reference_network <- validate_reference_network(reference_network)
+    } else {
+      stop("No valid source specified for reference network.")
+    }
+
+    runValidationModal(shiny::need(nrow(reference_network) > 0,
+                            "Please check the format of the reference network file and try again."))
+    
+    return(reference_network)
+  }
+  
+  #' Get Inputs for Metabolic Networks Module
+  #'
+  #' This is the main function for getting all inputs for the module
+  #'
+  #' @param session Shiny session object.
+  #' @param functions_from_database Logical. Whether gene functions come from the database.
+  #' @param functions_from_upload Logical. Whether gene functions are uploaded by user.
+  #' @param network_from_database Logical. Whether reference network comes from the database.
+  #' @param network_from_builder Logical. Whether reference network is built in-session.
+  #' @param network_from_upload Logical. Whether reference network is uploaded by user.
+  #' @param selected_organisms Character vector of selected organism IDs.
+  #' @param gene_functions_upload_path File path to uploaded gene functions (if any).
+  #' @param reference_network_upload_path File path to uploaded network (if any).
+  #' @param selected_reference_network Character or list of reference network IDs from database.
+  #' @param substrates Character vector of selected substrates.
+  #' @param products Character vector of selected products.
+  #' @param unbalanced_intermediates Character vector of metabolites to exclude.
+  #' @param all_subunits Logical. Whether to consider all subunits for module completion.
+  #'
+  #' @return A list of processed inputs.
+  get_network_inputs <- function(
+    session = shiny::getDefaultReactiveDomain(),
+    functions_from_database,
+    functions_from_upload,
+    network_from_database,
+    network_from_builder,
+    network_from_upload,
+    selected_organisms,
+    gene_functions_upload_path,
+    reference_network_upload_path,
+    selected_reference_network,
+    substrates,
+    products,
+    unbalanced_intermediates,
+    all_subunits
+  ) {
+    # Load gene functions
+    gene_functions <- get_gene_functions(
+      functions_from_database = functions_from_database,
+      functions_from_upload = functions_from_upload,
+      selected_organisms = selected_organisms,
+      upload_path = gene_functions_upload_path
+    )
+    
+    # Get organism names
+    organism_names <- colnames(gene_functions)
+
+    # Get reference network
+    reference_network <- get_reference_network(
+      network_from_database = network_from_database,
+      network_from_builder = network_from_builder,
+      network_from_upload = network_from_upload,
+      selected_network = selected_reference_network,
+      session = session,
+      upload_path = reference_network_upload_path
+    )
+    
+    # Validate substrates and products
+    runValidationModal(shiny::need(substrates != "", "Please choose at least one substrate"))
+    runValidationModal(shiny::need(products != "", "Please choose at least one product"))
+    
+    # Compile and return input list
+    list(
+      gene_functions = gene_functions,
+      organism_names = organism_names,
+      reference_network = reference_network,
+      substrates = substrates,
+      products = products,
+      unbalanced_intermediates = unbalanced_intermediates,
+      all_subunits = all_subunits
+    )
+  }
+  
 # === Loading and processing configuration file ===  
-  #' Get Configuration for Reference Reactions
+  #' Get Configuration for Reference Network
   #'
   #' Loads the network configuration and returns the appropriate entry based on the selected tab.
   #' If the tab is `"Database"`, it uses `database_val`; otherwise, it defaults to `"Other"`.
@@ -658,57 +780,54 @@
   #' get_network_config("Database", "Glucose fermentation")
   #' get_network_config("File upload", "")
   get_network_rxn_config <- function(tab, database_val) {
-    network_config <- load_config_networks_reference_reactions()
-    config_list <- split(network_config, ~reference_reaction)
+    network_config <- load_config_reference_networks()
+    config_list <- split(network_config, ~reference_network)
     ref <- if (tab == "Database") database_val else "Other"
     config_list[[ref]] %||% config_list[["Other"]]
   }
   
-  #' Get Choices for Reference Reactions in the Database
+  #' Get Choices for Reference Network in the Database
   #'
   #' This function retrieves the available reference reaction names from the 
-  #' configuration file for reference reactions, excluding the "Other" category.
+  #' configuration file for reference network, excluding the "Other" category.
   #'
   #' @return A character vector of reference reaction names.
   #' @examples
-  #' choices <- get_choices_reference_reactions_in_database()
+  #' choices <- get_choices_reference_network_in_database()
   #'
   #' @export
-  get_choices_reference_reactions_in_database <- function() {
-    network_config <- load_config_networks_reference_reactions()
-    choices <- setdiff(unique(network_config$reference_reaction), "Other")
+  get_choices_reference_network_in_database <- function() {
+    network_config <- load_config_reference_networks()
+    choices <- setdiff(unique(network_config$reference_network), "Other")
     return(choices)
   }
   
-  #' Get Reference Reactions from the Database
+  #' Get Reference Network from the Database
   #'
-  #' This function retrieves a set of reference reactions corresponding to a selected 
+  #' This function retrieves a set of reference networks corresponding to a selected 
   #' reference reaction name. It uses a configuration file to identify the appropriate 
   #' file and then loads its contents.
   #'
-  #' @param selected_reactions A character string indicating the selected reference reaction.
+  #' @param selected_network A character string indicating the selected reference network.
+  #' @param all_option A character string representing the "select all" value. Default is "All reactions".
   #'
-  #' @return An R object containing the loaded reference reaction data.
+  #' @return A dataframe containing the filtered or complete reference network.
   #' @examples
-  #' ref_data <- get_reference_reactions_from_database("Fermentation (glucose)")
+  #' ref_data <- get_reference_network_from_database("Fermentation (glucose)")
+  #' ref_all <- get_reference_network_from_database("All")
   #'
   #' @export
-  get_reference_reactions_from_database <- function(selected_reactions) {
-    network_config <- load_config_networks_reference_reactions()
-
-    file_name <- network_config %>%
-      dplyr::filter(reference_reaction == selected_reactions) %>%
-      dplyr::pull(file_name)
+  get_reference_network_from_database <- function(selected_network,
+                                                  all_option = "All reactions") {
+    main_network <- load_main_reference_network()
     
-    # Check for missing or invalid file
-    if (length(file_name) == 0 || is.na(file_name)) {
-      stop(paste("No file name found for reference reaction:", selected_reactions))
+    if (selected_network != all_option) {
+      configured_network <- dplyr::filter(main_network, nt == selected_network)
+    } else {
+      configured_network <- main_network
     }
-
-    # Load the object from file
-    obj <- check_and_load(file_name)
     
-    return(obj)
+    return(configured_network)
   }
   
   #' Get Default Selections for Metabolites from the Configuration File
@@ -718,17 +837,17 @@
   #' The function loads the configuration file, and retrieves information for a given 
   #' reference reaction (row) and metabolite type (column). 
   #'
-  #' @param selected_reaction A character string indicating the reference reaction name.
+  #' @param selected_network A character string indicating the selected reference network
   #' @param metabolite_col A string giving the column name in the configuration that holds the metabolites.
   #'
   #' @return A character vector of default metabolites (may be empty if not found).
   #' @export
-  get_metabolite_selections <- function(selected_reaction, metabolite_col){
-    network_config <- load_config_networks_reference_reactions()
+  get_metabolite_selections <- function(selected_network, metabolite_col){
+    network_config <- load_config_reference_networks()
     
     # Safely get the cell content
     value <- network_config %>%
-      dplyr::filter(.data$reference_reaction == selected_reaction) %>%
+      dplyr::filter(.data$reference_network == selected_network) %>%
       dplyr::pull(.data[[metabolite_col]])
     
     if (length(value) == 0 || is.na(value)) {
@@ -740,32 +859,31 @@
     
     return(default)
   }
- 
   
-  #' Get Default Selections for Organisms
+  #' Get Selections for Organisms from Configuration File
   #'
   #' This function retrieves a default selection of organisms corresponding to a selected 
-  #' reference reaction name. It uses a configuration file to identify the appropriate 
+  #' network name. It uses a configuration file to identify the appropriate 
   #' file and then loads its contents.
   #'
-  #' @param selected_reaction A character string indicating the reference reaction name.s.
+  #' @param selected_network A character string indicating the selected reference network
   #' 
   #' @return A character vector of default metabolites (may be empty if not found).
   #' @export
-  get_organism_selections <- function(selected_reaction) {
-    network_config <- load_config_networks_reference_reactions()
+  get_default_organism_selections <- function(selected_network) {
+    network_config <- load_config_reference_networks()
     
     value <- network_config %>%
-      dplyr::filter(.data$reference_reaction == selected_reaction) %>%
+      dplyr::filter(.data$reference_network == selected_network) %>%
       dplyr::pull(selected_organisms)
     
     if (length(value) == 0 || is.na(value)) {
       return(character(0))
     }
     
-    default <- strsplit(value, ";")[[1]]
+    selections <- strsplit(value, ";")[[1]]
     
-    return(default)
+    return(selections)
   }
   
   #' Get Configuration for Network Plots
@@ -818,6 +936,65 @@
   }
   
   
+# === User interface (UI) ===  
+  #' Create a Custom File Input UI with Modal Trigger
+  #'
+  #' This function creates a UI element that mimics a Shiny file input box but instead launches a modal dialog 
+  #' when clicked. It is useful in cases where the "file input" is generated or selected interactively 
+  #' (e.g., via a network builder or configuration tool) rather than uploaded.
+  #'
+  #' The element includes a styled button labeled \code{"Build..."} that triggers a modal when clicked, and a 
+  #' read-only text field showing the name or status of the "file". An optional label can be displayed above.
+  #'
+  #' @param id The module ID used to namespace the input elements.
+  #' @param label Optional text label shown above the pseudo file input. Default is \code{NULL}.
+  #'
+  #' @return A Shiny UI tag list simulating a file input with a modal trigger.
+  #' @export
+  #' @importFrom shiny NS div tags actionLink
+  create_network_input <- function(id, label = NULL) {
+    ns <- NS(id)
+    
+    div(
+      class = "form-group shiny-input-container",
+      if (!is.null(label)) create_input_label(ns("network_builder"), label),
+      
+      # File input with Build button
+      div(
+        class = "input-group",
+        tags$label(
+          class = "input-group-btn input-group-prepend",
+          actionLink(
+            inputId = ns("open_modal"),
+            label = tags$span(class = "btn btn-default btn-file", "Build...")
+          )
+        ),
+        tags$input(
+          id = ns("network_name_display"),
+          type = "text",
+          class = "form-control",
+          placeholder = "No network built",
+          readonly = "readonly"
+        )
+      )
+    )
+  }
+  
+  
+  #' Create conditional flex item
+  #'
+  #' @param ns Namespace function
+  #' @param condition JavaScript condition string
+  #' @param ui_element A UI element to include inside the flex-item div
+  #' @return A conditionalPanel with standardized structure
+  create_conditional_flex_item <- function(ns, condition, ui_element) {
+    shiny::conditionalPanel(
+      condition = condition,
+      ns = ns,
+      div(class = "flex-item", ui_element)
+    )
+  }  
+  
 # === Other functions ===
   #' Construct Graph of Metabolic Network
   #' 
@@ -828,6 +1005,7 @@
   #' @param add_flux A logical indicating whether to add fluxes to the graph
   #' @param to_remove A character vector of metabolites not to be displayed in the graph
   #' @param keep_missing_names A logical indicating whether to keep reactions where \code{ec} is \code{NA}.
+  #' @param add_underscore A logical indicating whether to add underscores to the names
   #' @return An igraph object of the metabolic network
   #' @export
   #' @importFrom igraph graph_from_data_frame
@@ -835,21 +1013,25 @@
   #' @importFrom dplyr distinct select
   make_network_graph <- function(s, add_flux=TRUE, 
                                  to_remove = c("NAD+", "NADH", "ATP", "ADP", "Orthophosphate", "H2O", "H+", "CO2"), 
-                                 keep_missing_names = TRUE) 
+                                 keep_missing_names = TRUE,
+                                 add_underscore = FALSE) 
   {
     # Get data
     df <- s
     
     # Get names of reactants and products
-    df <- tidyr::separate(df, col = eq, into = c("reactant", "product"), sep = "<=>")
-    df <- df[which(df$reactant != ""), ] # Remove reactions with no reactants
-    df <- df[which(df$product != ""), ] # Remove reactions with no products
-    df <- tidyr::separate_rows(df, reactant, sep = " \\+ ")
-    df <- tidyr::separate_rows(df, product, sep = " \\+ ")
+    df <- df %>%
+      dplyr::mutate(eq_original = eq) %>% 
+      tidyr::separate(col = eq, into = c("reactant", "product"), sep = "<=>") %>%
+      dplyr::filter(reactant != "", product != "") %>%
+      tidyr::separate_rows(reactant, sep = " \\+ ") %>%
+      tidyr::separate_rows(product,  sep = " \\+ ") %>%
+      dplyr::relocate(eq_original, .after = name) %>%
+      dplyr::rename(eq = eq_original)
     
     # Format names of reactants and products
-    df$reactant <- format_metabolite_name(name = df$reactant, add_underscore = FALSE)
-    df$product <- format_metabolite_name(name = df$product, add_underscore = FALSE)
+    df$reactant <- format_metabolite_name(name = df$reactant, add_underscore = add_underscore)
+    df$product <- format_metabolite_name(name = df$product, add_underscore = add_underscore)
     df <- dplyr::distinct(df)
     
     # Remove any names (usually unbalanced metabolites) not to be displayed in graph
@@ -867,9 +1049,9 @@
       # Add fluxes
       match <- match(x = paste0(df$name), table = paste0(s$name))
       df$flux <- s$flux[match]
-      df <- dplyr::select(df, reactant, product, ec, md, flux, lowbnd, uppbnd)
+      df <- df %>% dplyr::select(dplyr::any_of(c("reactant", "product", "ec", "eq", "ko", "rn", "md", "flux", "lowbnd", "uppbnd")))
     }else{
-      df <- dplyr::select(df, reactant, product, ec, md, lowbnd, uppbnd)
+      df <- df %>% dplyr::select(dplyr::any_of(c("reactant", "product", "ec", "eq", "ko", "rn", "md")))
     }
     
     #Get graph
@@ -1010,7 +1192,9 @@
     vertices <- data.frame(name = vertices, color = vertex_default_color, size = vertex_default_size)
     
     # Initialize fluxes data frame
-    fluxes <- df %>% dplyr::select(lowbnd, uppbnd, flux)
+    if (show_flux) {
+      fluxes <- df %>% dplyr::select(lowbnd, uppbnd, flux)
+    }
     
     # Set default vertex attributes
     vertices$color <- vertex_default_color
@@ -1118,24 +1302,24 @@
     return(graph)
   }
   
-  #' Validate Reference Reactions Data
+  #' Validate Reference Network Data
   #'
-  #' This function checks whether the uploaded reference reactions data contains all required columns.
+  #' This function checks whether the uploaded reference network data contains all required columns.
   #' If any required columns are missing, it returns an empty string.
   #'
-  #' @param reference_reactions Dataframe. The uploaded reference reactions data.
+  #' @param reference_network Dataframe. The uploaded reference network data.
   #' 
   #' @return The validated dataframe or an empty string if required columns are missing.
   #' @export
   #' @importFrom dplyr select
-  validate_reference_reactions <- function(reference_reactions) {
+  validate_reference_network <- function(reference_network) {
     required_columns <- c("name", "eq", "way", "ec", "ko", "md")
     
-    if (!all(required_columns %in% colnames(reference_reactions))) {
+    if (!all(required_columns %in% colnames(reference_network))) {
       return("")
     }
     
-    return(reference_reactions)
+    return(reference_network)
   }
   
   #' Keep only elements that are allowed
@@ -1192,4 +1376,159 @@
     name = sort(name)
     
     return(name)
+  }
+  
+  #' Create Labeled Choices from Multiple Columns
+  #'
+  #' Generates a named character vector for use in select inputs,
+  #' where each value is labeled with its variable (e.g., "Glycolysis (module)").
+  #' Preserves order within each column and omits NAs.
+  #'
+  #' @param data A data frame containing the source columns.
+  #' @param vars Named character vector of the form `c("column_name" = "label")`.
+  #' @param all_option A character string to use as the "select all" option. If `NULL`, it's omitted.
+  #'
+  #' @return A named character vector with labels for display and original values as choices.
+  #' @examples
+  #' vars_to_label <- c("md" = "module", "rn" = "reaction", "ko" = "KO", "eq" = "equation")
+  #' create_labeled_choices(main_network, vars_to_label, all_option = "All reactions")
+  #'
+  #' @export
+  create_labeled_choices <- function(data, vars, all_option = "All reactions") {
+    choices <- purrr::map2(
+      names(vars), vars,
+      function(var, label) {
+        vals <- data[[var]]
+        vals <- vals[!is.na(vals)]
+        vals <- vals[!duplicated(vals)]
+        stats::setNames(vals, paste0(vals, " (", label, ")"))
+      }
+    ) |>
+      unlist(use.names = TRUE)
+    
+    if (!is.null(all_option)) {
+      choices <- c(setNames(all_option, all_option), choices)
+    }
+    
+    return(choices)
+  }
+  
+  #' Filter Metabolic Network by Value Match
+  #'
+  #' This function filters a reference network based on whether any of 
+  #' the specified values appear in selected columns (`md`, `ko`, `rn`, or `eq`). 
+  #' It returns the subset of rows where any of the values are present in at least 
+  #' one of those columns. This allows users to select reactions from a large
+  #' network.  
+  #'
+  #' @param data A data frame or tibble containing at least the columns `nt`, `md`, 
+  #'  `ko`, `rn`, and `eq`. Typically, this will be the main reference network.
+  #' @param values A character vector of values to match against the `md`, `ko`, 
+  #'   `rn`, or `eq` columns. If `NULL`, the original `data` is returned unmodified.
+  #' @param all_option A character string used to indicate "no filtering" (default = "All").
+  #'
+  #' @return A data frame containing only rows where at least one of the given 
+  #'   `values` appears in any of the target columns.
+  #'
+  #' @examples
+  #' \dontrun{
+  #'   filter_network(data, values = c("K00844", "R00232"))
+  #'   filter_network(data, values = "All") # returns all rows
+  #' }
+  #'
+  #' @export
+  filter_network <- function(data, values = NULL, all_option = "All reactions") {
+    if (is.null(values) || (length(values) == 1 && values == all_option)) {
+      return(data)
+    }
+    
+    data <- data %>% 
+      dplyr::filter(
+        nt %in% values |
+          md %in% values |
+          ko %in% values |
+          rn %in% values |
+          eq %in% values
+      ) %>%
+      dplyr::distinct(md, ko, rn, eq, .keep_all = TRUE)
+
+    return(data)
+  }
+  
+  #' Flatten a nested named list into a tibble of character columns
+  #'
+  #' This helper applies safe string extraction to each element of the list
+  #' and returns a tibble with character columns.
+  #'
+  #' @param x A named list where each element is a list of character vectors.
+  #' @param fields Optional character vector of fields to include (default: all).
+  #' @return A tibble with flattened character columns.
+  flatten_named_list <- function(x, fields = names(x)) {
+    purrr::map_dfc(fields, function(field) {
+      val <- purrr::map_chr(x[[field]], safe_extract_chr)
+      tibble::tibble(!!field := val)
+    })
+  }
+  
+  #' Determine Metabolites to Remove from the Network
+  #'
+  #' This function returns a character vector of metabolites to exclude from the graph,
+  #' based on user input flags and exceptions.
+  #'
+  #' @param hide_unbalanced_intermediates Logical. Whether to remove unbalanced intermediates.
+  #' @param hide_cofactors Logical. Whether to remove cofactors.
+  #' @param unbalanced_intermediates Character vector of unbalanced intermediates.
+  #' @param enzyme_cofactors Character vector of cofactors.
+  #' @param exceptions Character vector of metabolites to always keep (e.g., product, substrate).
+  #'
+  #' @return Character vector of metabolite names to remove.
+  get_metabolites_to_remove <- function(hide_unbalanced_intermediates = FALSE,
+                                        hide_cofactors = FALSE,
+                                        unbalanced_intermediates = character(),
+                                        enzyme_cofactors = character(),
+                                        exceptions = character()) {
+    to_remove <- character()
+    
+    if (isTRUE(hide_unbalanced_intermediates)) {
+      to_remove <- union(to_remove, unbalanced_intermediates)
+    }
+    if (isTRUE(hide_cofactors)) {
+      to_remove <- union(to_remove, enzyme_cofactors)
+    }
+    
+    setdiff(to_remove, exceptions)
+  }
+
+# === Other ===
+  #' Get Metabolite Choices for a Selected Reaction
+  #'
+  #' This function retrieves all metabolite names (e.g., substrates, products, or intermediates)
+  #' involved in a selected reaction by parsing its reaction equations from the reference network.
+  #'
+  #' @param network_from_database Logical. Use database source?
+  #' @param network_from_builder Logical. Use in-session network builder?
+  #' @param network_from_upload Logical. Use uploaded file?
+  #' @param selected_network A character string indicating the selected reference network
+  #' @param session The Shiny session (needed for accessing userData).
+  #' @param upload_path File path to the uploaded network file (if using upload source).
+  #'
+  #' @return A character vector of metabolite names involved in the reaction.
+  #' @export
+  get_metabolite_choices <- function(network_from_database = FALSE,
+                                     network_from_builder = FALSE,
+                                     network_from_upload = FALSE,
+                                     selected_network = NULL,
+                                     session = shiny::getDefaultReactiveDomain(),
+                                     upload_path = NULL) {
+    reference_network <- get_reference_network(
+      network_from_database = network_from_database,
+      network_from_builder = network_from_builder,
+      network_from_upload = network_from_upload,
+      selected_network = selected_network,
+      upload_path = upload_path,
+    )
+    
+    metabolites <- get_metabolite_names(reference_network$eq)
+    
+    return(metabolites)
   }

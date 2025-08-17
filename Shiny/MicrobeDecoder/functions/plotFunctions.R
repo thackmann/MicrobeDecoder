@@ -711,6 +711,10 @@
       arrow.width = 1,
       lty = 1,
       label = NA,
+      ec = NA,
+      eq = NA,
+      rn = NA,
+      ko = NA,
       label.family = "serif",
       label.font = 1,
       label.cex = 1,
@@ -755,6 +759,14 @@
     # Get attributes from graph
     attributes = extract_graph_attr(graph)
     edge_data <- as.data.frame(attributes$edges)
+    
+    # Format labels for edges
+    edge_data$label <- paste0(
+      "<br>", edge_data$eq,
+      "<br>EC: ", edge_data$ec,
+      "<br>rn: ", edge_data$rn,
+      "<br>KO: ", edge_data$ko
+    )
     
     # Adjust edge color for opacity (opacity not directly supported)
     edge_data$color <- mapply(hex_to_rgba, hex_color = edge_data$color, alpha = edge_data$opacity, SIMPLIFY = TRUE)
@@ -848,7 +860,8 @@
             mode = 'lines',
             line = list(shape = "spline", color = edge_groups$color[i], width = edge_groups$width[i]),
             name =  trace_name,
-            hoverinfo = 'none'
+            text = rep(filtered$label, each = 4),
+            hoverinfo = 'text'
           )
       } else if (ncol(layout) == 3) {
         #3D plots
@@ -865,7 +878,8 @@
             mode = 'lines',
             line = list(shape = "spline", color = edge_groups$color[i], width = edge_groups$width[i]),
             name =  trace_name,
-            hoverinfo = 'none'
+            text = rep(filtered$label, each = 4),
+            hoverinfo = 'text'
           )
       }
     }
@@ -1306,11 +1320,11 @@
   #' @importFrom plotly plot_ly add_trace layout
   #' @importFrom igraph vcount ecount vertex_attr edge_attr as_data_frame
   plot_network <- function(graph, layout, 
-                           spread = 0.05, coord_fixed = TRUE, 
-                           network_legend_key = NULL,
-                           showlegend = TRUE, showlabels = FALSE,
-                           label_color = "red", arrow_color = "red", 
-                           font_size = 10, bgcolor_opacity = 0.6) {
+                            spread = 0.05, coord_fixed = TRUE, 
+                            network_legend_key = NULL,
+                            showlegend = TRUE, showlabels = FALSE,
+                            label_color = "red", arrow_color = "red", 
+                            font_size = 10, bgcolor_opacity = 0.6) {
     #Check if input graph is empty and return a message if so
     if (igraph::vcount(graph) == 0 || igraph::ecount(graph) == 0) {
       return(plot_message(message = "No network built"))

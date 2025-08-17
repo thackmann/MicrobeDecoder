@@ -202,15 +202,29 @@ inject_ip_script <- function(ns) {
 #' @return A `div` containing the query builder input.
 #' 
 #' @examples
-#' create_query_builder(ns, "query_builder", query_rules_search, load_query_filters, "Build query")
-#' create_query_builder(ns, "query_builder", query_rules_taxonomy, load_query_filters)
-#' create_query_builder(ns, "query_builder", query_rules_ML, load_query_filters, "Machine Learning Query")
-create_query_builder <- function(ns, input_id, label = NULL) {
+#' create_query_builder(ns, "query_builder", query_rules_search, "Build query")
+#' create_query_builder(ns, "query_builder", query_rules_taxonomy)
+#' create_query_builder(ns, "query_builder", query_rules_ML, "Machine Learning Query")
+create_query_builder <- function(ns, 
+                                 input_id, 
+                                 # rules = list(
+                                 #   condition = "AND",
+                                 #   rules = list(list(
+                                 #       id = "Type of metabolism (Fermentation Explorer)",
+                                 #       operator = "contains",
+                                 #       value = "fermentation"
+                                 #   ))),
+                                 label = NULL) {
   filters <- load_placeholder_filters()
 
   rules <- list(
     condition = "AND",
-    rules = list(list(id = "Type of metabolism (FAPROTAX)", operator = "contains"))
+    rules = list(
+      list(id = "Temperature for growth in degrees (BacDive)",
+           operator = "greater",
+           value = "39"
+          )
+      )
   )
   
   div(
@@ -225,6 +239,43 @@ create_query_builder <- function(ns, input_id, label = NULL) {
     )
   )
 }
+
+#' #' Create a Query Builder Input
+#' #' 
+#' #' This function generates a standardized `jqbr::queryBuilderInput` element with customizable 
+#' #' input ID, dynamically loaded filters, and rules.
+#' #' 
+#' #' @param ns The namespace function for the module.
+#' #' @param input_id A character string specifying the ID of the query builder input.
+#' #' @param rules The default rules for the query builder.
+#' #' @param label (Optional) A label or title to be displayed above the query builder.
+#' #' 
+#' #' @return A `div` containing the query builder input.
+#' #' 
+#' #' @examples
+#' #' create_query_builder(ns, "query_builder", query_rules_search, load_query_filters, "Build query")
+#' #' create_query_builder(ns, "query_builder", query_rules_taxonomy, load_query_filters)
+#' #' create_query_builder(ns, "query_builder", query_rules_ML, load_query_filters, "Machine Learning Query")
+#' create_query_builder <- function(ns, input_id, label = NULL) {
+#'   filters <- load_placeholder_filters()
+#'   
+#'   rules <- list(
+#'     condition = "AND",
+#'     rules = list(list(id = "Type of metabolism (FAPROTAX)", operator = "contains"))
+#'   )
+#'   
+#'   div(
+#'     if (!is.null(label)) div(label),
+#'     jqbr::queryBuilderInput(
+#'       inputId = ns(input_id),
+#'       filters = filters,
+#'       return_value = "r_rules",
+#'       display_errors = TRUE,
+#'       rules = rules,
+#'       add_na_filter = FALSE
+#'     )
+#'   )
+#' }
 
 #' Create Loading Spinner with Default Color
 #'
@@ -284,6 +335,7 @@ create_plot_div <- function(ns, plot_type, width = "100%", height = "40vh") {
 #' @param max_height The maximum height of the card (default: "50vh").
 #' @param centered Logical, whether to center the plot inside the card (default: FALSE).
 #' @param use_spinner Logical, whether to wrap the plot in a loading spinner (default: TRUE).
+#' @param full_screen Logical, whether to allow the card to be expanded full-screen (default: TRUE).
 #' 
 #' @return A `nav_panel` containing a `bslib::card` with a `plotlyOutput`.
 #' 
@@ -291,7 +343,8 @@ create_plot_div <- function(ns, plot_type, width = "100%", height = "40vh") {
 #' create_plot_panel(ns, "summary", "Summary")
 #' create_plot_panel(ns, "treemap", "Treemap", max_height = "60vh", centered = TRUE, use_spinner = FALSE)
 create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "100%", 
-                              max_height = "50vh", centered = FALSE, use_spinner = FALSE) {
+                              max_height = "50vh", centered = FALSE, 
+                              use_spinner = FALSE, full_screen = TRUE) {
   # Define the container ID
   container_id <- ns(paste0(plot_type, "-container"))
   
@@ -322,7 +375,7 @@ create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "10
   bslib::nav_panel(
     title = title,
     bslib::card(
-      full_screen = TRUE,
+      full_screen = full_screen,
       style = base_style,
       plot_container
     )
@@ -384,10 +437,12 @@ create_input_label <- function(inputId, label = NULL) {
 #' @export
 #' @importFrom shiny tags div actionLink
 fileInput_modal <- function(inputId, label = NULL, multiple = TRUE, 
-                            accept = c("text/csv", "text/comma-separated-values,text/plain", 
+                            accept = c("text/csv", 
+                                       "text/comma-separated-values,text/plain", 
+                                       "text/tab-separated-values", 
                                        "application/vnd.ms-excel", 
                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                       ".csv", ".txt", ".rds", ".ko", ".xls", ".xlsx"), 
+                                       ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx"), 
                             width = NULL, buttonLabel = "Browse...", 
                             placeholder = "No file selected", 
                             modalId, modalLabel = "Download example") {
@@ -436,6 +491,58 @@ fileInput_modal <- function(inputId, label = NULL, multiple = TRUE,
   )
 }
 
+#' Create a file input triggered by a link
+#'
+#' This function creates a hidden file input that is triggered by a link-styled action.
+#' Useful for cases where you want the visual appearance of a link, but the functionality of fileInput().
+#'
+#' @param inputId The input ID.
+#' @param label The text for the clickable link (default: "Upload file").
+#' @param accept Character vector of accepted file types (default: common text and spreadsheet formats).
+#' @param multiple Whether multiple file upload is allowed (default: FALSE).
+#' @param width Optional width of the wrapper div.
+#' @return A Shiny UI tag list with link-triggered file input.
+#' @export
+#' fileInput_link <- function(inputId,
+fileInput_link <- function(inputId,
+                           label = "Upload file",
+                           accept = c(
+                             "text/csv", 
+                             "text/comma-separated-values,text/plain", 
+                             "text/tab-separated-values", 
+                             "application/vnd.ms-excel", 
+                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx"),
+                           multiple = FALSE,
+                           width = NULL) {
+  
+  tagList(
+    shiny::tags$div(
+      style = if (!is.null(width)) paste0("width: ", shiny::validateCssUnit(width), ";"),
+      
+      # Action link that triggers file input
+      shiny::actionLink(paste0(inputId, "_trigger"), label = label, style = "display: block; margin-top: 10px;"),
+      
+      # Hidden file input with actual inputId
+      shiny::tags$input(
+        id = inputId,
+        name = inputId,
+        type = "file",
+        style = "display: none;",
+        accept = paste(accept, collapse = ","),
+        multiple = if (multiple) "multiple" else NULL
+      )
+    ),
+    
+    # JS to connect the link and the hidden file input
+    shiny::tags$script(HTML(sprintf("
+      $(document).on('click', '#%s', function() {
+        $('#%s').click();
+      });
+    ", paste0(inputId, "_trigger"), inputId)))
+  )
+}
+
 #' Create a Standardized Selectize Input
 #'
 #' This function creates a standardized `selectizeInput` with sensible defaults
@@ -455,10 +562,17 @@ fileInput_modal <- function(inputId, label = NULL, multiple = TRUE,
 #' create_selectize_input("taxonomy_database")
 #' create_selectize_input("set_traits", multiple = FALSE)
 #' create_selectize_input("models", choices = names(model_paths), selected = names(model_paths))
-create_selectize_input <- function(inputId, label = NULL, choices = NULL, 
-                                   selected = NULL, multiple = TRUE, width = NULL,
-                                   options = list(`actions-box` = TRUE, `live-search` = TRUE, 
-                                                  dropdownParent = 'body')) {
+create_selectize_input <- function(inputId, 
+                                   label = NULL, 
+                                   choices = NULL, 
+                                   selected = NULL, 
+                                   multiple = TRUE, 
+                                   width = NULL,
+                                   options = list(`actions-box` = TRUE, 
+                                                  `live-search` = TRUE, 
+                                                  dropdownParent = 'body',
+                                                  plugins = list("remove_button")
+                                    )) {
   shiny::selectizeInput(
     inputId = inputId,
     label = label,

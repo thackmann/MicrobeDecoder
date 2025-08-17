@@ -16,11 +16,11 @@ Sys.setlocale("LC_ALL", "C")
 # === Load external R files ===
   # Load external R files
   setwd(app_directory)
-  source("functions//helperFunctions.R", local = TRUE) 
+  source("functions//helperFunctions.R", local = TRUE)
   source("functions//loadDataFunctions.R", local = TRUE)
   source("functions//plotFunctions.R", local = TRUE) 
-  source("modules//predictionsMachineLearning//functions.R", local = TRUE) 
-  source("preprocessing//functions.R", local = TRUE) 
+  source("modules//predictionsMachineLearning//functions.R", local = TRUE)
+  source("preprocessing//functions.R", local = TRUE)
   
 # === Preprocess data ===
   # --- Clean database file and add links ---
@@ -237,8 +237,8 @@ Sys.setlocale("LC_ALL", "C")
         create_query_filter("Oxygen tolerance (BacDive)", data, delimited = TRUE),
         create_query_filter("Pathogenicity (BacDive)", data, delimited = TRUE),
         
-        create_query_filter("Temperature for growth in degrees (BacDive)", data, type = "double", label = "Temperature for growth in degrees"),
-        create_query_filter("Salt for growth in moles per liter (BacDive)", data, type = "double", label = "Salt for growth in moles per liter"),
+        create_query_filter("Temperature for growth in degrees (BacDive)", data, type = "double", label = "Temperature for growth in degrees (BacDive)"),
+        create_query_filter("Salt for growth in moles per liter (BacDive)", data, type = "double", label = "Salt for growth in moles per liter (BacDive)"),
         create_query_filter("pH for growth (BacDive)", data, type = "double"),
         create_query_filter("Incubation period in days (BacDive)", data, type = "double"),
         
@@ -269,7 +269,7 @@ Sys.setlocale("LC_ALL", "C")
 
     # Generate placeholder filters (simple filters to load at app startup)
     query_filters_simple <- list(
-      create_query_filter("Type of metabolism (FAPROTAX)", data, delimited = TRUE)
+      create_query_filter("Temperature for growth in degrees (BacDive)", data, type = "double", label = "Temperature for growth in degrees (BacDive)")
     )
     
     # Save object to file
@@ -372,58 +372,83 @@ Sys.setlocale("LC_ALL", "C")
         saveRDS(plot, file = data_fp)
 
   # --- Generate random forest models ---
-        # Define variables and query strings
-        variables <- list(
-          
-          # Type of metabolism
-          "fermentation" = "grepl(\"(?<=^|;)Fermentation(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
-          "methanogenesis" = "grepl(\"(?<=^|;)Methanogenesis(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
+        # Most variables 
+          # Define variables and query strings
+            variables <- list(
+              # Type of metabolism
+              "fermentation" = "grepl(\"(?<=^|;)Fermentation(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
+              "methanogenesis" = "grepl(\"(?<=^|;)Methanogenesis(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
+              "aerobic_chemoheterotrophy" = "grepl(\"(?<=^|;)aerobic chemoheterotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "phototrophy" = "grepl(\"(?<=^|;)phototrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "photoautotrophy" = "grepl(\"(?<=^|;)photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "nitrate_reduction" = "grepl(\"(?<=^|;)nitrate reduction(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "sulfur_compound_respiration" = "grepl(\"(?<=^|;)respiration of sulfur compounds(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "sulfate_respiration" = "grepl(\"(?<=^|;)sulfate respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "sulfur_respiration" = "grepl(\"(?<=^|;)sulfur respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              
+              # Metabolites produced
+              "acetate" = "grepl(\"(?<=^|;)acetate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "butyrate" = "grepl(\"(?<=^|;)butyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "CH4" = "grepl(\"(?<=^|;)CH4(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "ethanol" = "grepl(\"(?<=^|;)ethanol(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "formate" = "grepl(\"(?<=^|;)formate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "H2" = "grepl(\"(?<=^|;)H2(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "isobutyrate" = "grepl(\"(?<=^|;)isobutyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "isovalerate" = "grepl(\"(?<=^|;)isovalerate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "lactate" = "grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Major metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "propionate" = "grepl(\"(?<=^|;)propionate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "pyruvate" = "grepl(\"(?<=^|;)pyruvate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              "succinate" = "grepl(\"(?<=^|;)succinate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
+              
+              # Physiology/morphology
+              "anaerobe" = "grepl(\"(?<=^|;)anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)obligate anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE)",
+              "gram_positive" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Gram stain (BacDive)`, perl = TRUE)",
+              "spore_formation" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Spore formation (BacDive)`, perl = TRUE)",
+              "motility" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE)",
 
-          # Metabolites utilized
-          "nitrate" = "grepl(\"(?<=^|;)nitrate(?=;|$)\", `Metabolites utilized (BacDive)`, perl = TRUE)",
-          
-          # Metabolites produced
-          "acetate" = "grepl(\"(?<=^|;)acetate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "butyrate" = "grepl(\"(?<=^|;)butyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "CO2" = "grepl(\"(?<=^|;)CO2(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "CH4" = "grepl(\"(?<=^|;)CH4(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "ethanol" = "grepl(\"(?<=^|;)ethanol(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "formate" = "grepl(\"(?<=^|;)formate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "H2" = "grepl(\"(?<=^|;)H2(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "isobutyrate" = "grepl(\"(?<=^|;)isobutyrate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "isovalerate" = "grepl(\"(?<=^|;)isovalerate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "lactate" = "grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)D-lactate(?=;|$)\", `Major metabolites produced (Fermentation Explorer)`, perl = TRUE) | grepl(\"(?<=^|;)lactate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "propionate" = "grepl(\"(?<=^|;)propionate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "pyruvate" = "grepl(\"(?<=^|;)pyruvate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          "succinate" = "grepl(\"(?<=^|;)succinate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
-          
-          # Physiology/morphology
-          "anaerobe" = "grepl(\"(?<=^|;)anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)obligate anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE)",
-          "gram_positive" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Gram stain (BacDive)`, perl = TRUE)",
-          "spore_formation" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Spore formation (BacDive)`, perl = TRUE)",
-          "motility" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE)",
-          "motility_non_gliding" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE) & grepl(\"(?<=^|;)gliding(?=;|$)\", `Flagellum arrangement (BacDive)`, perl = TRUE)",
-          
-          # Growth
-          "thermophile" = "`Temperature for growth in degrees (BacDive)`> 45",
-          "halophile" = "`Salt for growth in moles per liter (BacDive)` > 3",
-          "slow_growth" = "`Incubation period in days (BacDive)` > 7",
-          
-          # Pathogenecity
-          "animal_pathogen" = "grepl(\"(?<=^|;)animal(?=;|$)\", `Pathogenicity (BacDive)`, perl = TRUE)",
-          "plant_pathogen" = "grepl(\"(?<=^|;)plant(?=;|$)\", `Pathogenicity (BacDive)`, perl = TRUE)"
-        )
-        
-      # Process each variable
-      for (i in seq_along(variables)) {
-        var_name <- names(variables)[i]
-        query_string <- variables[[i]]
-        
-        generate_rf(
-          var_name = var_name,
-          query_string = query_string,
-          predictors_to_keep = 1
-        )
-        
-        svMisc::progress(i, max.value = length(variables))
-      }
+              # Growth
+              "slow_growth" = "`Incubation period in days (BacDive)` > 7",
+            )
+            
+          # Process each variable
+          for (i in seq_along(variables)) {
+            var_name <- names(variables)[i]
+            query_string <- variables[[i]]
+            
+            generate_rf(
+              var_name = var_name,
+              query_string = query_string,
+              predictors_to_keep = 1
+            )
+            
+            svMisc::progress(i, max.value = length(variables))
+          }
+            
+        # FAPROTAX variables
+          # Uncomment below to run
+            # Define variables and query strings
+            # query_filters <- load_query_filters()
+            # idx = which(sapply(query_filters, function(x) x$id) == "Type of metabolism (FAPROTAX)")
+            # ids <- purrr::map_chr(query_filters[[idx]]$plugin_config$options, "id")
+            # names <- gsub(" ", "_", ids)
+            # 
+            # variables <- setNames(
+            #   paste0(
+            #     "grepl(\"(?<=^|;)", ids, "(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)"
+            #   ),
+            #   names
+            # )
+            # 
+            # # Process each variable
+            # for (i in seq_along(variables)) {
+            #   var_name <- names(variables)[i]
+            #   query_string <- variables[[i]]
+            #   
+            #   generate_rf(
+            #     var_name = var_name,
+            #     query_string = query_string,
+            #     predictors_to_keep = 1
+            #   )
+            #   
+            #   svMisc::progress(i, max.value = length(variables))
+            # }

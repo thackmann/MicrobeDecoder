@@ -243,20 +243,22 @@
   #' 
   #' @param inputId A character string specifying the ID of the query builder input.
   #' @param choices A character vector of variable names to filter the query builder filters.
+  #' @param setRules A list of rules apply to the query builder.
   #' @param delay_time An optional delay in milliseconds before applying the update (default: 250 ms).
   #' 
   #' @return Updates the query builder input dynamically.
   #' 
   #' @examples
   #' update_query_builder("query_builder", choices_traits_taxonomy)
-  update_query_builder <- function(inputId, choices, delay_time = 250) {
+  update_query_builder <- function(inputId, choices, setRules =  NULL, delay_time = 250) {
     filters <- load_query_filters()
     filters <- purrr::keep(filters, ~ .x$id %in% choices)
-    
+
     shinyjs::delay(delay_time, {
       jqbr::updateQueryBuilder(
         inputId = inputId,
-        setFilters = filters
+        setFilters = filters,
+        setRules = setRules
       )
     })
   }
@@ -304,6 +306,27 @@
     if (is.null(selected)) selected <- head(choices, 1)
     
     shinyWidgets::updatePickerInput(session, inputId = inputId, choices = choices, selected = selected)
+  }
+  
+  #' Update Text Input
+  #'
+  #' This function updates a text input field in a Shiny application. It sets the value
+  #' of the input dynamically during a session.
+  #'
+  #' @param session The Shiny session object (default is the current reactive domain).
+  #' @param inputId A character string specifying the ID of the text input to update.
+  #' @param value A character string specifying the new value for the input.
+  #' @param placeholder Optional. A character string for placeholder text if needed.
+  #'
+  #' @return Updates the specified text input dynamically.
+  #'
+  #' @examples
+  #' update_text_input(session, "network_name_display", value = "Custom network")
+  update_text_input <- function(session = getDefaultReactiveDomain(),
+                                inputId,
+                                value = "",
+                                placeholder = NULL) {
+    shiny::updateTextInput(session = session, inputId = inputId, value = value, placeholder = placeholder)
   }
   
   #' Update Checkbox Group Input

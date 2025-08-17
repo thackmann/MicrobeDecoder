@@ -904,7 +904,7 @@
 	#'
 	#' @param session The Shiny session object.
 	#' @param file_path Character. The path to the file.
-	#' @param accepted_extensions Character vector. The accepted file extensions (default: c("csv", "txt", "rds", "ko", "xls", "xlsx")).
+	#' @param accepted_extensions Character vector. The accepted file extensions (default: c("csv", "tsv", "txt", "rds", "ko", "xls", "xlsx")).
 	#' @return A dataframe (for CSV/TXT/KO/Excel) or an R object (for RDS), or NULL if an error occurs.
 	#' @export
 	#' @importFrom tools file_ext
@@ -915,7 +915,7 @@
 	#' @importFrom readxl read_excel
 	validate_and_read_file <- function(session = getDefaultReactiveDomain(), 
 	                                   file_path, 
-	                                   accepted_extensions = c("csv", "txt", "rds", "ko", "xls", "xlsx")) {
+	                                   accepted_extensions = c("csv", "tsv", "txt", "rds", "ko", "xls", "xlsx")) {
 	  if (is.null(file_path) || file_path == "") {
 	    runValidationModal(session = session, "No file selected. Please upload a file.")
 	    return(NULL)
@@ -932,6 +932,7 @@
 	  load_function <- switch(file_ext,
 	                          "rds"  = readRDS,
 	                          "csv"  = function(file, ...) readr::read_csv(file, show_col_types = FALSE, ...),
+	                          "tsv"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
 	                          "txt"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
 	                          "ko"   = function(file, ...) read.table(file, sep = "\t", header = FALSE, fill = TRUE, ...),
 	                          "xls"  = function(file, ...) readxl::read_excel(file, ...),
@@ -1049,6 +1050,87 @@
 	  return(!has_invalid_first_column)
 	}
 	
+	#' Check if Data Follows PICRUSt Format
+	#'
+	#' This function checks if the data contains columns from the KO_predicted.tsv
+	#' file of PICRUSt2.  It does this by checking if the header for the first
+	#' column is "sequence" and the remaining headers are KO IDs.
+	#' 
+	#' @param data Dataframe. The data to check.
+	#'
+	#' @return Logical. TRUE if the data follows PICRUSt format, FALSE otherwise.
+	#' @export
+	is_picrust_format <- function(data) {
+	  # Check if the first column header contains "sequence"
+	  if (!is.data.frame(data)) return(FALSE)
+	  if (!"sequence" %in% colnames(data)) return(FALSE)
+	  
+	  # Check if column headers are KO IDs
+	  ko_pattern <- "^K\\d{5}$"
+	  ko_cols <- colnames(data)[grepl(ko_pattern, colnames(data))]
+	  if (length(ko_cols) == 0) return(FALSE)
+	  
+	  # Check if all KO columns are numeric
+	  all_numeric <- all(sapply(data[, ko_cols, drop = FALSE], is.numeric))
+	  
+	  return(all_numeric)
+	}
+	
+	#' Check if Data Follows HUMAnN Format
+	#'
+	#' This function checks if the data contains columns from the genefamilies_ko.tsv
+	#' file of HUMAnN  It does this by checking if the header for the first
+	#' column contains "HUMAnN".  It also checks if the values of the first column
+	#' have KO IDs.
+	#'
+	#' @param data Dataframe. The data to check.
+	#' 
+	#' @return Logical. TRUE if the data follows KAAS format, FALSE otherwise.
+	#' @export
+	is_humann_format <- function(data) {
+	  # Check if the first column header contains "HUMAnN"
+	  if (!is.data.frame(data)) return(FALSE)
+	  if (!grepl(pattern = "HUMAnN", x = colnames(data)[1])) return(FALSE)
+	  
+	  # Check if the first column contains KO IDs
+	  if (!detect_ko_column(data[[1]])) return(FALSE)
+	  
+	  return(TRUE)
+	}
+	
+	#' Check if Data Follows eggNOG Format
+	#'
+	#' This function checks if the data follows eggNOG-mapper format.  It checks
+	#' for a column name of "KEGG_ko" and if it has KO IDs (e.g., ko:K00001).
+	#' It assumes column names are in the second row of data.
+	#'
+	#' @param data Dataframe. The data to check.
+	#'
+	#' @return Logical. TRUE if the data appears to follow eggNOG format, FALSE otherwise.
+	#' @export
+	is_eggnog_format <- function(data) {
+	  if (!is.data.frame(data)) return(FALSE)
+	  if (nrow(data) < 2 || ncol(data) < 2) return(FALSE)
+	  
+	  # Use second row as column names
+	  headers <- as.character(data[2, ])
+	  data <- data[-c(1, 2), , drop = FALSE]  # Drop first two rows
+	  colnames(data) <- headers
+	  rownames(data) <- NULL
+	  
+	  # Check for KEGG_ko column
+	  if (!"KEGG_ko" %in% colnames(data)) return(FALSE)
+	  
+	  # Check if KEGG_ko column contains valid KO IDs (e.g., ko:K00001)
+	  ko_values <- data[["KEGG_ko"]]
+	  ko_values <- ko_values[!is.na(ko_values) & ko_values != ""]
+	  
+	  ko_ids <- unlist(strsplit(ko_values, ","))
+	  ko_ids <- stringr::str_trim(ko_ids)
+	  
+	  return(any(grepl("^ko:K\\d{5}$", ko_ids)))
+	}
+	
 	#' Check if Data Has One Column with KO IDs
 	#'
 	#' This function checks if the data contains at least one column of KO IDs.
@@ -1096,6 +1178,8 @@
 	#' @return A dataframe where genome names are column headers, and KO IDs are values.
 	#' @export
 	process_img_gene_format <- function(data) {
+	  if (is_img_format(data)) return(NULL)
+	  
 	  # Select relevant columns and remove missing values
 	  processed_data <- data %>%
 	    dplyr::select(`Genome Name`, KO) %>%
@@ -1129,6 +1213,8 @@
 	#' @return A dataframe containing the standard "Genome" and "KO" columns.
 	#' @export
 	process_kaas_format <- function(data) {
+	  if (!is_kaas_format(data)) return(NULL)
+	  
 	  # Extract only the KO ID column (second column)
 	  processed_data <- data[, 2, drop = FALSE]
 	  
@@ -1152,6 +1238,143 @@
 	  return(processed_data)
 	}
 	
+	#' Process Data Following PICRUSt Format
+	#'
+	#' This function extracts KO identifiers from a PICRUSt-formatted dataset, 
+	#' then pivots the data wider so that each genome becomes a column header 
+	#' with KO IDs as values.
+	#'
+	#' @param data Dataframe. The PICRUSt-style input data.
+	#'
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
+	#' @export
+	process_picrust_format <- function(data) {
+	  if (!is_picrust_format(data)) return(NULL)
+	  
+	  # Remove columns that have gene count of 0
+	  processed_data <- data
+	  processed_data <- processed_data[, c(TRUE, colSums(processed_data[,-1]) != 0)] 
+	  
+	  # Set non-zero column values equal to KO ID
+	  processed_data <- processed_data %>%
+	    dplyr::mutate(across(-sequence, ~ ifelse(. != 0, dplyr::cur_column(), NA_character_)))
+	  
+	  # Pivot longer
+	  processed_data <- processed_data %>%
+	    tidyr::pivot_longer(
+	      cols = -sequence,
+	      names_to = "KO",
+	      values_to = "value"
+	    ) %>%
+	    dplyr::filter(!is.na(value)) %>%
+	    dplyr::select(sequence, KO)
+	  
+	  # Pivot wider to match output style
+	  processed_data <- processed_data %>%
+	    dplyr::group_by(sequence) %>%
+	    dplyr::mutate(row_id = dplyr::row_number()) %>%
+	    tidyr::pivot_wider(names_from = sequence, values_from = KO) %>%
+	    dplyr::select(-row_id)
+	  
+	  return(processed_data)
+	}
+	
+	#' Process Data Following HUMAnN Format
+	#'
+	#' This function extracts KO and genome IDs from a HUMAnN-formatted dataset, 
+	#' then pivots the data wider so that each genome becomes a column header 
+	#' with KO IDs as values.
+	#'
+	#' @param data Dataframe. HUMAnN input data.
+	#'
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
+	#' @export
+	process_humann_format <- function(data) {
+	  if (!is_humann_format(data)) return(NULL)
+	  
+	  # Remove rows with no genome or KO ID
+	  processed_data <- data
+	  processed_data <- processed_data %>%
+	    dplyr::filter(grepl("\\|", .[[1]])) %>%
+	    dplyr::filter(grepl("^K\\d{5}\\|", .[[1]]))
+	  
+	  # Separate KO ID and genome columns
+	  processed_data <- processed_data %>% 
+	    tidyr::separate(
+	      col = 1,
+	      into = c("KO", "Genome"),
+	      sep = "\\|",
+	      remove = TRUE
+	    ) %>%
+	    dplyr::select("KO", "Genome")
+	  
+	  # Remove unclassified
+	  processed_data <- processed_data %>% 
+	    dplyr::filter(Genome!="unclassified")
+	  
+	  # Pivot to wide format: KO IDs as values, genomes as columns
+	  processed_data <- processed_data %>%
+	    dplyr::group_by(Genome) %>%
+	    dplyr::mutate(row_id = dplyr::row_number()) %>%  # prevent duplicate KO collapse
+	    tidyr::pivot_wider(names_from = Genome, values_from = KO) %>%
+	    dplyr::select(-row_id)
+	  
+	  return(processed_data)
+	}
+	
+	#' Process Data Following eggNOG Format
+	#'
+	#' This function extracts KO identifiers from an eggNOG-mapper dataset,
+	#' assigns "Organism" as the genome column header, and removes rows without KO IDs.
+	#' It also handles cases where multiple KO IDs are comma-delimited in a single field.
+	#'
+	#' @param data Dataframe. The data to process.
+	#'
+	#' @return A dataframe with KO identifiers expanded and organized under a single "Organism" column.
+	#' @export
+	process_eggnog_format <- function(data) {
+	  if (!is_eggnog_format(data)) return(NULL)
+	  
+	  # Use second row as column names
+	  headers <- as.character(data[2, ])
+	  data <- data[-c(1, 2), , drop = FALSE]
+	  colnames(data) <- headers
+	  rownames(data) <- NULL
+	  
+	  # Extract the KEGG_ko column
+	  ko_data <- data[["KEGG_ko"]]
+	  
+	  # Remove NA or empty entries
+	  ko_data <- ko_data[!is.na(ko_data) & ko_data != ""]
+	  
+	  # Expand comma-delimited KO IDs (e.g., "ko:K00001,ko:K00002")
+	  ko_split <- unlist(strsplit(ko_data, ","))
+	  
+	  # Trim whitespace and remove invalid entries
+	  ko_clean <- stringr::str_trim(ko_split)
+	  ko_clean <- ko_clean[grepl("^ko:K\\d{5}$", ko_clean)]
+	  
+	  # Remove "ko:" prefix
+	  ko_clean <- sub("^ko:", "", ko_clean)
+	  
+	  if (length(ko_clean) == 0) return(NULL)
+	  
+	  # Build dataframe with "Organism" column
+	  processed_data <- data.frame(
+	    Genome = "Organism",
+	    KO = ko_clean,
+	    stringsAsFactors = FALSE
+	  )
+	  
+	  # Pivot to wide format: Genome as column header, KO as values
+	  processed_data <- processed_data %>%
+	    dplyr::group_by(Genome) %>%
+	    dplyr::mutate(row_id = dplyr::row_number()) %>%
+	    tidyr::pivot_wider(names_from = Genome, values_from = KO) %>%
+	    dplyr::select(-row_id)
+	  
+	  return(processed_data)
+	}
 	
 	#' Process Data Following Single-KO Format
 	#'
@@ -1161,7 +1384,7 @@
 	#'
 	#' @param data Dataframe. The data to process.
 	#'
-	#' @return A dataframe where genome names are column headers, and KO IDs are values.
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
 	#' @export
 	process_single_ko_format <- function(data) {
 	  # Detect KO-related columns
@@ -1220,59 +1443,168 @@
 	#' 
 	#' gene_functions Dataframe. The gene functions data.
 	#' 
-	#' @return A processed dataframe or NULL if the file structure is unrecognized.
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
 	#' @export
 	process_uploaded_gene_functions <- function(gene_functions) {
 	  if (!is.data.frame(gene_functions)) return(NULL)
 	  
-	  if(is_img_gene_format(gene_functions))
-	  {
+	  if (is_img_gene_format(gene_functions)) {
 	    gene_functions <- process_img_gene_format(gene_functions)
-	  }else if(is_kaas_format(gene_functions)){
+	  } else if (is_humann_format(gene_functions)) {
+	    gene_functions <- process_humann_format(gene_functions)
+	  } else if (is_picrust_format(gene_functions)) {
+	    gene_functions <- process_picrust_format(gene_functions)
+	  } else if (is_kaas_format(gene_functions)) {
 	    gene_functions <- process_kaas_format(gene_functions)
-	  }else if(is_single_ko_format(gene_functions)){
+	  } else if (is_eggnog_format(gene_functions)) {
+	    gene_functions <- process_eggnog_format(gene_functions)
+	  } else if (is_single_ko_format(gene_functions)) {
 	    gene_functions <- process_single_ko_format(gene_functions)
-	  }else if(is_multi_ko_format(gene_functions)){
+	  } else if (is_multi_ko_format(gene_functions)) {
 	    gene_functions <- process_multi_ko_format(gene_functions)
-	  }else{
+	  } else {
 	    return(NULL)
 	  }
 	  
 	  return(gene_functions)
 	}
-  
-  #' Process Gene Functions from the Database
-  #'
-  #' This function processes gene functions for selected organisms, filtering and reshaping the data accordingly.
-  #'
-  #' @param gene_functions Dataframe. The gene functions data.
-  #' @param organism_by_genome Dataframe. The dataframe mapping organisms to genomes.
-  #' @param selected_organisms Character vector. The organisms selected by the user.
-  #'
-  #' @return A dataframe with gene functions for the selected organisms, with renamed columns to use organism names.
-  #' @export
-  #' @importFrom dplyr filter group_by mutate select
-  #' @importFrom tidyr pivot_wider
-  process_database_gene_functions <- function(gene_functions, organism_by_genome, selected_organisms) {
-    filtered_data <- organism_by_genome %>%
-      dplyr::filter(Organism %in% selected_organisms)
-
-    filtered_data$Genome <- as.character(filtered_data$Genome)
-
-    gene_functions <- gene_functions %>%
-      dplyr::filter(Genome %in% filtered_data$Genome) %>%
-      dplyr::group_by(Genome) %>%
-      dplyr::mutate(row_id = dplyr::row_number()) %>%
-      tidyr::pivot_wider(names_from = Genome, values_from = Database_ID) %>%
-      dplyr::select(-row_id) %>%
-      dplyr::select(all_of(filtered_data$Genome))
-
-    colnames(gene_functions) <- filtered_data$Organism
-
-    gene_functions <- as.data.frame(gene_functions)
-    
-    return(gene_functions)
-  }
+	
+	#' Process Gene Functions from the Database
+	#'
+	#' This function processes gene functions for selected organisms, filtering and reshaping the data accordingly.
+	#'
+	#' @param gene_functions Dataframe. The gene functions data.
+	#' @param organism_by_genome Dataframe. The dataframe mapping organisms to genomes.
+	#' @param selected_organisms Character vector. The organisms selected by the user.
+	#'
+	#' @return A dataframe with gene functions for the selected organisms, with renamed columns to use organism names.
+	#' @export
+	#' @importFrom dplyr filter group_by mutate select
+	#' @importFrom tidyr pivot_wider
+	process_database_gene_functions <- function(gene_functions, organism_by_genome, selected_organisms) {
+	  filtered_data <- organism_by_genome %>%
+	    dplyr::filter(Organism %in% selected_organisms)
+	  
+	  filtered_data$Genome <- as.character(filtered_data$Genome)
+	  
+	  gene_functions <- gene_functions %>%
+	    dplyr::filter(Genome %in% filtered_data$Genome) %>%
+	    dplyr::group_by(Genome) %>%
+	    dplyr::mutate(row_id = dplyr::row_number()) %>%
+	    tidyr::pivot_wider(names_from = Genome, values_from = Database_ID) %>%
+	    dplyr::select(-row_id) %>%
+	    dplyr::select(all_of(filtered_data$Genome))
+	  
+	  colnames(gene_functions) <- filtered_data$Organism
+	  
+	  gene_functions <- as.data.frame(gene_functions)
+	  
+	  return(gene_functions)
+	}
+	
+	#' Get Selections for Organisms from Uploaded File
+	#'
+	#' This function reads a file of uploaded organism names, validates it, trims whitespace,
+	#' and filters to keep only valid choices present in the database.
+	#'
+	#' @param upload_file Character. Path to the uploaded file.
+	#' @param choices Character vector of valid organism names to match against.
+	#' @param session Shiny session object (default: current reactive session).
+	#'
+	#' @return A character vector of valid organism names from the upload file.
+	#' @export
+	get_uploaded_organism_selections <- function(upload_file, choices, session = getDefaultReactiveDomain()) {
+	  if (is.null(upload_file) || !file.exists(upload_file)) {
+	    return(character(0))
+	  }
+	  
+	  uploaded <- validate_and_read_file(file_path = upload_file, session = session)
+	  
+	  if (is.null(uploaded)) {
+	    return(character(0))
+	  }
+	  
+	  # Handle cases: vector, single-column data frame, or coercible types
+	  if (is.character(uploaded)) {
+	    organism_names <- uploaded
+	  } else if (is.data.frame(uploaded) && ncol(uploaded) >= 1) {
+	    organism_names <- uploaded[[1]]
+	  } else {
+	    runValidationModal(session, "Please check the format of your file and try again")
+	    return(NULL)
+	  }
+	  
+	  organism_names <- trimws(organism_names)
+	  valid_names <- organism_names[organism_names %in% choices]
+	  
+	  return(valid_names)
+	}
+	
+	
+	#' Get Gene Functions from the Database
+	#'
+	#' This function retrieves gene function annotations from the database for the selected organisms.
+	#' It loads the database, gene function table, and organism-to-genome mappings, and processes the
+	#' gene functions to reshape them into a wide format where each column corresponds to an organism.
+	#'
+	#' @param selected_organisms Character vector. A list of organism names selected by the user.
+	#'
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
+	#' @export
+	#'
+	#' @seealso [process_database_gene_functions()], [load_gene_functions()], [get_organism_by_genome()]
+	get_gene_functions_from_database <- function(selected_organisms)
+	{
+	  database <- load_database()
+	  gene_functions <- load_gene_functions()
+	  organism_by_genome <- get_organism_by_genome(database = database)
+	  gene_functions <- process_database_gene_functions(gene_functions, organism_by_genome, selected_organisms)
+	  
+	  return(gene_functions)
+	}
+	
+	#' Get Gene Functions from Uploaded File
+	#'
+	#' This helper function reads and processes a gene functions file uploaded by the user.
+	#' It first validates and reads the file based on its extension, and then processes it according
+	#' to the detected format (IMG, KAAS, single KO column, or multi KO column).
+	#'
+	#' @param upload_path Character. Path to the uploaded file.
+	#' @param session Shiny session object. Used for triggering validation modals (default: current session).
+	#'
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
+	#' @export
+	get_gene_functions_from_upload <- function(upload_path, session = shiny::getDefaultReactiveDomain()) {
+	  gene_functions <- validate_and_read_file(file_path = upload_path, session = session)
+	  gene_functions <- process_uploaded_gene_functions(gene_functions)
+	  return(gene_functions)
+	}
+	
+	#' Get Gene Functions
+	#'
+	#' Gets gene functions from either a database or an uploaded file.
+	#'
+	#' @param functions_from_database Logical. Use database gene functions?
+	#' @param functions_from_upload Logical. Use uploaded gene functions?
+	#' @param selected_organisms Character vector of selected organism names.
+	#' @param upload_path File path to uploaded gene functions.
+	#'
+	#' @return A dataframe of gene functions with organisms as column headers and KO IDs as values
+	get_gene_functions <- function(functions_from_database,
+	                               functions_from_upload,
+	                               selected_organisms = NULL,
+	                               upload_path = NULL) {
+	  if (functions_from_database) {
+	    gene_functions <- get_gene_functions_from_database(selected_organisms)
+	    runValidationModal(need(gene_functions != "", "Please choose at least one organism."))
+	  } else if (functions_from_upload) {
+	    gene_functions <- get_gene_functions_from_upload(upload_path = upload_path)
+	    runValidationModal(need(gene_functions != "", "Please check the format of your predicted gene functions file and try again."))
+	  } else {
+	    stop("No valid source for gene functions specified.")
+	  }
+	  return(gene_functions)
+	}
   
 # === Processing query strings ===  
   #' Process a Query String for More Precise Matching
@@ -1446,9 +1778,11 @@
   
   #' Expand and Merge Taxonomy into Dataframe
   #'
-  #' Expands taxonomic strings in a specified column of a given dataframe and merges the extracted 
-  #' taxonomic levels into that dataframe. If the required taxonomy columns ("Domain", "Phylum", "Class", 
-  #' "Order", "Family") already exist, the function skips processing.
+  #' Expands taxonomic strings in a specified column of a given dataframe and 
+  #' merges the extracted taxonomic levels into that dataframe. If the required 
+  #' taxonomy columns ("Domain", "Phylum", "Class", "Order", "Family") already 
+  #' exist, the function skips processing.  It also skips over any rows that are 
+  #' NA.  
   #'
   #' @param data A dataframe containing a column with taxonomic strings 
   #'   formatted as Greengenes-style taxonomy (i.e., levels separated by semicolons and prefixed with rank indicators).
@@ -1458,14 +1792,16 @@
   #' @export
   expand_and_merge_taxonomy <- function(data, col_name) {
     required_cols <- c("Domain", "Phylum", "Class", "Order", "Family")
-    
+
     if (!all(required_cols %in% colnames(data))) {
       tax <- data[[col_name]] %>%
+        purrr::discard(is.na) %>%
         purrr::map(expand_taxonomy) %>%
-        purrr::map_dfr(~purrr::set_names(as.list(.), c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")))
+        purrr::map_dfr(~purrr::set_names(as.list(.), 
+                                         c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")))
 
       tax <- dplyr::select(tax, -Genus, -Species)
-      data <- cbind(tax, data)
+      data <- cbind(tax, data[!is.na(data[[col_name]]), , drop = FALSE])
     }    
     
     return(data)

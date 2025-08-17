@@ -11,6 +11,11 @@
 #' format_Taxonomy(tax_vector)
 #' @export
 collapse_taxonomy <- function(tax_vector) {
+  # If all values are NA, return NA
+  if (all(is.na(tax_vector))) {
+    return(NA_character_)
+  }
+  
   # Replace NA values with empty strings
   tax_vector <- ifelse(is.na(tax_vector), "NA", tax_vector)
   
@@ -401,6 +406,13 @@ create_query_filter <- function(id, data, type = "string", delimited = FALSE, de
     list(
       id = id,
       label = label,
+      type = "double"
+    )
+  } else if (type == "slider") {
+    plugin_config <- create_slider_plugin_config(data[[id]])
+    list(
+      id = id,
+      label = label,
       type = "double",
       plugin = "slider",
       plugin_config = plugin_config
@@ -409,6 +421,7 @@ create_query_filter <- function(id, data, type = "string", delimited = FALSE, de
     stop("Unknown type: must be 'string' or 'double'")
   }
 }
+
 
 #' Generate Random Forest Models
 #' 

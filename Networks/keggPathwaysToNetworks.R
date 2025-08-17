@@ -21,7 +21,7 @@
   map_ids <- c("map00010", "map00620", "map00020", "map00190", "map00910", 
                "map00195", "map00710", "map00920", "map00720", "map00650",
                "map00640", "map00030", "map00051", "map00052", "map00053", 
-               "map00500", "map00680", "map00040", "map00630"
+               "map00500", "map00680", "map00040", "map00630", "map00625"
                )  
   
 # === Build reference models ===
@@ -55,47 +55,61 @@
   
   # === Format enzymes in KEGG modules ===
     # Get module IDs for the pathway
-    md <- map_to_md(map)
-  
-    # Get metadata for each module
-    module_metadata <- purrr::set_names(md) %>%
-      purrr::map(get_module_metadata)
-    
-    # Convert module definitions to tables
-    module_table <- purrr::map(module_metadata, function(meta) {
-      if (!is.null(meta$definition)) {
-        parse_module_definition(meta$definition)
-      } else {
-        NULL
-      }
-    })
-    
-    # Get sets of KO IDs that give complete enzymes
-    module_enzymes <- purrr::imap(module_table, function(df, md) {
-      if (!is.null(df)) {
-        get_complete_enzyme_combinations(df)
-      } else {
-        NULL
-      }
-    })
-    
-    # Remove NULL entries
-    module_enzymes <- purrr::compact(module_enzymes)
-    
-    # Convert into long dataframe
-    module_enzymes <- expand_enzyme_ko_df(module_enzymes)
-    
-    # Join with metadata and summarize
-    module_enzymes  <- summarize_enzyme_annotations(module_enzymes, kegg_metadata, remove_na = TRUE)
-
-    # Collapse across shared ko-rn mappings
-    module_enzymes <- collapse_by_ko_set(module_enzymes)
+      md <- map_to_md(map)
+      
+    if (!is.null(md) && length(md) > 0 && !all(is.na(md))) {
+      # Get metadata for each module
+      module_metadata <- purrr::set_names(md) %>%
+        purrr::map(get_module_metadata)
+      
+      # Convert module definitions to tables
+      module_table <- purrr::map(module_metadata, function(meta) {
+        if (!is.null(meta$definition)) {
+          parse_module_definition(meta$definition)
+        } else {
+          NULL
+        }
+      })
+      
+      # Get sets of KO IDs that give complete enzymes
+      module_enzymes <- purrr::imap(module_table, function(df, md) {
+        if (!is.null(df)) {
+          get_complete_enzyme_combinations(df)
+        } else {
+          NULL
+        }
+      })
+      
+      # Remove NULL entries
+      module_enzymes <- purrr::compact(module_enzymes)
+      
+      # Convert into long dataframe
+      module_enzymes <- expand_enzyme_ko_df(module_enzymes)
+      
+      # Join with metadata and summarize
+      module_enzymes  <- summarize_enzyme_annotations(module_enzymes, kegg_metadata, remove_na = TRUE)
+      
+      # Collapse across shared ko-rn mappings
+      module_enzymes <- collapse_by_ko_set(module_enzymes)
+      
+    } else {
+      module_enzymes <- tibble::tibble(
+        ko_set = character(),
+        rn     = character(),
+        eq     = character(),
+        ec     = character(),
+        symbol = character(),
+        name   = character(),
+        md     = character()
+      )
+      module_metadata <- list()
+    }
     
   # === Format enzymes not in modules ===
     # Get KO IDs not in modules
     kegg_metadata_cleaned <- filter_nonmodule_kos(kegg_metadata, module_enzymes, module_metadata)
     
-    if(length(kegg_metadata_cleaned)>0 & nrow(kegg_metadata_cleaned)>0)
+    if (!is.null(kegg_metadata_cleaned) && nrow(kegg_metadata_cleaned) > 0)
     {
       # Find subunits in other_enzymes
       other_enzyme_table <- format_nonmodule_enzymes(kegg_metadata_cleaned)

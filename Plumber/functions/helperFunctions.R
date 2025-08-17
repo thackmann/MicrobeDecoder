@@ -3,17 +3,19 @@
 # Timothy Hackmann
 # 13 May 25
 
-#' Handle callback posting to a provided URL
+#' Handle Callback Posting to a Provided URL
 #'
-#' This function sends a POST request to the callback_url with the given result.
-#' If the callback_url is present, it suppresses the direct return of the result
-#' and instead returns a status message.
+#' This function sends a POST request to a callback URL with the given result,
+#' wrapped in a named JSON object. It is useful for asynchronous API workflows.
+#' If a callback URL is specified, the function does not return the result directly
+#' but instead sends it to the URL and returns a submission status.
 #'
-#' @param result The object to send (e.g., probabilities)
-#' @param callback_url The callback URL to post the result to
-#' @param label A label to wrap the result in (e.g., "probabilities")
+#' @param result The object to send (e.g., a list of probabilities).
+#' @param callback_url Character. The URL to which the result should be posted.
+#' @param label Character. The name to wrap around the result in the JSON body (default: "probabilities").
 #'
-#' @return Either a status message (if callback used) or NULL (to continue execution)
+#' @return A list indicating status and callback URL if posted, or NULL if no callback is used.
+#' @export
 handle_callback <- function(result, callback_url, label = "probabilities") {
   if (!is.null(callback_url)) {
     tryCatch({
@@ -32,42 +34,17 @@ handle_callback <- function(result, callback_url, label = "probabilities") {
   return(NULL)  # continue regular return
 }
 
+#' Replace NULL with NA in Lists
+#'
+#' This recursive helper function replaces any `NULL` values in a list with `NA`.
+#' Useful for cleaning API input or output data structures where `NULL` is not allowed.
+#'
+#' @param x A list or value to process.
+#'
+#' @return The input with all NULL values replaced by NA.
+#' @export
 replace_null_with_na <- function(x) {
   if (is.list(x)) lapply(x, replace_null_with_na)
   else if (is.null(x)) NA
   else x
-}
-
-get_gene_functions_from_database <- function(selected_organisms)
-{
-  database <- load_database()
-  gene_functions <- load_gene_functions()
-  organism_by_genome <- get_organism_by_genome(database = database)
-  gene_functions <- process_database_gene_functions(gene_functions, organism_by_genome, selected_organisms)
-
-  return(gene_functions)
-}
-
-# Get choices for metabolites (substrates, products, or unbalanced intermediates)
-get_metabolite_choices <- function(selected_reaction)
-{
-  reference_reactions <- get_reference_reactions_from_database(selected_reaction)
-  metabolites <- get_metabolite_names(reference_reactions$equation)
-
-  return(metabolites)
-}
-
-get_model_paths_from_database <- function(model_names)
-{
-  model_paths <- lapply(model_names, function(model_name) {
-    model_paths[[model_name]]})
-
-  return(model_paths)
-}
-
-get_choices_model_names <- function()
-{
-  choices <- names(model_paths)
-
-  return(choices)
 }

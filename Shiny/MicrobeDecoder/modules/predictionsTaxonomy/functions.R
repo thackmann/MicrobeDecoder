@@ -37,18 +37,13 @@
   #' Convert a Query into a Regular Expression for Matching
   #'
   #' This function converts a query string into a regular expression for matching,
-  #' padding strings with "^" and "$" to prevent partial matches. NA values are replaced 
-  #' with "^.*$" so they match any string.
+  #' padding strings with "^" and "$" to prevent partial matches.
   #'
   #' @param x A character string or NA value to be formatted.
   #' @return A formatted regular expression string.
   #' @export
   format_query_element <- function(x) {
-    if (!is.na(x)) {
       return(paste0("^", x, "$"))
-    } else {
-      return("^.*$")
-    }
   }
   
   #' Get Reference Table of Organisms
@@ -98,27 +93,77 @@
   #' Filter a Table by Taxon
   #'
   #' This function filters a table to return rows matching a specified query taxon.
+  #' It starts at the most specific level (Genus + Species) and progressively moves up 
+  #' the taxonomic ranks until a match is found. There is an option to require 
+  #' all ranks to match (strict mode). Ranks that are NA (^NA$) are ignored.
   #'
   #' @param table A dataframe to be filtered.
-  #' @param query_taxon A dataframe containing the taxon query to match.
+  #' @param query_taxon A dataframe containing the taxon query to match
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
+  #'
   #' @return A filtered dataframe containing only rows that match the query taxon.
   #' @export
-  #' @importFrom dplyr filter select
-  #' @importFrom stringr str_detect
-  filter_table_by_taxon <- function(table, query_taxon) {
-    # Get the names of the columns that need to be filtered
-    filter_columns <- colnames(query_taxon)
+  filter_table_by_taxon <- function(table, query_taxon, ignore_species = TRUE, match_all_ranks = FALSE) {
+    # Set levels of taxonomic ranks to match
+    rank_levels <- list(
+      c("Genus", "Species"),
+      "Genus",
+      "Family",
+      "Order",
+      "Class",
+      "Phylum"
+    )
+
+    if (ignore_species) {
+      rank_levels <- lapply(rank_levels, setdiff, "Species")
+    }
+
+    valid_levels <- names(query_taxon)[
+      names(query_taxon) %in% unlist(rank_levels) & !sapply(query_taxon, identical, "^NA$")
+    ]
     
-    # Dynamically filter the table based on the columns in query
-    match <- table
-    for (col in filter_columns) {
-      match <- match %>% dplyr::filter(grepl(pattern = query_taxon[[col]], x = match[[col]]))
+    rank_levels <- lapply(rank_levels, function(ranks) {
+      intersect(ranks, valid_levels)
+    })
+    
+    rank_levels <- Filter(length, rank_levels)
+    rank_levels <- rank_levels[!duplicated(rank_levels)]
+    
+    # Option 1 (strict): match across all taxonomic ranks at once
+    if (match_all_ranks) {
+      match <- table
+      
+      all_ranks_to_match <- unique(unlist(rank_levels))
+      
+      for (rank in all_ranks_to_match) {
+        pattern <- query_taxon[[rank]]
+
+        if (!identical(pattern, "^.*$")) {
+          match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
+        }
+      }
+      
+      return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
     }
     
-    # Drop the columns used for filtering
-    match <- dplyr::select(as.data.frame(match), -all_of(filter_columns))
+    # Option 2 (permissive): start matching at low taxonomic levels, then move up if no match
+    for (ranks in rank_levels) {
+      match <- table
+      for (rank in ranks) {
+        pattern <- query_taxon[[rank]]
+
+        if (!identical(pattern, "^.*$")) {
+          match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
+        }
+      }
+      if (nrow(match) > 0) {
+        return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
+      }
+    }
     
-    return(match)
+    # No match found at any level
+    return(dplyr::select(as.data.frame(table[0, ]), -all_of(colnames(query_taxon))))
   }
   
   #' Convert a Trait into a Regular Expression for Matching
@@ -290,15 +335,24 @@
   #' @param query_unique A dataframe containing unique queries.
   #' @param table A dataframe containing reference data.
   #' @param query_patterns A list of formatted query patterns.
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
   #'
   #' @return A list of dataframes, where each element corresponds to matching organisms 
   #'   for a unique query.
   #'
   #' @export
-  compute_matching_organisms <- function(query_unique, table, query_patterns) {
-    lapply(seq_len(nrow(query_unique)), function(i) {
-      filter_table_by_taxon(table = table, query_taxon = query_patterns[[i]])
-    })
+  compute_matching_organisms <- function(query_unique, table, query_patterns, ignore_species = TRUE, match_all_ranks = FALSE) {
+    matching_organisms <- vector("list", length = nrow(query_unique))
+    for (i in seq_len(nrow(query_unique))) {
+      matching_organisms[[i]] <- filter_table_by_taxon(table = table, 
+                                                       query_taxon = query_patterns[[i]], 
+                                                       ignore_species = ignore_species, 
+                                                       match_all_ranks = match_all_ranks)
+      
+    }
+    
+    return(matching_organisms)
   }
   
   #' Compute Probabilities of Traits for Unique Queries
@@ -391,12 +445,15 @@
   #' @param table A cleaned reference table.
   #' @param traits_to_predict A character vector of trait names to predict.
   #' @param ignore_NA Logical; whether to ignore NAs when computing probabilities.
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
   #' @param ns A namespace function for Shiny progress bar updates.
   #' @param session The current Shiny session object.
   #'
   #' @return A dataframe of predicted trait probabilities.
   #' @export
   predict_traits_taxonomy <- function(query, table, traits_to_predict, ignore_NA = TRUE,
+                            ignore_species = TRUE, match_all_ranks = FALSE,
                              ns = NULL, session = shiny::getDefaultReactiveDomain()) {
     unique_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
     
@@ -404,7 +461,11 @@
     
     patterns <- precompute_patterns(query_data$query_unique, traits_to_predict, table)
     
-    matching_organisms <- compute_matching_organisms(query_data$query_unique, table, patterns$query_patterns)
+    matching_organisms <- compute_matching_organisms(query_unique = query_data$query_unique, 
+                                                     table = table, 
+                                                     query_patterns = patterns$query_patterns, 
+                                                     ignore_species = ignore_species,
+                                                     match_all_ranks = match_all_ranks)
     
     results_unique <- compute_probabilities(
       query_unique = query_data$query_unique,
@@ -429,14 +490,14 @@
   #' @param query_string A query string used to filter the database
   #' @param traits_to_predict Character vector of trait names
   #' @param ignore_NA Logical, whether to ignore NA values
-  #' @param simple_names Logical, whether to use simplified names for taxa
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
   #' @param ignore_species Logical, whether to ignore species rank in taxa
   #' @param system_taxonomy Character, taxonomy system to use (e.g., "LPSN")
   #' @param ns The namespace function for the Shiny module.
   #'
   #' @return A named list with trait probabilities.
   #' @export
-  compute_taxonomy_predictions <- function(data, query_taxa, query_string, traits_to_predict, ignore_NA, simple_names, ignore_species, system_taxonomy, ns = NULL) {
+  compute_taxonomy_predictions <- function(data, query_taxa, query_string, traits_to_predict, ignore_NA, match_all_ranks, ignore_species, system_taxonomy, ns = NULL) {
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Getting data", value = 0)  
     
@@ -444,14 +505,14 @@
     table <- get_reference_table(data, system_taxonomy, traits_to_predict, query_string, ignore_NA)
     
     # Get query taxa
-    query_taxa <- format_query_taxa(query_taxa, simple_names = simple_names, ignore_species = ignore_species)
+    query_taxa <- format_query_taxa(query_taxa)
     
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 0)  
     cat(file = stderr(), paste0("Started prediction at ", Sys.time(), "\n"))  
     
     # Get trait probabilities
-    probabilities <- predict_traits_taxonomy(query_taxa, table, traits_to_predict, ignore_NA = ignore_NA, ns = ns)
+    probabilities <- predict_traits_taxonomy(query_taxa, table, traits_to_predict, ignore_NA = ignore_NA, ignore_species = ignore_species, match_all_ranks = match_all_ranks, ns = ns)
     
     # Update progress
     cat(file = stderr(), paste0("Ended prediction at ", Sys.time(), "\n"))
@@ -460,64 +521,85 @@
   }
   
 # === Processing taxonomy ===
+  #' Check if String has Taxonomy in QIIME2 or MetaPhlAn Format
+  #' 
+  #' This helper function is used to detect if a string follows QIIME2 or
+  #' MetaPhlAn format.  It checks for presence of taxonomic prefixes 
+  #' (like k__, p__), which both formats use.  It also checks for presence 
+  #' of semicolon seperators (used by QIIME2) and pipe separators 
+  #' (used by MetaPhlAn).
+  #'
+  #' @param x A single character string.
+  #' @return One of "QIIME2", "MetaPhlAn", or "Unknown".
+  #' @examples
+  #' classify_taxonomy_string("k__Bacteria; p__Firmicutes; c__Bacilli")
+  #' classify_taxonomy_string("k__Bacteria|p__Firmicutes|c__Bacilli")
+  #' classify_taxonomy_string("UNCLASSIFIED")
+  classify_taxonomy_string <- function(x) {
+    x <- as.character(x)
+    
+    has_prefix <- grepl("k__|p__|c__|o__|f__|g__|s__", x, perl = TRUE)
+    has_semicolon <- grepl(";", x, fixed = TRUE)
+    has_pipe <- grepl("|", x, fixed = TRUE)
+    
+    if (has_prefix && has_semicolon && !has_pipe) {
+      return("qiime2")
+    } else if (has_prefix && has_pipe && !has_semicolon) {
+      return("metaphlan")
+    } else {
+      return("unknown")
+    }
+  }
+  
   #' Split Taxonomy String into Taxonomic Ranks
   #'
-  #' This function processes a single Greengenes-like taxonomy string and splits it into
-  #' individual taxonomic ranks. By default, it extracts the species epithet
-  #' (e.g., "coli" in "Escherichia coli").
+  #' This function splits a string containing an organism's full taxonomy into
+  #' individual ranks. It can accommodate both QIIME2 and MetaPhlAn-style
+  #' strings. By default, it extracts the species epithet
+  #' (e.g., "coli" in "Escherichia coli" or "epidermidis" from "Staphylococcus_epidermidis").
   #'
-  #' @param taxonomy A character string representing a GTDB taxonomy, e.g.,
+  #' @param taxonomy A character string with the organism's taxonomy, e.g.,
   #'   "d__Bacteria;p__Pseudomonadota;c__Gammaproteobacteria;o__Burkholderiales;f__Burkholderiaceae;g__Bordetella;s__Bordetella pseudohinzii".
+  #' @param rank_sep The delimiter between ranks (e.g., ";" for QIIME2, "|" for MetaPhlAn).
+  #' @param ranks Vector of rank names.
+  #' @param prefixes Vector of corresponding prefixes.
   #' @param extract_species_epithet Logical. If `TRUE` (default), the species
   #'   column contains only the epithet (e.g., "coli" from "Escherichia coli").
   #'   If `FALSE`, the full species name is returned.
-  #'
-  #' @return A named character vector with elements for each taxonomic rank:
-  #'   `Domain`, `Phylum`, `Class`, `Order`, `Family`, `Genus`, and `Species`.
+  #' @param sp_sep The delimiter between genus and species (e.g., " " for QIIME2, "_" for MetaPhlAn).
+  #' 
+  #' @return A named character vector with taxonomic ranks.
   #'
   #' @examples
-  #' taxonomy <- "d__Bacteria;p__Bacillota;c__Bacilli;o__Staphylococcales;f__Staphylococcaceae;g__Staphylococcus;s__Staphylococcus epidermidis"
-  #' split_taxonomy(taxonomy)
-  #' split_taxonomy(taxonomy, extract_species_epithet = FALSE)
-  split_taxonomy <- function(
+  #' split_taxonomy_string("k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; f__Streptococcaceae; g__Streptococcus; s__Streptococcus pneumoniae", rank_sep = ";", sp_sep = " ")
+  #' split_taxonomy_string("k__Bacteria|p__Firmicutes|c__Bacilli|o__Lactobacillales|f__Streptococcaceae|g__Streptococcus|s__Streptococcus_pneumoniae", rank_sep = "|", sp_sep = "_")
+  split_taxonomy_string <- function(
     taxonomy,
-    ranks = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+    rank_sep = ";",
+    ranks = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
     prefixes = paste0(substr(tolower(ranks), 1, 1), "__"),
-    extract_species_epithet = TRUE
+    extract_species_epithet = TRUE,
+    sp_sep = " "
   ) {
-    # Split the taxonomy string by semicolon
-    taxon_split <- strsplit(taxonomy, ";")[[1]]
+    parts <- strsplit(taxonomy, rank_sep, fixed = TRUE)[[1]]
+    out <- setNames(rep(NA_character_, length(ranks)), ranks)
     
-    # Create a named vector from prefix to taxon
-    taxon_named <- setNames(rep(NA_character_, length(ranks)), ranks)
-    for (item in taxon_split) {
+    for (item in parts) {
+      item <- trimws(item)  # remove leading/trailing spaces
       for (i in seq_along(prefixes)) {
         prefix <- prefixes[i]
         if (startsWith(item, prefix)) {
-          taxon_named[ranks[i]] <- sub(paste0("^", prefix), "", item)
+          val <- sub(paste0("^", prefix), "", item)
+          if (ranks[i] == "Species" && extract_species_epithet) {
+            val <- sub(paste0(".*", sp_sep), "", val)
+          }
+          out[ranks[i]] <- val
           break
         }
       }
     }
     
-    # Optionally extract the species epithet
-    if (extract_species_epithet && "Species" %in% ranks && !is.na(taxon_named["Species"])) {
-      taxon_named["Species"] <- sub(".*\\s", "", taxon_named["Species"])
-    }
-    
-    return(taxon_named)
-  }
-  
-  #' Check if a column contains QIIME2 Taxonomy Format
-  #'
-  #' This helper function checks if a column contains taxonomy in QIIME2 format.
-  #'
-  #' @param column Vector. A column from a dataframe.
-  #' 
-  #' @return Logical. TRUE if the column contains QIIME2-formatted taxonomy, FALSE otherwise.
-  detect_qiime2_column <- function(column) {
-    pattern <- "^\\s*k__[^;]+(;\\s*p__[^;]+)?(;\\s*c__[^;]+)?(;\\s*o__[^;]+)?(;\\s*f__[^;]+)?(;\\s*g__[^;]+)?(;\\s*s__[^;]+)?\\s*$"
-    any(grepl(pattern, column[!is.na(column)], perl = TRUE))
+    return(out)
   }
   
   #' Check if Data Follows DADA2 Format
@@ -532,18 +614,41 @@
     all(c("Phylum", "Class", "Order", "Family", "Genus", "Species") %in% colnames(data))
   }
   
-  #' Check if Data Follows QIIME2 Format
+  #' Check if Data Follows DADA2 Format
   #'
-  #' This function checks if the data contains taxonomy information in the QIIME2 format.
-  #' It does this by scanning all columns for the QIIME2 taxonomy pattern.
+  #' This function checks if the data contains taxonomoy in DADA2-format.
+  #' It does this by scanning all columns for the DADA2 taxonomy pattern.
   #'
   #' @param data Dataframe. The data to check.
   #' 
-  #' @return Logical. TRUE if any column contains QIIME2-formatted taxonomy, FALSE otherwise.
+  #' @return Logical. TRUE if the data follows DADA2 format, FALSE otherwise.
   #' @export
   is_qiime2_format <- function(data) {
     if (!is.data.frame(data)) return(FALSE)
-    any(sapply(data, detect_qiime2_column))
+    
+    any(
+      sapply(data, function(col) {
+        any(sapply(col, classify_taxonomy_string) == "qiime2", na.rm = TRUE)
+      })
+    )
+  }
+  
+  #' Check if Data Follows MetaPhlAn Format
+  #'
+  #' This function checks if the data contains taxonomoy in MetaPhlAn-format.
+  #' It does this by scanning all columns for the MetaPhlAn taxonomy pattern.
+  #'
+  #' @param data A dataframe to check.
+  #' @return Logical. TRUE if any column contains MetaPhlAn-formatted taxonomy, FALSE otherwise.
+  #' @export
+  is_metaphlan_format <- function(data) {
+    if (!is.data.frame(data)) return(FALSE)
+    
+    any(
+      sapply(data, function(col) {
+        any(sapply(col, classify_taxonomy_string) == "metaphlan", na.rm = TRUE)
+      })
+    )
   }
   
   #' Check if Data Follows IMG Genome Format
@@ -589,33 +694,78 @@
   #' @export
   process_qiime2_format <- function(data) {
     # Find the column that contains QIIME2-format taxonomy
-    taxonomy_col <- NULL
-    for (colname in names(data)) {
-      if (detect_qiime2_column(data[[colname]])) {
-        taxonomy_col <- colname
-        break
-      }
+    taxonomy_col <- names(data)[
+      which.max(
+        sapply(data, function(col) any(sapply(col, classify_taxonomy_string) == "qiime2", na.rm = TRUE))
+      )
+    ]
+    
+    if (is.na(taxonomy_col) || taxonomy_col == "") {
+      stop("No QIIME2-formatted column found.")
     }
     
-    if (is.null(taxonomy_col)) {
-      stop("No column with QIIME2-formatted taxonomy found.")
-    }
-    
+    # Split the strings into separate columns
     taxonomy_vec <- as.character(data[[taxonomy_col]])
-    n <- length(taxonomy_vec)
-    df <- data.frame(matrix(NA, nrow = n, ncol = 6))
-    colnames(df) <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
-    prefix <- c("p__", "c__", "o__", "f__", "g__", "s__")
     
-    for (i in seq_len(n)) {
-      for (j in seq_along(prefix)) {
-        pattern <- paste0(prefix[j], ".*?(;|$)")
-        match <- stringr::str_extract(taxonomy_vec[i], pattern)
-        cleaned <- gsub(".__", "", match)
-        cleaned <- gsub(";", "", cleaned)
-        df[i, j] <- cleaned
-      }
+    out_list <- vector("list", length(taxonomy_vec))
+    for (i in seq_along(taxonomy_vec)) {
+      out_list[[i]] <- split_taxonomy_string(
+        taxonomy = taxonomy_vec[i],
+        rank_sep = ";",
+        sp_sep = " ",
+        extract_species_epithet = TRUE
+      )
     }
+    
+    # Combine results
+    df <- do.call(rbind, out_list)
+    rownames(df) <- NULL
+    df <- (as.data.frame(df))
+    
+    return(df)
+  }
+  
+  
+  #' Process MetaPhlAn Format
+  #'
+  #' Splits MetaPhlAn-style taxonomy strings into separate columns.
+  #' Only rows beginning with `k__` are included; others like `UNCLASSIFIED` are excluded.
+  #'
+  #' @param data Dataframe that contains a column with MetaPhlAn-formatted taxonomy.
+  #'
+  #' @return A dataframe with columns `Phylum`, `Class`, `Order`, `Family`, `Genus`, `Species`.
+  #' @export
+  process_metaphlan_format <- function(data) {
+    # Find the column that contains MetaPhlAn-format taxonomy
+    taxonomy_col <- names(data)[
+      which.max(
+        sapply(data, function(col) any(sapply(col, classify_taxonomy_string) == "metaphlan", na.rm = TRUE))
+      )
+    ]
+    
+    if (is.na(taxonomy_col) || taxonomy_col == "") {
+      stop("No MetaPhlAn-formatted column found.")
+    }
+    
+    # Split the strings into separate columns
+    taxonomy_vec <- as.character(data[[taxonomy_col]])
+    taxonomy_vec <- gsub("\\t.*$", "", taxonomy_vec)         # Strip extra fields
+    taxonomy_vec <- taxonomy_vec[grepl("^k__", taxonomy_vec)] # Keep valid rows
+    
+    out_list <- vector("list", length(taxonomy_vec))
+    for (i in seq_along(taxonomy_vec)) {
+      out_list[[i]] <- split_taxonomy_string(
+        taxonomy = taxonomy_vec[i],
+        rank_sep = "|",
+        sp_sep = "_",
+        extract_species_epithet = TRUE
+      )
+    }
+    
+    # Combine results
+    df <- do.call(rbind, out_list)
+    rownames(df) <- NULL
+    df <- (as.data.frame(df))
     
     return(df)
   }
@@ -671,7 +821,8 @@
   #' Process Uploaded Taxonomy File
   #'
   #' This function processes an uploaded taxonomy file, detecting whether it follows
-  #' the DADA2, QIIME2, or IMG genome format, and reformats the data accordingly.
+  #' the DADA2, QIIME2, MetaPhlan, or IMG genome format, and reformats the data 
+  #' accordingly.
   #'
   #' @param query Dataframe. The uploaded taxonomy data.
   #'
@@ -684,11 +835,200 @@
       return(process_dada2_format(query))
     } else if (is_qiime2_format(query)) {
       return(process_qiime2_format(query))
+    } else if (is_metaphlan_format(query)) {
+      return(process_metaphlan_format(query))
     } else if (is_img_format(query)) {
       return(process_img_genome_format(query))
     } else {
       return(NULL)
     }
+  }
+                
+  #' Process IMG Genome Format
+  #'
+  #' Selects and renames GTDB or NCBI taxonomy columns from IMG genome tables.
+  #' By default, it prioritizes NCBI taxonomy columns unless `prefer = "GTDB"` is specified.
+  #' It can also optionally extract just the species epithet (e.g., "coli" from "Escherichia coli").
+  #'
+  #' @param data Dataframe containing GTDB or NCBI taxonomy columns.
+  #' @param prefer Character. Which taxonomy to prioritize if both are present: "NCBI" (default) or "GTDB".
+  #' @param extract_species_epithet Logical. If `TRUE` (default), returns only the species epithet
+  #'   in the `Species` column; if `FALSE`, returns full species name.
+  #'
+  #' @return A dataframe with columns `Phylum` to `Species`, or NULL if neither taxonomy is available.
+  #' @export
+  process_img_genome_format <- function(data, prefer = c("NCBI", "GTDB"), extract_species_epithet = TRUE) {
+    prefer <- match.arg(prefer)
+    
+    gtdb_cols <- c("GTDB Phylum", "GTDB Class", "GTDB Order", "GTDB Family", "GTDB Genus", "GTDB Species")
+    ncbi_cols <- c("NCBI Phylum", "NCBI Class", "NCBI Order", "NCBI Family", "NCBI Genus", "NCBI Species")
+    
+    has_gtdb <- all(gtdb_cols %in% colnames(data))
+    has_ncbi <- all(ncbi_cols %in% colnames(data))
+    
+    select_and_rename <- function(cols, prefix) {
+      df <- data %>%
+        dplyr::select(dplyr::all_of(cols)) %>%
+        dplyr::rename_with(~ gsub(paste0("^", prefix, " "), "", .x))
+      
+      if (extract_species_epithet && "Species" %in% colnames(df)) {
+        df <- df %>%
+          dplyr::mutate(Species = sub(".*\\s", "", Species))
+      }
+      
+      return(df)
+    }
+    
+    if (prefer == "NCBI" && has_ncbi) {
+      return(select_and_rename(ncbi_cols, "NCBI"))
+    } else if (prefer == "GTDB" && has_gtdb) {
+      return(select_and_rename(gtdb_cols, "GTDB"))
+    } else if (has_ncbi) {
+      return(select_and_rename(ncbi_cols, "NCBI"))
+    } else if (has_gtdb) {
+      return(select_and_rename(gtdb_cols, "GTDB"))
+    } else {
+      return(NULL)
+    }
+  }
+  
+  #' Process Uploaded Taxonomy File
+  #'
+  #' This function processes an uploaded taxonomy file, detecting whether it follows
+  #' the DADA2, QIIME2, MetaPhlan, or IMG genome format, and reformats the data 
+  #' accordingly.
+  #'
+  #' @param query Dataframe. The uploaded taxonomy data.
+  #'
+  #' @return A processed dataframe with standard taxonomic ranks or NULL if format is unrecognized.
+  #' @export
+  process_uploaded_taxonomy <- function(query) {
+    if (!is.data.frame(query)) return(NULL)
+    
+    if (is_dada2_format(query)) {
+      return(process_dada2_format(query))
+    } else if (is_qiime2_format(query)) {
+      return(process_qiime2_format(query))
+    } else if (is_metaphlan_format(query)) {
+      return(process_metaphlan_format(query))
+    } else if (is_img_format(query)) {
+      return(process_img_genome_format(query))
+    } else {
+      return(NULL)
+    }
+  }
+  
+# === Get inputs ===
+  #' Get Query Taxa
+  #'
+  #' Processes the query taxa input from either a database selection or uploaded file.
+  #'
+  #' @param taxonomy_from_database Logical. Use database input?
+  #' @param taxonomy_from_upload Logical. Use uploaded file?
+  #' @param selected_organisms Character vector of selected taxa (if from database).
+  #' @param taxonomy_upload_path File path to uploaded taxonomy file.
+  #'
+  #' @return A processed `query_taxa` dataframe.
+  get_query_taxa <- function(taxonomy_from_database,
+                             taxonomy_from_upload,
+                             selected_organisms = NULL,
+                             taxonomy_upload_path = NULL) {
+    if (taxonomy_from_database) {
+      query_taxa <- process_query_taxa(selected_organisms)
+      runValidationModal(need(!is.null(query_taxa) && nrow(query_taxa) > 0, "Please choose a taxon"))
+    } else if (taxonomy_from_upload) {
+      query_taxa <- validate_and_read_file(file_path = taxonomy_upload_path)
+      
+      query_taxa <- process_uploaded_taxonomy(query_taxa)
+      
+      runValidationModal(need(!is.null(query_taxa) && nrow(query_taxa) > 0, "Please check the format of the taxonomy file and try again."))
+    } else {
+      stop("No valid taxonomy input specified.")
+    }
+    return(query_taxa)
+  }
+  
+  #' Get Traits Input
+  #'
+  #' Validates trait inputs and processes query string for custom traits.
+  #'
+  #' @param traits_from_standard Logical. Is this a standard trait?
+  #' @param traits_from_other Logical. Is this a custom trait?
+  #' @param traits_to_predict Character vector of traits (if standard).
+  #' @param query_string Raw query string (if custom trait).
+  #'
+  #' @return A named list with `traits_to_predict` and `query_string`.
+  get_traits_input <- function(traits_from_standard,
+                               traits_from_other,
+                               traits_to_predict = NULL,
+                               query_string = NULL) {
+    if (traits_from_standard) {
+      runValidationModal(need(!is.null(traits_to_predict) && length(traits_to_predict) > 0, "Please choose a trait"))
+      return(list(traits_to_predict = traits_to_predict, query_string = NULL))
+    } else if (traits_from_other) {
+      query_string <- process_query_string(query_string)
+      runValidationModal(need(query_string != "", "Please build a valid query."))
+      return(list(traits_to_predict = "Custom trait", query_string = query_string))
+    } else {
+      stop("No valid trait source specified.")
+    }
+  }
+  
+  #' Get Inputs for Taxonomy Module
+  #'
+  #' This is the main function for getting all inputs for the module
+  #'
+  #' @param taxonomy_from_database Logical. Whether taxonomy is selected from database.
+  #' @param taxonomy_from_upload Logical. Whether taxonomy is uploaded from a file.
+  #' @param traits_from_standard Logical. Whether traits are standard.
+  #' @param traits_from_other Logical. Whether trait is defined by a custom query.
+  #' @param selected_organisms Character vector of selected taxa (if from database).
+  #' @param taxonomy_upload_path File path to uploaded taxonomy file.
+  #' @param traits_to_predict Character vector of traits to predict.
+  #' @param query_string Raw query string for custom trait.
+  #' @param ignore_NA Logical. Ignore NA in response variable?
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
+  #' @param ignore_species Logical. Collapse species to genus?
+  #' @param system_taxonomy Logical. Use system taxonomy hierarchy?
+  #'
+  #' @return A named list of inputs for downstream processing.
+  get_taxonomy_inputs <- function(
+    taxonomy_from_database,
+    taxonomy_from_upload,
+    traits_from_standard,
+    traits_from_other,
+    selected_organisms = NULL,
+    taxonomy_upload_path = NULL,
+    traits_to_predict = NULL,
+    query_string = NULL,
+    ignore_NA,
+    match_all_ranks,
+    ignore_species,
+    system_taxonomy
+  ) {
+    query_taxa <- get_query_taxa(
+      taxonomy_from_database = taxonomy_from_database,
+      taxonomy_from_upload = taxonomy_from_upload,
+      selected_organisms = selected_organisms,
+      taxonomy_upload_path = taxonomy_upload_path
+    )
+    
+    traits_info <- get_traits_input(
+      traits_from_standard = traits_from_standard,
+      traits_from_other = traits_from_other,
+      traits_to_predict = traits_to_predict,
+      query_string = query_string
+    )
+    
+    list(
+      query_taxa = query_taxa,
+      traits_to_predict = traits_info$traits_to_predict,
+      query_string = traits_info$query_string,
+      ignore_NA = ignore_NA,
+      match_all_ranks = match_all_ranks,
+      ignore_species = ignore_species,
+      system_taxonomy = system_taxonomy
+    )
   }
   
 # === Other functions ===
@@ -884,79 +1224,60 @@
     return(query)
   }
   
-  #' Clean taxon data by replacing placeholders and removing brackets
+  #' Clean taxon data by replacing placeholders, removing suffixes, and stripping brackets
   #'
-  #' This function replaces common placeholder values (e.g., "", "?", "unclassified") with `NA`
-  #' and removes square brackets (e.g., "[", "]") from character or factor columns.
+  #' This function replaces common placeholder values (e.g., "", "?", "unclassified") with `NA`,
+  #' removes specified suffixes (e.g., "_unclassified"), and strips characters from specified brackets.
   #'
   #' @param df A data frame of taxonomic data.
   #' @param missing_values A character vector of values to treat as missing. Defaults to "", "?", and "unclassified".
+  #' @param suffixes_to_remove A character vector of suffixes to strip from values (e.g., "_unclassified").
+  #' @param brackets_to_remove A string of bracket characters to remove (e.g., "[]{}()"). Defaults to "[]".
   #'
   #' @return A cleaned data frame.
   #' @export
   #'
   #' @examples
   #' cleaned <- clean_taxon_data(taxon_df)
-  clean_taxon_data <- function(df, missing_values = c("", "?", "unclassified")) {
+  clean_taxon_data <- function(
+    df,
+    missing_values = c("", "?", "unclassified"),
+    suffixes_to_remove = c("_unclassified"),
+    brackets_to_remove = "[]"
+  ) {
+    # Escape bracket characters for regex
+    brackets_regex <- paste0("[", gsub("([][(){}.^$*+?|\\\\])", "\\\\\\1", brackets_to_remove), "]")
+    
     df[] <- lapply(df, function(x) {
       if (is.character(x) || is.factor(x)) {
         x <- as.character(x)
         x[x %in% missing_values] <- NA
-        x <- gsub("\\[|\\]", "", x)
+        x <- gsub(brackets_regex, "", x)  # Remove bracket characters
+        
+        for (suffix in suffixes_to_remove) {
+          pattern <- paste0(suffix, "$")
+          x <- gsub(pattern, "", x)
+        }
       }
       return(x)
     })
     return(as.data.frame(df))
   }
   
-  #' Simplify Taxonomy Names
-  #'
-  #' This function simplifies taxonomy names by replacing high-level taxonomic ranks with NA.
-  #' The last non-NA rank is preserved, along with the species name.
-  #'
-  #' @param row A vector representing a row of taxonomy data.
-  #' @param col_names A character vector of column names corresponding to the taxonomy ranks.
-  #' @return A simplified vector with high-level ranks replaced by NA.
-  #' @export
-  simplify_names <- function(row, col_names) {
-    species_column_idx <- which(col_names == "Species")
-    
-    if (all(is.na(row[-species_column_idx]))) {
-      row
-    } else {
-      last_non_na_idx <- max(which(!is.na(row[-species_column_idx])))
-      row[-c(last_non_na_idx, species_column_idx)] <- NA
-    }
-    
-    return(row)
-  }
-  
   #' Format Query Taxa Table
   #'
-  #' This function cleans and formats a query taxa dataframe by replacing missing values,
-  #' simplifying names, and optionally removing species.
+  #' This function cleans and formats a query taxa dataframe by replacing missing values.
   #'
   #' @param query A dataframe of taxonomic ranks for query organisms.
-  #' @param simple_names Logical; whether to simplify taxon names.
-  #' @param ignore_species Logical; whether to blank out species names.
   #'
   #' @return A formatted version of the query dataframe.
   #' @export
-  format_query_taxa <- function(query, simple_names = TRUE, ignore_species = TRUE) {
+  format_query_taxa <- function(query) {
     query <- clean_taxon_data(query)
-    
-    if (simple_names) {
-      query <- as.data.frame(t(apply(query, 1, simplify_names, colnames(query))))
-    }
-    
-    if (ignore_species && "Species" %in% colnames(query)) {
-      query$Species <- NA
-    }
-    
+
     return(query)
   }
-  
-  
+
   #' Get Choices for Taxa
   #'
   #' This function extracts unique taxonomic names from a dataframe and appends 

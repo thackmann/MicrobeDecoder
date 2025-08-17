@@ -58,7 +58,7 @@
               condition = "input.show_advanced",
               ns = ns,
               shiny::sliderInput(ns("threshold"), "Probability threshold", min = 0, max = 1, value = 0.5),
-              create_switch_input(inputId = ns("simple_names"), label = "Simplify names of taxa"),
+              create_switch_input(inputId = ns("match_all_ranks"), label = "All taxonomic ranks must match", value = FALSE),
               create_switch_input(inputId = ns("ignore_species"), label = "Ignore species names for taxa"),
               create_switch_input(inputId = ns("ignore_missing"), label = "Ignore missing values in database"),
               create_selectize_input(inputId = ns("system_taxonomy"), label = "Taxonomy", multiple = FALSE),
@@ -144,59 +144,32 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   }, label = "create_job")
   
   # --- Get inputs ---
-  # Get inputs
-  get_inputs <- shiny::eventReactive({make_predictions_trigger()},
-  {
-     # Get query taxa
-       if (input$taxonomy_tabs == "Database") {
-         # Get inputs
-         selected_organisms <- input$taxonomy_database
-         query_taxa <- process_query_taxa(selected_organisms)
-         runValidationModal(need((!is.null(query_taxa)) && (nrow(query_taxa) > 0), "Please choose an taxon"))
-         
-       } else if (input$taxonomy_tabs == "File upload") {
-         # Validate, read, and process the taxonomy file
-         query_taxa <- validate_and_read_file(file_path = input$taxonomy_upload$datapath)
-         query_taxa <- process_uploaded_taxonomy(query_taxa)
-         
-         runValidationModal(need((!is.null(query_taxa)) && (nrow(query_taxa) > 0), "Please check the format of the taxonomy file and try again."))
-       }
-       
-     # Get traits to predict
-       if (input$trait_tabs == "Standard traits") {
-         traits_to_predict <- input$set_traits
-         runValidationModal(need(!is.null(traits_to_predict) && length(traits_to_predict) > 0, "Please choose a trait"))
-       }else if(input$trait_tabs == "Other traits"){
-         traits_to_predict <- "Custom trait"
-       }
-       
-     # Get query string (from query builder)
-       if(input$trait_tabs == "Other traits") {
-         query_string  = input$query_builder
-         query_string <- process_query_string(query_string)
-         runValidationModal(need(query_string != "", "Please build a valid query."))
-       }else if(input$trait_tabs == "Standard traits") {
-         query_string <- NULL
-       }
-       
-    # Get other inputs
-      ignore_NA <- input$ignore_missing
-      simple_names <- input$simple_names
-      ignore_species <- input$ignore_species
-      system_taxonomy <- input$system_taxonomy
+  get_inputs <- shiny::eventReactive(make_predictions_trigger(), {
+    # Set flags
+    taxonomy_from_database <- isTRUE(input$taxonomy_tabs == "Database")
+    taxonomy_from_upload   <- isTRUE(input$taxonomy_tabs == "File upload")
+    traits_from_standard   <- isTRUE(input$trait_tabs == "Standard traits")
+    traits_from_other      <- isTRUE(input$trait_tabs == "Other traits")
     
-     # Compile inputs
-      list(
-        query_taxa = query_taxa,
-        traits_to_predict = traits_to_predict,
-        query_string = query_string,
-        ignore_NA = ignore_NA,
-        simple_names = simple_names,
-        ignore_species = ignore_species,
-        system_taxonomy = system_taxonomy
-      )
-  }, 
-  label = "get_inputs")
+    # Launch modal
+    display_modal(ns = ns, message = "Getting inputs")
+    
+    # Call master input function
+    get_taxonomy_inputs(
+      taxonomy_from_database = taxonomy_from_database,
+      taxonomy_from_upload = taxonomy_from_upload,
+      traits_from_standard = traits_from_standard,
+      traits_from_other = traits_from_other,
+      selected_organisms = input$taxonomy_database,
+      taxonomy_upload_path = input$taxonomy_upload$datapath,
+      traits_to_predict = input$set_traits,
+      query_string = input$query_builder,
+      ignore_NA = input$ignore_missing,
+      match_all_ranks = input$match_all_ranks,
+      ignore_species = input$ignore_species,
+      system_taxonomy = input$system_taxonomy
+    )
+  }, label = "get_inputs")
   
   #--- Perform computations ---
   # Perform computations
@@ -208,7 +181,7 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
       query_string = get_inputs()$query_string,
       traits_to_predict = get_inputs()$traits_to_predict,
       ignore_NA = get_inputs()$ignore_NA,
-      simple_names = get_inputs()$simple_names,
+      match_all_ranks = get_inputs()$match_all_ranks,
       ignore_species = get_inputs()$ignore_species,
       system_taxonomy = get_inputs()$system_taxonomy,
       ns = ns

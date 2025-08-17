@@ -275,7 +275,7 @@ evaluate_rf <- function(rf, data) {
   predicted_classes <- as.factor(ifelse(predictions >= 0.5, levels(response_column)[2], levels(response_column)[1]))
   
   # Create a confusion matrix
-  confusion_matrix <- caret::confusionMatrix(predicted_classes, response_column)
+  confusion_matrix <- caret::confusionMatrix(predicted_classes, response_column, positive = "1")
   
   return(confusion_matrix)
 }
@@ -519,3 +519,251 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
   
   return(results)
 }
+
+# === Get inputs ===
+  #' Get Model Names
+  #'
+  #' Extracts model names based on the selected tab.
+  #'
+  #' @param models_from_standard Logical. Using standard model list?
+  #' @param models_from_other Logical. Defining custom model name?
+  #' @param models_from_upload Logical. Uploading a model file?
+  #' @param model_names Vector of selected model names.
+  #' @param trait_name Custom trait name (if applicable).
+  #' @param model_upload Upload input object containing name field.
+  #'
+  #' @return Character vector of model names.
+  get_model_names <- function(models_from_standard,
+                              models_from_other,
+                              models_from_upload,
+                              model_names = NULL,
+                              trait_name = NULL,
+                              model_upload = NULL) {
+    if (models_from_standard) {
+      return(model_names)
+    } else if (models_from_other) {
+      runValidationModal(need(grepl("^[a-zA-Z0-9_ ]*$", trait_name), "Please enter a valid trait name and try again."))
+      runValidationModal(need(trait_name != "", "Please enter a valid trait name and try again."))
+      return(trait_name)
+    } else if (models_from_upload) {
+      return(model_upload$name)
+    } else {
+      return(NULL)
+    }
+  }
+  
+  #' Get Model Paths from Database
+  #'
+  #' This helper function retrieves file paths for a list of model names from a configuration object.
+  #'
+  #' @param model_names Character vector. A list of model names to retrieve paths for.
+  #' @param model_path_config Named list. A mapping of model names to their file paths.
+  #'
+  #' @return A list of file paths corresponding to the given model names.
+  #' @export
+  get_model_paths_from_database <- function(model_names, model_path_config) {
+    model_paths <- lapply(model_names, function(model_name) {
+      model_path_config[[model_name]]
+    })
+    
+    return(model_paths)
+  }
+  
+  #' Get Model Paths
+  #'
+  #' Determines file paths for models based on source.
+  #'
+  #' @param models_from_standard Logical. Use preloaded models?
+  #' @param models_from_upload Logical. Use uploaded model file?
+  #' @param model_names Character vector of model names.
+  #' @param model_path_config Named list mapping model names to file paths.
+  #' @param model_upload_path File path of uploaded model file.
+  #'
+  #' @return A list or character vector of model paths.
+  #' @export
+  get_model_paths <- function(models_from_standard,
+                              models_from_upload,
+                              model_names,
+                              model_path_config,
+                              model_upload_path) {
+    if (models_from_standard) {
+      paths <- get_model_paths_from_database(model_names, model_path_config)
+      runValidationModal(need(paths != "", "Please choose at least one trait or model"))
+      return(paths)
+    } else if (models_from_upload) {
+      runValidationModal(need(model_upload_path != "", "Please choose at least one trait or model"))
+      return(model_upload_path)
+    } else {
+      return(NULL)
+    }
+  }
+  
+  #' Get Response Variable
+  #'
+  #' Formats response variable based on query string for custom traits.
+  #'
+  #' @param models_from_other Logical. Is this for a custom trait?
+  #' @param query_string Raw query string from query builder.
+  #' @param ignore_NA Logical. Whether to ignore NA responses.
+  #'
+  #' @return A dataframe containing the formatted response variable.
+  get_response <- function(models_from_other,
+                           query_string,
+                           ignore_NA) {
+    if (!models_from_other) return(NULL)
+    
+    query_string <- process_query_string(query_string)
+    runValidationModal(need(query_string != "", "Please build a valid query."))
+    
+    data <- load_database()
+    response <- format_response(data = data, query_string = query_string, ignore_NA = ignore_NA)
+    
+    runValidationModal(need(nrow(response) > 0, "Please ensure the dataset has at least one response."))
+    runValidationModal(need(length(unique(response$Response)) == 2, "Please ensure that the response variable has exactly two classes."))
+    
+    return(response)
+  }
+  
+  #' Get Predictors
+  #'
+  #' Generates predictors from gene functions for custom traits.
+  #'
+  #' @param models_from_other Logical. Is this for a custom trait?
+  #' @param responses_to_keep Character vector of response levels to include.
+  #' @param predictors_to_keep Character vector of predictor names to include.
+  #' @param seed Random seed for reproducibility.
+  #'
+  #' @return A dataframe of predictor variables.
+  get_predictors <- function(models_from_other,
+                             responses_to_keep,
+                             predictors_to_keep,
+                             seed) {
+    if (!models_from_other) return(NULL)
+    
+    gene_functions <- load_gene_functions()
+    predictors <- format_predictors(
+      gene_functions = gene_functions,
+      responses_to_keep = responses_to_keep,
+      predictors_to_keep = predictors_to_keep,
+      seed = seed
+    )
+    
+    runValidationModal(need(ncol(predictors) > 1, "Please ensure the dataset has at least one predictor"))
+    return(predictors)
+  }
+  
+  #' Get Inputs for Machine Learning Module
+  #'
+  #' This is the main function for getting all inputs for the module
+  #'
+  #' @param functions_from_database Logical. Use gene functions from database?
+  #' @param functions_from_upload Logical. Use gene functions from uploaded file?
+  #' @param models_from_standard Logical. Use standard trait models?
+  #' @param models_from_other Logical. Use custom trait definition?
+  #' @param models_from_upload Logical. Use uploaded model file?
+  #' @param selected_organisms Character vector of selected organisms.
+  #' @param gene_functions_upload_path File path to uploaded gene functions.
+  #' @param model_names_input Character vector of model names (for standard models).
+  #' @param trait_name Character name of custom trait.
+  #' @param model_upload Upload object with `name` field.
+  #' @param model_upload_path Path to uploaded model file.
+  #' @param model_path_config Named list of available model paths.
+  #' @param query_string Character query string for response formatting.
+  #' @param ignore_NA Logical. Ignore NA values in response variable?
+  #' @param responses_to_keep Character vector of response levels to include.
+  #' @param predictors_to_keep Character vector of predictor names to include.
+  #' @param seed Numeric random seed.
+  #' @param ntree Number of trees in the random forest (if applicable).
+  #' @param maxnodes Maximum number of terminal nodes (if applicable).
+  #' @param positive_class_weight Numeric weight for positive class (if applicable).
+  #' @param training_split Training data proportion (if applicable).
+  #'
+  #' @return A named list of all ML input components.
+  get_ml_inputs <- function(
+      functions_from_database,
+      functions_from_upload,
+      models_from_standard,
+      models_from_other,
+      models_from_upload,
+      selected_organisms = NULL,
+      gene_functions_upload_path = NULL,
+      model_names_input = NULL,
+      trait_name = NULL,
+      model_upload = NULL,
+      model_upload_path = NULL,
+      model_path_config = NULL,
+      query_string = NULL,
+      ignore_NA = NULL,
+      responses_to_keep = NULL,
+      predictors_to_keep = NULL,
+      seed,
+      ntree = NULL,
+      maxnodes = NULL,
+      positive_class_weight = NULL,
+      training_split = NULL
+  ) {
+    gene_functions <- get_gene_functions(
+      functions_from_database = functions_from_database,
+      functions_from_upload = functions_from_upload,
+      selected_organisms = selected_organisms,
+      upload_path = gene_functions_upload_path
+    )
+    
+    model_names <- get_model_names(
+      models_from_standard = models_from_standard,
+      models_from_other = models_from_other,
+      models_from_upload = models_from_upload,
+      model_names = model_names_input,
+      trait_name = trait_name,
+      model_upload = model_upload
+    )
+    
+    model_paths <- get_model_paths(
+      models_from_standard = models_from_standard,
+      models_from_upload = models_from_upload,
+      model_names = model_names,
+      model_path_config = model_path_config,
+      model_upload_path = model_upload_path
+    )
+    
+    response <- get_response(
+      models_from_other = models_from_other,
+      query_string = query_string,
+      ignore_NA = ignore_NA
+    )
+    
+    predictors <- get_predictors(
+      models_from_other = models_from_other,
+      responses_to_keep = responses_to_keep,
+      predictors_to_keep = predictors_to_keep,
+      seed = seed
+    )
+    
+    list(
+      gene_functions = gene_functions,
+      response = response,
+      predictors = predictors,
+      model_names = model_names,
+      model_paths = model_paths,
+      seed = seed,
+      ntree = if (models_from_other) ntree else NULL,
+      maxnodes = if (models_from_other) maxnodes else NULL,
+      positive_class_weight = if (models_from_other) positive_class_weight else NULL,
+      training_split = if (models_from_other) training_split else NULL
+    )
+  }
+  
+# === Other ===
+  #' Get Choices for Model Names
+  #'
+  #' This function returns the names of all available models from a provided `model_path_config` object.
+  #' It is used to populate choices in model selection UIs or APIs.
+  #'
+  #' @param model_path_config Named list. A mapping of model names to file paths.
+  #'
+  #' @return A character vector of model names.
+  #' @export
+  get_choices_model_names <- function(model_path_config) {
+    choices <- names(model_path_config)
+    return(choices)
+  }

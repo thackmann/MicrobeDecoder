@@ -33,60 +33,56 @@
                                   bslib::nav_panel(title = "Database",
                                                    div(
                                                      create_selectize_input(inputId = ns("gene_functions_database")),
-                                                     shiny::actionLink(ns("update_gene_function_choices"), 
-                                                                       label = "Load examples",
-                                                                       style = "margin-top: -6px; display: block;")
+                                                     div(
+                                                       style = "display: flex; gap: 10px; align-items: baseline; margin-top: -8px;",
+                                                       span(
+                                                         style = "margin-top: -8px; padding: 0;",
+                                                         shiny::actionLink(ns("update_gene_function_choices"), label = "Load examples")
+                                                       ),
+                                                       span(
+                                                         style = "margin-top: -8px; padding: 0;",
+                                                         fileInput_link(ns("upload_names"), label = "Upload names")
+                                                       )
+                                                     )
                                                    )
                                   ),
                                   bslib::nav_panel(title = "File upload",
                                                    fileInput_modal(ns("gene_functions_upload"), modalId = ns("gene_functions_modal"))
                                   )
                 ),
-                div("Type of metabolism (reference reactions)", class = "tight-heading"),
+                div("Type of metabolism (reference network)", class = "tight-heading"),
                 bslib::navset_tab(id = ns("reaction_tabs"),
                                   bslib::nav_panel(title = "Database",
-                                                   create_selectize_input(inputId = ns("reference_reactions_database"), multiple = FALSE),
+                                                   create_selectize_input(inputId = ns("reference_network_database"), multiple = FALSE),
                                    ),
+                                  bslib::nav_panel(title = "Build",
+                                                   div(
+                                                     create_network_input(ns("network_input")),
+                                                     uiOutput(ns("download_network_ui")),
+                                                     style = "margin-top: -6px;"
+                                                   )
+                                  ),
                                   bslib::nav_panel(title = "File upload",
-                                                   fileInput_modal(ns("reference_reactions_upload"), modalId = ns("reference_reactions_modal"))
+                                                   fileInput_modal(ns("reference_network_upload"), modalId = ns("reference_network_modal"))
                                    )
                   ),
                 
                 # Set parameters
-                shiny::conditionalPanel(
-                  condition = "input.reaction_tabs == 'Database'",
-                  ns = ns, 
-                  create_selectize_input(inputId = ns("substrates_database"), label = "Substrates"), 
-                  create_selectize_input(inputId = ns("products_database"), label = "End products"),
-                ),
-                shiny::conditionalPanel(
-                  condition = "input.reaction_tabs == 'File upload'",
-                  ns = ns, 
-                  create_selectize_input(inputId = ns("substrates_upload"), label = "Substrates"), 
-                  create_selectize_input(inputId = ns("products_upload"), label = "End products"),
-                ),
-                
+                create_selectize_input(inputId = ns("substrates"), label = "Substrates"), 
+                create_selectize_input(inputId = ns("products"), label = "End products"),
+                 
                 # Advanced inputs
                 shiny::checkboxInput(ns("show_advanced"), "Show advanced settings", value = FALSE),
                 shiny::conditionalPanel(
-                  condition = "input.show_advanced & input.reaction_tabs == 'Database'",
-                  ns = ns,
-                  create_selectize_input(inputId = ns("unbalanced_intermediates_database"), label = "Unbalanced intermediates"),
-                ),
-                shiny::conditionalPanel(
-                  condition = "input.show_advanced & input.reaction_tabs == 'File upload'",
-                  ns = ns,
-                  create_selectize_input(inputId = ns("unbalanced_intermediates_upload"), label = "Unbalanced intermediates"),
-                ),
-                shiny::conditionalPanel(
                   condition = "input.show_advanced",
                   ns = ns,
+                  create_selectize_input(inputId = ns("unbalanced_intermediates"), label = "Unbalanced intermediates"),
                   shiny::sliderInput(ns("threshold"), "Flux threshold", min = 0, max = 1000, value = 1),
                   create_switch_input(inputId = ns("all_subunits"), label = "Enzymes must have all subunits")
                 ),
                 
                 # Make predictions
-                shiny::actionButton(ns("make_predictions"), "Make predictions", class = "btn btn-primary"),
+                shiny::actionButton(ns("make_predictions"), "Make predictions", class = "btn btn-primary")
             ),
           
           # Main content area
@@ -125,61 +121,40 @@
                   # Plot options
                   div(
                     class = "flex-container",
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network' && output.flag_multiple_organisms",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_picker_input(inputId = ns("organism_to_display"), label = "Organism")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network' && output.flag_multiple_organisms",
+                                                 create_picker_input(ns("organism_to_display"), "Organism")
                     ),
-                    shiny::conditionalPanel(
-                      condition = "output.flag_multiple_substrates",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_picker_input(inputId = ns("substrate_to_display"), label = "Substrate")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "output.flag_multiple_substrates",
+                                                 create_picker_input(ns("substrate_to_display"), "Substrate")
                     ),
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network' && output.flag_multiple_products",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_picker_input(inputId = ns("product_to_display"), label = "End product")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network' && output.flag_multiple_products",
+                                                 create_picker_input(ns("product_to_display"), "End product")
                     ),
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network'",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_picker_input(inputId = ns("set_network_layout"), label = "Layout")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network'",
+                                                 create_picker_input(ns("set_network_layout"), "Layout")
                     ),
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network'",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_picker_input(inputId = ns("set_network_dimensions"), label = "Dimensions", choices = c("2", "3"), selected = "2")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network'",
+                                                 create_picker_input(ns("set_network_dimensions"), "Dimensions", choices = c("2", "3"), selected = "2")
                     ),
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network'",
-                      ns = ns, 
-                      div(
-                        class = "flex-item",
-                        create_switch_input(inputId = ns("hide_cofactors"), label = "Hide cofactors", label_position = "above")
-                      )
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network'",
+                                                 create_switch_input(ns("hide_cofactors"), "Hide cofactors", label_position = "above")
+                    ),
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network'",
+                                                 create_switch_input(ns("hide_unbalanced_intermediates"), "Hide unbalanced", label_position = "above")
                     )
                   ),
                   div(
                     class = "flex-container",
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Metabolic network'",
-                      ns = ns, 
-                      create_download_button(ns('download_network_model'), label = "Download network model")
+                    create_conditional_flex_item(ns, 
+                                                 "input.results_tabs == 'Metabolic network'",
+                                                 create_download_button(ns("download_network_model"), "Download network model")
                     )
                   )
                 )
@@ -193,125 +168,72 @@
   
   # === Define server ===
   predictionsNetworkServer <- function(input, output, session, x, selected_tab) {
-    #Set namespace
+    # --- Set namespace ----
     ns <- session$ns
+    
+    # --- Set variables ----
+    session$userData$builder_selected <- reactiveVal("Glycolysis") # For storing the selected values in the builder
+    session$userData$network_data <- reactiveVal(NULL) # For storing the user-built network
+    network_filename <- reactiveVal(NULL) # For storing network's file name
     
     # --- Define triggers for reactive expressions ---
     tab_selected_trigger <- make_tab_trigger(selected_tab, "predictionsNetwork")
     
     make_predictions_trigger <- make_action_button_trigger("make_predictions")
     
-    updated_reference_reactions_trigger <- make_other_trigger(
-      input$reference_reactions_database,
-      input$reference_reactions_upload
+    updated_reference_network_trigger <- make_other_trigger(
+      input$reference_network_database,
+      session$userData$network_data(),
+      input$reference_network_upload
     )
     
     url_change_trigger <- make_url_trigger(tab_name = "predictionsNetwork")
 
     update_metabolite_choices_trigger <- or_trigger(
       tab_selected_trigger, 
-      updated_reference_reactions_trigger
+      updated_reference_network_trigger
     )
     
     get_graph_trigger <- make_other_trigger(
       url_change_trigger(),
-      input$substrate_to_display, input$product_to_display,
-      input$set_network_layout, input$set_network_dimensions,
+      input$substrate_to_display, 
+      input$product_to_display,
+      input$set_network_layout, 
+      input$set_network_dimensions,
       input$organism_to_display,
-      input$hide_cofactors
+      input$hide_cofactors,
+      input$hide_unbalanced_intermediates
     )
 
     # --- Get user input (events) ---
-    # Get inputs
-    get_inputs <- shiny::eventReactive({make_predictions_trigger()},
-    {
-      # Set source of inputs # debug
-        functions_from_database <- isTRUE(input$function_tabs == "Database") & isFALSE(session$userData$img_init)
-        functions_from_upload <- isTRUE(input$function_tabs == "File upload") & isFALSE(session$userData$img_init)
-        reactions_from_database <- isTRUE(input$reaction_tabs == "Database") & isFALSE(session$userData$img_init)
-        reactions_from_upload <- isTRUE(input$reaction_tabs == "File upload") & isFALSE(session$userData$img_init)
+    get_inputs <- shiny::eventReactive({ make_predictions_trigger() }, {
+      # Set flags
+      functions_from_database <- isTRUE(input$function_tabs == "Database")
+      functions_from_upload <- isTRUE(input$function_tabs == "File upload")
+      network_from_database <- isTRUE(input$reaction_tabs == "Database")
+      network_from_builder <- isTRUE(input$reaction_tabs == "Build")
+      network_from_upload <- isTRUE(input$reaction_tabs == "File upload")
+
+      # Launch modal
+      display_modal(ns = ns, message = "Getting inputs")
       
-      # Get gene functions
-        # Launch modal
-        display_modal(ns = ns, message = "Loading gene functions")
-
-        # get_gene_functions
-          if (input$function_tabs == "Database") {
-            database <- load_database()
-            gene_functions <- load_gene_functions()
-            selected_organisms <- input$gene_functions_database
-
-            organism_by_genome <- get_organism_by_genome(database = database)
-            gene_functions <- process_database_gene_functions(gene_functions, organism_by_genome, selected_organisms)
-            
-            runValidationModal(need(gene_functions != "", 
-                                    "Please choose at least one organism."))
-          } else if (input$function_tabs == "File upload") {
-            gene_functions <- validate_and_read_file(file_path = input$gene_functions_upload$datapath)
-            gene_functions <- process_uploaded_gene_functions(gene_functions)
-    
-            runValidationModal(need(gene_functions != "", 
-                                    "Please check the format of your predicted gene functions file and try again."))
-          }
-
-      # Get organism names
-          organism_names <- colnames(gene_functions)
-      
-      # Get reference reactions
-        # get_reference_reactions
-          if (input$reaction_tabs == "Database") {
-            selected <- input$reference_reactions_database
-            reference_reactions <- get_reference_reactions_from_database(selected)
-          } else if (input$reaction_tabs == "File upload") {
-            reference_reactions <- validate_and_read_file(file_path = input$reference_reactions_upload$datapath)
-            reference_reactions <- validate_reference_reactions(reference_reactions)
-          }
-
-          runValidationModal(need(reference_reactions != "", 
-                                  "Please check the format of the reference reactions file and try again."))
-      # Get substrates
-        substrates <- switch(
-          input$reaction_tabs,
-          "Database" = input$substrates_database,
-          "File upload" = input$substrates_upload,
-          NULL
-        )
-        
-        runValidationModal(need(substrates != "", "Please choose at least one substrate"))
-
-      # Get products
-        products <- switch(
-          input$reaction_tabs,
-          "Database" = input$products_database,
-          "File upload" = input$products_upload,
-          NULL
-        )
-        
-        runValidationModal(need(products != "", "Please choose at least one product"))
-
-      # Get unbalanced intermediates
-        unbalanced_intermediates <- switch(
-          input$reaction_tabs,
-          "Database" = input$unbalanced_intermediates_database,
-          "File upload" = input$unbalanced_intermediates_upload,
-          NULL
-        )
-        
-      # Get other inputs
-        all_subunits <- input$all_subunits
-        
       # Compile inputs
-      list(
-        gene_functions = gene_functions,
-        organism_names = organism_names,
-        reference_reactions = reference_reactions,
-        substrates = substrates,
-        products = products,
-        unbalanced_intermediates = unbalanced_intermediates,
-        all_subunits = all_subunits
+      get_network_inputs(
+        functions_from_database = functions_from_database,
+        functions_from_upload = functions_from_upload,
+        network_from_database = network_from_database,
+        network_from_builder = network_from_builder,
+        network_from_upload = network_from_upload,
+        selected_organisms = input$gene_functions_database,
+        gene_functions_upload_path = input$gene_functions_upload$datapath,
+        reference_network_upload_path = input$reference_network_upload$datapath,
+        selected_reference_network = input$reference_network_database,
+        substrates = input$substrates,
+        products = input$products,
+        unbalanced_intermediates = input$unbalanced_intermediates,
+        all_subunits = input$all_subunits
       )
-    }, 
-    label = "get_inputs")
+    }, label = "get_inputs")
     
     # --- Process input ---
     # Create job for computation
@@ -332,11 +254,10 @@
     }, label = "create_job")
     
     # --- Perform computations ---
-    # Perform computations
     compute_job <- shiny::eventReactive({make_predictions_trigger()},
     {
       results <- compute_network_predictions(
-        reference_reactions = get_inputs()$reference_reactions,
+        reference_network = get_inputs()$reference_network,
         gene_functions = get_inputs()$gene_functions,
         substrates = get_inputs()$substrates,
         products = get_inputs()$products,
@@ -398,6 +319,7 @@
       unbalanced_intermediates <- get_results()$get_unbalanced_intermediates
       threshold <- input$threshold
       hide_cofactors <- input$hide_cofactors
+      hide_unbalanced_intermediates <- input$hide_unbalanced_intermediates
       
       # Get model
       s = s[[organism]][[substrate]][[product]]
@@ -408,15 +330,17 @@
       }
       
       # Set metabolites to remove
-      to_remove <- switch(
-        as.character(hide_cofactors),
-        "TRUE"  = setdiff(union(unbalanced_intermediates, enzyme_cofactors), c(product, substrate)),
-        "FALSE" = unbalanced_intermediates
+      to_remove <- get_metabolites_to_remove(
+        hide_unbalanced_intermediates = input$hide_unbalanced_intermediates,
+        hide_cofactors = hide_cofactors,
+        unbalanced_intermediates = unbalanced_intermediates,
+        enzyme_cofactors = enzyme_cofactors,
+        exceptions = c(product, substrate)
       )
       
       # Make graph
       g = make_network_graph(s = s, to_remove = to_remove)
-
+      
       return(g)
     }, 
     label="get_network_graph")
@@ -440,7 +364,7 @@
       
       # Get choices
       choices <- get_organism_choices(database = database)
-      selected <- get_organism_selections(input$reference_reactions_database)
+      selected <- get_default_organism_selections(input$reference_network_database)
       selected <- assign_if_invalid(selected, "Escherichia coli")
       
       update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
@@ -448,54 +372,62 @@
       # Hide loading screen
       shinyjs::runjs("shinyjs.hide('network-loading-screen'); shinyjs.show('network-wrapper');")
     }, 
-    label = "update_gene_function_choices", ignoreInit = TRUE)
+    label = "update_gene_function_choices_init", ignoreInit = TRUE)
     
-    # Update choices for reference reactions
-    observeEvent(tab_selected_trigger(), {
-      choices <- get_choices_reference_reactions_in_database()
+    shiny::observeEvent(input$upload_names, {
+      req(input$upload_names)
       
-      update_select_input(inputId = "reference_reactions_database", choices = choices)
-    }, label = "update_reference_reactions_choices")
+      # Load data
+      database <- load_database()
+      
+      # Get choices
+      database <- load_database()
+      choices <- get_organism_choices(database = database)
+      selected <- get_uploaded_organism_selections(input$upload_names$datapath, choices)
+      selected <- assign_if_invalid(selected, "Escherichia coli")
+      
+      # Update UI
+      update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
+    }, 
+    label = "update_gene_function_choices_from_upload", ignoreInit = TRUE)
+    
+    # Update choices for reference network
+    observeEvent(tab_selected_trigger(), {
+      choices <- get_choices_reference_network_in_database()
+      
+      update_select_input(inputId = "reference_network_database", choices = choices)
+    }, label = "update_reference_network_choices")
     
     # Update choices for metabolites (substrates, products, and unbalanced intermediates)
     observeEvent({update_metabolite_choices_trigger()}, {
       # Get choices for metabolites
-      selected_reaction <- if (input$reaction_tabs == "Database") input$reference_reactions_database else "Other"
-      req(selected_reaction)
-      if (input$reaction_tabs == "Database") {
-        reference_reactions <- get_reference_reactions_from_database(selected_reaction)
-      } else if (input$reaction_tabs == "File upload") {
-        req(input$reference_reactions_upload$datapath)
-        reference_reactions <- validate_and_read_file(file_path = input$reference_reactions_upload$datapath)
-        reference_reactions <- validate_reference_reactions(reference_reactions)
-        runValidationModal(need(reference_reactions != "", 
-                                "Please check the format of the reference reactions file and try again."))
-      }
+      selected_network <- if (input$reaction_tabs == "Database") input$reference_network_database else "Other"
+      req(selected_network)
 
-      choices <- get_metabolite_names(reference_reactions$eq)
-      
+      choices <- get_metabolite_choices(
+          network_from_database = isTRUE(input$reaction_tabs == "Database"),
+          network_from_builder = isTRUE(input$reaction_tabs == "Build"),
+          network_from_upload = isTRUE(input$reaction_tabs == "File upload"),
+          selected_network = selected_network,
+          upload_path = input$reference_network_upload$datapath
+      ) 
+
       # Get choices for substrates
-      inputId <- if (input$reaction_tabs == "Database") "substrates_database" else "substrates_upload"
-      metabolite_col <- "default_substrates"
-      selected <- get_metabolite_selections(selected_reaction = selected_reaction, 
-                                            metabolite_col = metabolite_col)
-      update_select_input(inputId = inputId, choices = choices, selected = selected)
+      selected <- get_metabolite_selections(selected_network = selected_network, 
+                                            metabolite_col = "default_substrates")
+      update_select_input(inputId = "substrates", choices = choices, selected = selected)
       
       # Get choices for products
-      inputId <- if (input$reaction_tabs == "Database") "products_database" else "products_upload"
-      metabolite_col <- "default_products"
-      selected <- get_metabolite_selections(selected_reaction = selected_reaction, 
-                                            metabolite_col = metabolite_col)
-      update_select_input(inputId = inputId, choices = choices, selected = selected)
+      selected <- get_metabolite_selections(selected_network = selected_network, 
+                                            metabolite_col = "default_products")
+      update_select_input(inputId = "products", choices = choices, selected = selected)
       
       # Get choices for unbalanced intermediates
-      inputId <- if (input$reaction_tabs == "Database") "unbalanced_intermediates_database" else "unbalanced_intermediates_upload"
-      metabolite_col <- "default_unbalanced_intermediates"
-      selected <- get_metabolite_selections(selected_reaction = selected_reaction, 
-                                            metabolite_col = metabolite_col)
+      selected <- get_metabolite_selections(selected_network = selected_network, 
+                                            metabolite_col = "default_unbalanced_intermediates")
       selected <- selected[selected %in% choices]
 
-      update_select_input(inputId = inputId, choices = choices, selected = selected)
+      update_select_input(inputId = "unbalanced_intermediates", choices = choices, selected = selected)
     }, label = "update_metabolite_choices")
   
     # Update choices for substrates, products, and organisms to display
@@ -518,6 +450,19 @@
     },
     label="update_layout_display")
 
+    # Update text for file input
+    observeEvent(session$userData$network_data(), {
+      reference_network <- session$userData$network_data()
+      
+      # Generate filename based on current time
+      file_name <- paste0("network_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".csv")
+      network_filename(file_name)
+      
+      # Create display text for the input box
+      display <- if (nrow(reference_network) == 0) "Custom network" else file_name
+      update_text_input(inputId = "network_input-network_name_display", value = display)
+    })
+    
     # Toggle sidebar closed (when loading saved job)
     shiny::observeEvent(tab_selected_trigger(), 
     {
@@ -551,17 +496,17 @@
   )
 
   output_download_modal(
-    input_id = "reference_reactions_modal",
+    input_id = "reference_network_modal",
     object_ids = c(
-      "reference_reactions_glucose_fermentation",
-      "reference_reactions_methanogenesis"
+      "reference_network_glucose_fermentation",
+      "reference_network_methanogenesis"
     ),
     labels = c(
       "Glucose fermentation",
       "Methanogenesis"
     ),
     ns = ns,
-    label = "show_reference_reactions_modal"
+    label = "show_reference_network_modal"
   )
 
   # Create observer to direct user to Help
@@ -713,4 +658,30 @@
       s = s[[organism]][[substrate]][[product]]
     }
   )
-  }
+  
+  # Output modal for building networks
+  observeEvent(input$`network_input-open_modal`, {
+    # Open modal
+    showModal(modalDialog(
+      size = "xl", easyClose = FALSE, footer = NULL,
+      modalUI(ns("modal"))
+    ))
+    
+    # Call the server module for the modal
+    shiny::callModule(modalServer, "modal")
+  })
+  
+  # Output downloadable csv of reference network
+  output$download_network <- create_download_handler(
+    filename_prefix = reactive({ req(network_filename()) |> tools::file_path_sans_ext() }),
+    data_source = reactive({ req(session$userData$network_data()) }),
+    file_type = "csv"
+  )
+  
+  # Output download link
+  output$download_network_ui <- shiny::renderUI({
+    df <- session$userData$network_data()
+    if (is.null(df)) return(NULL)
+    downloadLink(ns("download_network"), "Download network", class = "action-link")
+  })
+}

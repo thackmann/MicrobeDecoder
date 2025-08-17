@@ -234,7 +234,7 @@
   # Split taxonomy into ranks
   gtdb_data <- gtdb_data %>%
     dplyr::mutate(
-      taxonomy_split = lapply(gtdb_taxonomy, split_taxonomy)
+      taxonomy_split = lapply(gtdb_taxonomy, split_taxonomy_string)
     ) %>%
     tidyr::unnest_wider(taxonomy_split)
   

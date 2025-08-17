@@ -378,24 +378,22 @@
 	}
 
 /* Modal (for progress bar) */
-.modal {
-  text-align: center;
-  padding: 0 !important;
-}
-
-.modal:before {
-  content: '';
-  display: inline-block;
-  height: 100%;
-  vertical-align: middle;
-  margin-right: -4px;
-}
-
 .modal-dialog {
-  display: inline-block;
-  text-align: left;
-  vertical-align: middle;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  max-height: 95vh;
 }
+
+  .modal-content {
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  body.modal-open {
+    overflow: hidden !important;
+  }
 
 /* Container for selectInput elements */
 .flex-container {

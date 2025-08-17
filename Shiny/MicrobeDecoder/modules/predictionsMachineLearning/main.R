@@ -1,4 +1,3 @@
-# Define the Predictions Using Machine Learning Module in Shiny App
 # This script defines the user interface (UI) and server for the predictions using machine learning module.  
 # Author: Timothy Hackmann
 # Date: 23 Mar 2025
@@ -30,7 +29,16 @@
     					  div("Organisms (gene functions)", class = "tight-heading"),
     					  bslib::navset_tab(id = ns("function_tabs"),
     										bslib::nav_panel(title = "Database",
-    														 create_selectize_input(inputId = ns("gene_functions_database"))
+    														 div(
+    														   create_selectize_input(inputId = ns("gene_functions_database")),
+    														   div(
+    														     style = "display: flex; gap: 10px; align-items: baseline; margin-top: -8px;",
+    														     span(
+    														       style = "margin-top: -8px; padding: 0;",
+    														       fileInput_link(ns("upload_names"), label = "Upload names")
+    														     )
+    														   )
+    														 )
     										),
     										bslib::nav_panel(title = "File upload",
     														 fileInput_modal(ns("gene_functions_upload"), modalId = ns("gene_functions_modal"))
@@ -157,130 +165,40 @@
 	  url_change_trigger <- make_url_trigger(tab_name = "predictionsMachineLearning")
 	  
 	  # --- Get user input (events) ----
-	  # Get inputs
-	  get_inputs <- shiny::eventReactive({make_predictions_trigger()}, {
-	    # Get gene functions
-	    # Update progress
-	    # display_modal(ns = ns, message = "Loading gene functions") # debug
-	    
-	    # get_gene_functions
-	    # Get file path
-	    if (input$function_tabs == "Database") {
-	      data <- load_database()
-	      gene_functions <- load_gene_functions()
-	      selected_organisms <- input$gene_functions_database
-	      organism_by_genome <- get_organism_by_genome(database = data)
-	      gene_functions <- process_database_gene_functions(gene_functions, organism_by_genome, selected_organisms)
-	      
-	      runValidationModal(need(gene_functions != "", "Please choose at least one organism."))
-	    } else if (input$function_tabs == "File upload") {
-	      file_path <- input$gene_functions_upload$datapath
-	      gene_functions <- validate_and_read_file(file_path = file_path)
-	      gene_functions <- process_uploaded_gene_functions(gene_functions)
-	      
-	      runValidationModal(need(gene_functions != "", "Please check the format of your predicted gene functions file and try again."))
-	    }
-	    
-	    # Get model names
-	    if (input$subtabs == "Standard traits") {
-	      model_names <- input$model_names
-	    }else if(input$subtabs == "Other traits") {
-	      model_names <- input$trait_name
-	      runValidationModal(need(grepl("^[a-zA-Z0-9_ ]*$", model_names), "Please enter a valid trait name and try again."))
-	      runValidationModal(need(model_names != "", "Please enter a valid trait name and try again."))
-	    }else if(input$subtabs == "Model upload") {
-	      model_names <- input$model_upload$name
-	    }
-	    
-	    # Get file paths for models
-	    if (input$subtabs == "Standard traits") {
-	      model_paths <- lapply(model_names, function(model_name) {
-	        model_paths[[model_name]]})
-	      runValidationModal(need(model_paths != "", "Please choose at least one trait or model"))
-	    }else if(input$subtabs == "Model upload") {
-	      model_paths <- input$model_upload$datapath
-	      runValidationModal(need(model_paths != "", "Please choose at least one trait or model"))
-	    }else{
-	      model_paths <- NULL
-	    }
-	    
-	    # Get response variable
-	    # Update progress
-	    # display_modal(ns = ns, message = "Getting response variable") # debug
-	    
-	    # get_response
-	    if (input$subtabs == "Other traits"){
-	      query_string  <- input$query_builder
-	      ignore_NA <- input$ignore_missing
-	      
-	      data <- load_database()
-	      
-	      query_string <- process_query_string(query_string)
+	  get_inputs <- shiny::eventReactive(make_predictions_trigger(), {
+	    # Set flags
+	    functions_from_database <- isTRUE(input$function_tabs == "Database")
+	    functions_from_upload   <- isTRUE(input$function_tabs == "File upload")
+	    models_from_standard <- isTRUE(input$subtabs == "Standard traits")
+	    models_from_other    <- isTRUE(input$subtabs == "Other traits")
+	    models_from_upload   <- isTRUE(input$subtabs == "Model upload")
 
-	      runValidationModal(need(query_string != "", "Please build a valid query."))
-	      
-	      response <- format_response(data = data, 
-	                                  query_string = query_string, 
-	                                  ignore_NA = ignore_NA)
-	      
-	      n_response = length(unique(response$Response))
-	      
-	      runValidationModal(need(nrow(response)>0, "Please ensure the dataset has at least one response."))
-	      runValidationModal(need(n_response == 2, "Please ensure that the response variable has exactly two classes."))
-	      
-	    }else{
-	      response <- NULL
-	    }
-	    
-	    # Get predictors
-	    # get_predictors 
-	    if (input$subtabs == "Other traits"){
-	      # Update progress
-	      # display_modal(ns = ns, message = "Getting predictors") # debug
-	      
-	      functions <- load_gene_functions()
-	      responses_to_keep <- input$responses_to_keep
-	      predictors_to_keep <- input$predictors_to_keep
-	      seed <- input$seed
-	      
-	      predictors <- format_predictors(gene_functions = functions, 
-	                                      responses_to_keep = responses_to_keep, 
-	                                      predictors_to_keep = predictors_to_keep,
-	                                      seed = seed)
-	      
-	      runValidationModal(need(ncol(predictors)>1, "Please ensure the dataset has at least one predictor"))
-	      
-	    }else{
-	      predictors <- NULL
-	    }
-	    
-	    # Get model training parameters
-	    if(input$subtabs == "Other traits"){
-	      seed <- input$seed
-	      ntree <- input$ntree
-	      maxnodes <- input$maxnodes
-	      positive_class_weight <- input$positive_class_weight
-	      training_split <- input$training_split
-	    }else{
-	      seed <- input$seed
-	      ntree <- NULL
-	      maxnodes <- NULL
-	      positive_class_weight <- NULL
-	      training_split <- NULL
-	    }
+	    # Launch modal
+	    display_modal(ns = ns, message = "Getting inputs")
 	    
 	    # Compile inputs
-	    list(
-	      gene_functions = gene_functions,
-	      response = response,
-	      predictors = predictors,
-	      model_names = model_names,
-	      model_paths = model_paths,
-	      seed = seed,
-	      ntree = ntree,
-	      maxnodes = maxnodes,
-	      positive_class_weight = positive_class_weight,
-	      training_split = training_split
+	    get_ml_inputs(
+	      functions_from_database = functions_from_database,
+	      functions_from_upload = functions_from_upload,
+	      models_from_standard = models_from_standard,
+	      models_from_other = models_from_other,
+	      models_from_upload = models_from_upload,
+	      selected_organisms = input$gene_functions_database,
+	      gene_functions_upload_path = input$gene_functions_upload$datapath,
+	      model_names_input = input$model_names,
+	      trait_name = input$trait_name,
+	      model_upload = input$model_upload,
+	      model_upload_path = input$model_upload$datapath,
+	      model_path_config = model_path_config,
+	      query_string = input$query_builder,
+	      ignore_NA = input$ignore_missing,
+	      responses_to_keep = input$responses_to_keep,
+	      predictors_to_keep = input$predictors_to_keep,
+	      seed = input$seed,
+	      ntree = input$ntree,
+	      maxnodes = input$maxnodes,
+	      positive_class_weight = input$positive_class_weight,
+	      training_split = input$training_split
 	    )
 	  }, label = "get_inputs")
 	  
@@ -390,13 +308,32 @@
 	  {
 		  database <- load_database()
 		  choices <- get_organism_choices(database)
-		  update_select_input(inputId = "gene_functions_database", choices = choices)
+		  selected <- "Escherichia coli"
+		  update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
 
       # Hide loading screen
 		  shinyjs::runjs("shinyjs.hide('ml-loading-screen'); shinyjs.show('ml-wrapper');")
 	  }, 
-	  , label="update_gene_function_choices")
+	  label="update_gene_function_choices_init")
 
+	  shiny::observeEvent(input$upload_names, {
+	    req(input$upload_names)
+	    
+	    # Load data
+	    database <- load_database()
+	    
+	    # Get choices
+	    database <- load_database()
+	    choices <- get_organism_choices(database = database)
+	    selected <- get_uploaded_organism_selections(input$upload_names$datapath, choices)
+	    selected <- assign_if_invalid(selected, "Escherichia coli")
+	    
+	    # Update UI
+	    update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
+	  }, 
+	  label = "update_gene_function_choices_from_upload", ignoreInit = TRUE)
+	  
+	  
 	  # Update query builder
 	  shiny::observeEvent({tab_selected_trigger()},
 	  {
@@ -407,7 +344,7 @@
 	  # Update choices for models
 	  shiny::observeEvent({tab_selected_trigger()},
 	  {
-		choices = names(model_paths)
+		choices = get_choices_model_names(model_path_config = model_path_config)
 		selected = c(
 					  "Fermentation (type of metabolism)",
 					  "Methanogenesis (type of metabolism)"

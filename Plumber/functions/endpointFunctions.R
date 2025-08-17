@@ -36,7 +36,7 @@
   #* @param query_string:string An optional query string to filter the database.
   #* @param traits_to_predict:array Names of traits to predict
   #* @param ignore_NA:boolean Whether to ignore NA values
-  #* @param simple_names:boolean Whether to use simplified names for taxa
+  #* @param match_all_ranks:boolean Whether all ranks must match
   #* @param ignore_species:boolean Whether to ignore species rank in taxa
   #* @param system_taxonomy:string Taxonomic system to use (e.g., "LPSN")
   #* @post /compute/taxonomy
@@ -53,7 +53,7 @@
       query_string = input$query_string %||% NULL,
       traits_to_predict = input$traits_to_predict,
       ignore_NA = input$ignore_NA %||% TRUE,
-      simple_names = input$simple_names %||% TRUE,
+      match_all_ranks = input$match_all_ranks %||% TRUE,
       ignore_species = input$ignore_species %||% TRUE,
       system_taxonomy = input$system_taxonomy %||% "LPSN"
     )
@@ -70,7 +70,7 @@
   #* Predict traits from metabolic networks
   #* @param selected_organisms:array Selected organism names (used to look up gene functions)
   #* @param gene_functions:object A data frame of gene functions (if organisms not provided)
-  #* @param reference_reactions:string The name of the set of reference reactions to use
+  #* @param reference_network:string The name of the set of reference network to use
   #* @param substrates:array Names of substrates
   #* @param products:array Names of products
   #* @param unbalanced_intermediates:array Names of unbalanced intermediates
@@ -95,11 +95,11 @@
       gene_functions <- process_uploaded_gene_functions(gene_functions)
     }
     
-    reference_reactions <- get_reference_reactions_from_database(input$reference_reactions)
+    reference_network <- get_reference_network_from_database(input$reference_network)
     
     # Compute result
     result <- compute_network_predictions(
-      reference_reactions = reference_reactions,
+      reference_network = reference_network,
       gene_functions = gene_functions,
       substrates = input$substrates,
       products = input$products,
@@ -140,7 +140,8 @@
       gene_functions <- process_uploaded_gene_functions(gene_functions)
     }
     
-    model_paths <- get_model_paths_from_database(input$model_names)
+    model_paths <- get_model_paths_from_database(input$model_names, 
+                                                 model_path_config = model_path_config)
     
     # Compute result
     result <- compute_ml_predictions(
@@ -190,9 +191,9 @@
         choices = c(TRUE, FALSE),
         default = TRUE
       ),
-      simple_names = list(
+      match_all_ranks = list(
         choices = c(TRUE, FALSE),
-        default = TRUE
+        default = FALSE
       ),
       ignore_species = list(
         choices = c(TRUE, FALSE),
@@ -209,12 +210,12 @@
   }
   
   #* List parameters for predicting traits with networks
-  #* @param selected_reaction:object The selected reference reaction
+  #* @param selected_network:object The selected reference reaction
   #* @get /parameters/networks
-  parameters_networks <- function(selected_reaction = NULL) {
+  parameters_networks <- function(selected_network) {
     # Get parameters
-    if (is.null(selected_reaction)) {
-      selected_reaction <- "Fermentation (glucose)"
+    if (is.null(selected_network)) {
+      selected_network <- "Fermentation of glucose"
     }
     
     parameters <- list(
@@ -226,24 +227,39 @@
         choices = NA,
         default = NA
       ),
-      reference_reactions = list(
-        choices = get_choices_reference_reactions_in_database(),
-        default = head(get_choices_reference_reactions_in_database())
+      reference_network = list(
+        choices = get_choices_reference_network_in_database(),
+        default = get_choices_reference_network_in_database()[1]
       ),
       substrates = list(
-        choices = get_metabolite_choices(selected_reaction),
-        default = get_metabolite_selections(selected_reaction, 
-                                            metabolite_col = "default_substrates")
+        choices = get_metabolite_choices(
+          network_from_database = TRUE,
+          selected_network = selected_network
+          ),
+        default = get_metabolite_selections(
+          selected_network = selected_network, 
+          metabolite_col = "default_substrates"
+        )
       ),
       products = list(
-        choices = get_metabolite_choices(selected_reaction),
-        default = get_metabolite_selections(selected_reaction, 
-                                            metabolite_col = "default_products")
+        choices = get_metabolite_choices(
+          network_from_database = TRUE,
+          selected_network = selected_network
+        ),
+        default = get_metabolite_selections(
+          selected_network = selected_network, 
+          metabolite_col = "default_products"
+        )
       ),
       unbalanced_intermediates = list(
-        choices = get_metabolite_choices(selected_reaction),
-        default = get_metabolite_selections(selected_reaction, 
-                                            metabolite_col = "default_unbalanced_intermediates")
+        choices = get_metabolite_choices(
+          network_from_database = TRUE,
+          selected_network = selected_network
+        ),
+        default = get_metabolite_selections(
+          selected_network = selected_network, 
+          metabolite_col = "default_unbalanced_intermediates"
+        )
       ),
       all_subunits = list(
         choices = c(TRUE, FALSE),
@@ -263,7 +279,7 @@
   #* @get /parameters/ml
   parameters_ml <- function() {
     # Get parameters
-    model_choices <- get_choices_model_names()
+    model_choices <- get_choices_model_names(model_path_config = model_path_config)
     default_models <- c(
       "Fermentation (type of metabolism)", 
       "Methanogenesis (type of metabolism)"

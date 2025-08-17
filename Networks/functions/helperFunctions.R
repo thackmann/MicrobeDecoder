@@ -1240,7 +1240,7 @@
   #' Filters  KEGG metadata to exclude KO IDs already present in modules or marked as optional.
   #'
   #' @param kegg_metadata A dataframe with column ko.
-  #' @param module_enzymes A dataframe of module enzymes with ko_set.
+  #' @param module_enzymes A dataframe of module enzymes with ko
   #' @param module_metadata A named list of module metadata, including definitions.
   #' @return A dataframe filtered to exclude module and optional kos.
   filter_nonmodule_kos <- function(kegg_metadata, module_enzymes, module_metadata) {
@@ -1416,12 +1416,13 @@
   #' @param keep_all_ko Logical; if TRUE, retains all KO IDs from matched rows in the merged ko. 
   #'                     If FALSE (default), retains only the KO IDs from the group.
   #' @param rn_match Optional character vector of `rn` values to restrict merging to. Default is NULL (no restriction).
+  #' @param exact_match Logical; if TRUE, partial matches for ko_groups are disallowed. Default is FALSE.
   #'
   #' @return A dataframe with specified KO groups merged into single rows.
   #' @export
-  combine_ko <- function(df, ko_groups, keep_all_ko = TRUE, rn_match = NULL) {
+  combine_ko <- function(df, ko_groups, keep_all_ko = TRUE, rn_match = NULL, exact_match = FALSE) {
     if (missing(ko_groups) || !is.list(ko_groups) || length(ko_groups) == 0) {
-      stop("`ko_groups` must be a non-empty list of KO ID vectors.")
+      stop("`ko_groups` must be a non-empty list of KO ID strings or vectors.")
     }
     
     df <- df %>% dplyr::mutate(.row = dplyr::row_number())
@@ -1430,16 +1431,22 @@
     matched_indices <- c()
     
     for (group in ko_groups) {
-      group <- sort(group)
-      
+      # Do not split group: interpret literally
       df_matched <- df %>%
-        dplyr::mutate(ko_vec = strsplit(ko, ",\\s*")) %>%
         dplyr::filter(
-          purrr::map_lgl(ko_vec, ~ any(.x %in% group)) &
+          if (exact_match) {
+            ko %in% group
+          } else {
+            ko_vec <- strsplit(ko, ",\\s*")
+            purrr::map_lgl(ko_vec, function(kos) any(kos %in% unlist(strsplit(group, ",\\s*"))))
+          } &
             (is.null(rn_match) | rn %in% rn_match)
         )
       
-      if (nrow(df_matched) == 0) next
+      if (nrow(df_matched) == 0) {
+        warning("No matches found for KO group: ", paste(group, collapse = " | "))
+        next
+      }
       
       matched_indices <- c(matched_indices, df_matched$.row)
       
@@ -1756,8 +1763,13 @@
 
   #' Fill in Reaction Info (eq, rn, ec, ko) by Match
   #'
-  #' This function fills in missing values of `eq`, `rn`, `ec`, and/or `ko` in-place for matched rows.
-  #' Matches are based on `ko`, `name`, `eq`, `ec`, or `rn` columns.
+  #' This function fills in missing or placeholder values of `eq`, `rn`, `ec`, and/or `ko`
+  #' for matched rows, duplicating the row for each set of replacements.
+  #'
+  #' Matches are based on any combination of `ko`, `name`, `eq`, `ec`, or `rn`.
+  #'
+  #' If multiple values are given for `new_eq`, `new_rn`, `new_ec`, or `new_ko`, the matching
+  #' row(s) will be duplicated accordingly, and each replacement value will be assigned to a copy.
   #'
   #' @param df A dataframe with columns like `eq`, `rn`, `ec`, `ko`, and `name`.
   #' @param ko_match Optional string to match in `ko` (comma-delimited KO IDs).
@@ -1765,16 +1777,13 @@
   #' @param eq_match Optional string to match in `eq`.
   #' @param ec_match Optional string to match in `ec`.
   #' @param rn_match Optional string to match in `rn`.
-  #' @param new_eq Optional character value to replace missing `eq`.
-  #' @param new_rn Optional character value to replace missing `rn`.
-  #' @param new_ec Optional character value to replace missing `ec`.
-  #' @param new_ko Optional character value to replace missing `ko`.
+  #' @param new_eq Optional character vector of replacement values for `eq`.
+  #' @param new_rn Optional character vector of replacement values for `rn`.
+  #' @param new_ec Optional character vector of replacement values for `ec`.
+  #' @param new_ko Optional character vector of replacement values for `ko`.
   #'
   #' @return A dataframe with updated rows.
   #' @export
-  #'
-  #' @examples
-  #' fill_info(df, ko_match = "K14086", new_eq = "H+ <=> H2", new_ec = "7.2.1.A", new_rn = "R00019A", new_ko = "K99999")
   fill_info <- function(df,
                         ko_match = NULL,
                         name_match = NULL,
@@ -1785,11 +1794,23 @@
                         new_rn = NULL,
                         new_ec = NULL,
                         new_ko = NULL) {
-    if (!any(c(!is.null(new_eq), !is.null(new_rn), !is.null(new_ec), !is.null(new_ko)))) {
+    # Check at least one new_* value is supplied
+    if (all(sapply(list(new_eq, new_rn, new_ec, new_ko), is.null))) {
       stop("You must provide at least one of `new_eq`, `new_rn`, `new_ec`, or `new_ko`.")
     }
     
-    # Identify matching rows
+    # Determine number of replacements
+    lengths <- c(length(new_eq), length(new_rn), length(new_ec), length(new_ko))
+    lengths <- lengths[lengths > 0]
+    n_replacements <- if (length(lengths) == 0) 1 else max(lengths)
+    
+    # Expand new_* values or keep NULL
+    new_eq <- if (!is.null(new_eq)) rep_len(new_eq, n_replacements) else rep(NA_character_, n_replacements)
+    new_rn <- if (!is.null(new_rn)) rep_len(new_rn, n_replacements) else rep(NA_character_, n_replacements)
+    new_ec <- if (!is.null(new_ec)) rep_len(new_ec, n_replacements) else rep(NA_character_, n_replacements)
+    new_ko <- if (!is.null(new_ko)) rep_len(new_ko, n_replacements) else rep(NA_character_, n_replacements)
+    
+    # Identify matches
     match_ko   <- if (!is.null(ko_match)) grepl(ko_match, df$ko, fixed = TRUE) else FALSE
     match_name <- if (!is.null(name_match)) grepl(name_match, df$name, fixed = TRUE) else FALSE
     match_eq   <- if (!is.null(eq_match) && "eq" %in% names(df)) grepl(eq_match, df$eq, fixed = TRUE) else FALSE
@@ -1797,16 +1818,23 @@
     match_rn   <- if (!is.null(rn_match) && "rn" %in% names(df)) grepl(rn_match, df$rn, fixed = TRUE) else FALSE
     
     match_any <- match_ko | match_name | match_eq | match_ec | match_rn
+    rows_to_replace <- which(match_any)
     
-    # Fill or overwrite
-    df <- dplyr::mutate(df,
-                        eq = ifelse(match_any & !is.null(new_eq), new_eq, eq),
-                        rn = ifelse(match_any & !is.null(new_rn), new_rn, rn),
-                        ec = ifelse(match_any & !is.null(new_ec), new_ec, ec),
-                        ko = ifelse(match_any & !is.null(new_ko), new_ko, ko)
-    )
+    if (length(rows_to_replace) == 0) return(df)
     
-    return(df)
+    # Duplicate each matched row and fill missing values only
+    replacement_blocks <- purrr::map(rows_to_replace, function(i) {
+      row <- df[i, , drop = FALSE]
+      expanded <- row[rep(1, n_replacements), ]
+      if ("eq" %in% names(df)) expanded$eq <- ifelse(is.na(expanded$eq), new_eq, expanded$eq)
+      if ("rn" %in% names(df)) expanded$rn <- ifelse(is.na(expanded$rn), new_rn, expanded$rn)
+      if ("ec" %in% names(df)) expanded$ec <- ifelse(is.na(expanded$ec), new_ec, expanded$ec)
+      if ("ko" %in% names(df)) expanded$ko <- ifelse(is.na(expanded$ko), new_ko, expanded$ko)
+      expanded
+    })
+    
+    df_remaining <- df[-rows_to_replace, ]
+    dplyr::bind_rows(df_remaining, dplyr::bind_rows(replacement_blocks))
   }
   
   #' Remove a Reaction from the Network
@@ -1848,28 +1876,47 @@
     df[!matches, , drop = FALSE]
   }
 
+  #' Replace H2O with H2O* in reaction equations
+  #'
+  #' This function replaces H2O with H2O* in specified reaction equations.  
+  #' It is used for denoting water formed during reduction of oxygen, 
+  #' distinguishing it from water formed during ordinary hydrolysis.  
+  #'
+  #' @param df A dataframe containing a column `rn` for reaction numbers and `eq` for equations.
+  #' @param rns A character vector of reaction numbers to modify.
+  #'
+  #' @return A modified dataframe with updated equations.
+  #' @export
+  replace_water <- function(df, rns) {
+    dplyr::mutate(df, eq = dplyr::if_else(
+      rn %in% rns,
+      stringr::str_replace_all(eq, "\\bH2O\\b", "H2O*"),
+      eq
+    ))
+  }
+  
 # === Configure and Save Networks ===  
   #' Configure Reactions for Metabolic Network
   #'
-  #' This function extracts and orders reactions from the master network based on
+  #' This function extracts and orders reactions from the merged network based on
   #' the specified modules and a reaction configuration table.
   #'
-  #' @param master_network A dataframe of the master network, containing name, equation, way, ec, ko, md, rn, and symbol
+  #' @param merged_network A dataframe of the merged network, containing name, equation, way, ec, ko, md, rn, and symbol
   #' @param mds A character vector specifying the modules to keep in the configured network and the order they should appear in.         
   #' @param reaction_config A dataframe that specifies which reactions belong to modules and their direction, containing `rn`, `md`, and `way`
   #'
   #' @return A tibble containing only reactions from the specified modules, merged with full metadata
-  #'         from `master_network`, and ordered by `mds` and appearance in `master_network`.
+  #'         from `merged_network`, and ordered by `mds` and appearance in `merged_network`.
   #'
   #' @export
-  configure_network <- function(master_network, mds, reaction_config) {
+  configure_network <- function(merged_network, mds, reaction_config) {
     configured_list <- vector("list", length(mds))
     
     # Save original column order
-    master_cols <- names(master_network)
+    orig_cols <- names(merged_network)
     
     # Rename original 'md' to 'mdk' in column order
-    col_order <- ifelse(master_cols == "md", "mdk", master_cols)
+    col_order <- ifelse(orig_cols == "md", "mdk", orig_cols)
     
     for (i in seq_along(mds)) {
       md_i <- mds[i]
@@ -1877,10 +1924,10 @@
       subset <- reaction_config %>%
         dplyr::filter(md == md_i) %>%
         dplyr::select(rn, md, way) %>%
-        dplyr::left_join(master_network, by = "rn", suffix = c("", ".master")) %>%
+        dplyr::left_join(merged_network, by = "rn", suffix = c("", ".master")) %>%
         dplyr::rename(mdk = md.master) %>%
         dplyr::select(-way.master) %>%
-        dplyr::semi_join(master_network, by = "rn") %>%
+        dplyr::semi_join(merged_network, by = "rn") %>%
         dplyr::distinct()
       
       # Move md (from config) to the front; preserve original col order otherwise
@@ -1973,3 +2020,42 @@
     
     stringr::str_c(keep_vals, collapse = ", ")
   }
+  
+  #' Remove or Replace Target Value in Comma-Delimited Strings
+  #'
+  #' This helper function processes character vectors where each element may contain
+  #' one or more comma-separated values. It removes a specified target string (`target`)
+  #' if other values are present. If the target is the only value, it replaces it with `"NA"`.
+  #'
+  #' This is useful for cleaning up annotations like `"other_reactions"` that should be
+  #' dropped if additional meaningful data are present but retained as `"NA"` when alone.
+  #'
+  #' @param x A character vector with comma-separated entries (e.g., `"map0020, other_reactions"`).
+  #' @param target A string to remove when other values are present, or convert to `"NA"` if alone. Default is `"other_reactions"`.
+  #'
+  #' @return A character vector with `target` removed if surrounded by other values, or replaced with `"NA"` if alone.
+  #'
+  #' @examples
+  #' remove_or_replace_target("map0020, other_reactions")
+  #' # Returns: "map0020"
+  #'
+  #' remove_or_replace_target("other_reactions")
+  #' # Returns: "NA"
+  #'
+  #' remove_or_replace_target(c("map0020", "other_reactions, map0050"))
+  #' # Returns: c("map0020", "map0050")
+  #'
+  #' @export
+  remove_or_replace_target <- function(x, target = "other_reactions") {
+    x_split <- strsplit(x, ",\\s*")
+    cleaned <- lapply(x_split, function(vals) {
+      vals <- vals[vals != target]
+      if (length(vals) == 0) {
+        return("NA")
+      } else {
+        return(paste(vals, collapse = ", "))
+      }
+    })
+    unlist(cleaned)
+  }
+  
