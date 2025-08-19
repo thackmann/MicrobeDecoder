@@ -44,6 +44,7 @@
       # Propanoate metabolism
       list(ec = "7.2.4.3"),
       list(ko = "K11942"),
+      list(ec = "7.2.4.3"),
       
       # Formate formation
       list(ec = "1.17.5.3"),
@@ -54,6 +55,35 @@
       # Sulfate respiration
       list(rn = "R00860"),
       
+      # Sulfur respiration
+      list(ko = "K16293"),
+      list(ko = "K16294"),
+      
+      # Sulfur disproportionation
+      list(rn = "R00864"),
+      
+      # Aerobic respiration
+      list(ko="K16933"),
+      list(ko="K16934"),
+      
+      # Iron respiration
+      list(ec ="1.16.2.1"),
+      
+      # Chlorate respiration
+      list(ec ="1.97.1.1"),
+      list(ec ="1.13.11.49"),
+      
+      # Selenite respiration
+      list(rn = "R07229"),
+      list(rn = "R13388"),
+         
+      # TMAO respiration
+      list(ko ="K03532"),
+         
+      # Organohalide respiration
+      list(ec = "1.21.99.5"),
+      list(ko ="k21566"),
+      
       # Sulfur oxidation
       list(rn = "R12164"),
       list(rn = "R12097"),
@@ -61,6 +91,10 @@
       list(rn = "R12096"),
       list(ko = "K17226"),
       list(ko = "K17227"),
+      list(rn = "R00029"),
+      
+      # Phosphite oxidation
+      list(ec = "1.20.1.1"),
       
       # Hydrogen formation
       list(ec = "1.12.5.1"),
@@ -70,24 +104,35 @@
       list(ec = "1.12.1.2"),
       list(ec = "1.12.1.3"),
       list(ec = "1.17.98.4"),
+      list(ko = c("K14086", "K14087", "K14088", "K14089", "K14090", "K14091")),
       
-      #Hydrogen oxidation
+      # Hydrogen oxidation
       list(ec = "1.12.2.1"),
       
       # Methane formation
       list(rn = "R11743"),
+      list(ec = "1.5.98.3"),
+      list(rn = "R09095"),
+      list(ec = "1.1.98.5"),
       
-      # ATP synthesis/electron transfer
+      # NADH reduction by ferredoxin
       list(ec = "1.6.1.4"),
+      list(ec = "7.2.1.2"),
+      list(rn = "R05875"),
+      
+      # Quinone reduction by NADH
       list(ec = "1.6.5.9"),
       list(ec = "7.2.1.1"),
-      list(ec = "7.2.1.2"),
+      
+      # NADPH reduction by electron carriers
+      list(ec = "1.6.5.2"),
+      list(ec = "1.6.5.10"),
+      list(ec = "1.6.5.5"),
+      list(ec = "1.18.1.2"),
+      
+      # ATP formation
       list(ec = "7.2.2.1"),
-      list(rn = "R05875"),
-      list(rn = "R01195"),
       list(ec = "7.2.3.1"),
-      list(ec = "7.2.4.3"),
-      list(ko = c("K14086", "K14087", "K14088", "K14089", "K14090", "K14091")),
       
       # Formate metabolism
       list(ec = "1.17.1.11"),
@@ -102,7 +147,22 @@
       list(rn = "R03034"),
       
       # Acetogenesis
-      list(rn = "R08433")
+      list(rn = "R08433"),
+      
+      # Iron oxidation
+      list(ec ="1.16.9.1"),
+      
+      # Arsenic oxidation
+      list(ec = "1.20.2.1"),
+      
+      # Carbon monoxide oxidation
+      list(rn ="R11168"),
+      
+      # Photosynthesis
+      list(ec = "7.1.1.10"),
+      list(md = "M00597"),
+      list(md = "M00598"),
+      list(ko = "K04641")
   )
   
   # Initialize empty list to store results
@@ -175,4 +235,3 @@
 #===  Export ===  
   fp <- paste0(network_directory, "\\data\\keggNetworks\\", map, ".csv")
   write.csv(model, fp, row.names = FALSE)
-  

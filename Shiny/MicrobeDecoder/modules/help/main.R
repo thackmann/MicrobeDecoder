@@ -102,9 +102,10 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h4("Show advanced settings")),
              tags$i("Probability threshold"),
              p("When this slider is set to 0.5, only traits with predicted probability of at least 0.5 are shown."),
-             tags$i("Simplify names of taxa"),
-             p("When turned on, only genus and species names are kept, and others are replaced with \"NA\". Because \"NA\" are not matched, this simplifies matching and usually leads to more matches."),
-             p("If genus and species are \"NA\", then family (or next highest taxonomic rank) is kept."),
+             tags$i("All taxonomic ranks must match"),
+             p("When turned on, query organisms must match database organisms at all ranks (species to phylum).  When turned off, the tool is less strict; it starts matching at the most specific level (genus and species), then moves up ranks until a match is found.  Ranks in query organisms that are \"NA\" are ignored.  Turning it off leads to more matches."),
+             tags$i("Ignore species"),
+             p("When turned on, the rank of species is ignored when matching.  Turning it off leads to more matches"),
              tags$i("Ignore missing values in database"),
              p("When turned on, matching organisms with \"NA\" for a trait are ignored.  This leads to more traits being predicted."),
              tags$i("Taxonomy"),
@@ -127,8 +128,8 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "MAGs from rumen"))
              ),
              
-             p(h4("Type of metabolism (reference reactions)")),
-             p("The user chooses reference reactions from the database or by uploading a file.  The tool will check if these reactions are in the genome and if so add them to the biochemical network.  All reactions needed to metabolize a chosen substrate to end products should be included."),
+             p(h4("Type of metabolism (reference network)")),
+             p("The user chooses a reference network from the database or by uploading a file.  The tool will check if these reactions are in the genome and if so add them to the biochemical network.  All reactions needed to metabolize a chosen substrate to end products should be included."),
              p(shiny::tagList("An uploaded file should be a *csv and follow the format below.  Information can come from ", url_KEGG, ".")), # debug
              p("Example files:"),
              tags$ol(class = "circled-list",
@@ -136,9 +137,9 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadReference_3"), label = "Methanogenesis"))
              ),
              p(h4("Substrates")),
-             p("The user specifies one or more substrates for the metabolic model here. Any metabolite in the reference reactions can be chosen."),
+             p("The user specifies one or more substrates for the metabolic network here. Any metabolite in the reference network can be chosen."),
              p(h4("End products")),
-             p("The user specifies end products to check here. Any metabolite in the reference reactions can be chosen."),
+             p("The user specifies end products to check here. Any metabolite in the reference network can be chosen."),
              p(h4("Show advanced settings")),
              tags$i("Unbalanced intermediates"),
              p("Metabolites chosen here are allowed to be produced (or consumed) in infinite quantities. NADH and ATP are examples of metabolites usually chosen to be unbalanced. In the metabolic model, these can accumulate without needing to be regenerated to NAD+ or ADP. This simplifies the model, as reactions for consuming NADH and ATP do not have to be included."),
@@ -248,8 +249,8 @@ helpServer <- function(input, output, session, x, selected_tab) {
     output$downloadFunctions_3 <- create_download_handler("gene_functions_rumen_cultured", function() load_gene_functions_rumen_cultured())
     output$downloadFunctions_4 <- create_download_handler("gene_functions_rumen_MAGs", function() load_gene_functions_rumen_MAGs())
     
-    output$downloadReference_1 <- create_download_handler("reference_reactions_glucose_fermentation", function() load_reference_reactions_glucose_fermentation())
-    output$downloadReference_3 <- create_download_handler("reference_reactions_methanogenesis", function() load_reference_reactions_methanogenesis())
+    output$downloadReference_1 <- create_download_handler("reference_network_glucose_fermentation", function() load_reference_network_glucose_fermentation())
+    output$downloadReference_3 <- create_download_handler("reference_network_methanogenesis", function() load_reference_network_methanogenesis())
 
     output$downloadModel_1 <- create_download_handler("random_forest_fermentation", function() load_model_fermentation(), file_type = "rds")
     output$downloadModel_2 <- create_download_handler("random_forest_methanogenesis", function() load_model_methanogenesis(), file_type = "rds")

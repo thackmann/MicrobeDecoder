@@ -11,6 +11,7 @@ enzyme_cofactors <- c(
   "Oxidized hydrogenase", "Reduced hydrogenase",
   "Acceptor", "Reduced acceptor",
   "Ferricytochrome c", "Ferrocytochrome c", "Ferricytochrome cL", "Ferrocytochrome cL",
+  "Rusticyanin", " Reduced rusticyanin",
   "ATP", "ADP", "AMP", "GTP", "GDP", "NDP", "Nucleoside triphosphate",
   "Orthophosphate", "Diphosphate", "Polyphosphate",
   

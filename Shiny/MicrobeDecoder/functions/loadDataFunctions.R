@@ -304,35 +304,6 @@
     return(obj)
   }
   
-  #' Load Reference Reactions for Glucose Fermentation
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_reference_reactions_glucose_fermentation <- function() {
-    data_fp <- "data/reference_reactions/glucose_fermentation.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Reference Reactions for Methanogenesis
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_reference_reactions_methanogenesis <- function() {
-    data_fp <- "data/reference_reactions/methanogenesis.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
   
   #' Load Gene Functions for Rumen MAGs
   #'
@@ -349,30 +320,45 @@
     return(obj)
   }
   
-  #' Load Reference Reactions for Glucose Fermentation
+  #' Load Reference Network for Glucose Fermentation
   #'
   #' This function loads an example dataset from an zip file.
   #' The data is loaded and stored in the environment if it is not already present.
   #'
   #' @return A list containing the query filters
   #' @export
-  load_reference_reactions_glucose_fermentation <- function() {
-    data_fp <- "data/reference_reactions/fermentation_of_glucose.csv"
+  load_reference_network_glucose_fermentation <- function() {
+    data_fp <- "data/reference_networks/fermentation_of_glucose.csv"
     
     obj <- check_and_load(data_fp)
     
     return(obj)
   }
   
-  #' Load Reference Reactions for Methanogenesis
+  #' Load Reference Network for Methanogenesis
   #'
   #' This function loads an example dataset from an zip file.
   #' The data is loaded and stored in the environment if it is not already present.
   #'
   #' @return A list containing the query filters
   #' @export
-  load_reference_reactions_methanogenesis <- function() {
-    data_fp <- "data/reference_reactions/methanogenesis.csv"
+  load_reference_network_methanogenesis <- function() {
+    data_fp <- "data/reference_networks/methanogenesis.csv"
+    
+    obj <- check_and_load(data_fp)
+    
+    return(obj)
+  }
+  
+  #' Load Main Reference Network
+  #'
+  #' This function loads an example dataset from an zip file.
+  #' The data is loaded and stored in the environment if it is not already present.
+  #'
+  #' @return A list containing the query filters
+  #' @export
+  load_main_reference_network <- function() {
+    data_fp <- "data/reference_networks/main.csv"
     
     obj <- check_and_load(data_fp)
     
@@ -592,15 +578,15 @@
     return(obj)
   }
   
-  #' Load Configuration File for Reference Reactions for Metabolic Networks
+  #' Load Configuration File for Reference Network for Metabolic Networks
   #'
   #' This function loads the a configuration file for metabolic networks from an CSV file.
   #' The data is loaded and stored in the environment if it is not already present.
   #'
   #' @return A list containing the query filters
   #' @export
-  load_config_networks_reference_reactions <- function() {
-    data_fp <- "data/config/config_networks_reference_reactions.csv"
+  load_config_reference_networks <- function() {
+    data_fp <- "data/config/reference_networks.csv"
     
     obj <- check_and_load(data_fp)
     
@@ -615,7 +601,7 @@
   #' @return A list containing the query filters
   #' @export
   load_config_networks_plots <- function() {
-    data_fp <- "data/config/config_networks_plots.csv"
+    data_fp <- "data/config/network_plots.csv"
     
     obj <- check_and_load(data_fp)
     

@@ -13,13 +13,17 @@ choices_traits_ML = c(
 )
 
 # File paths for random forest models
-model_paths <- list(
+model_path_config <- list(
   # Type of metabolism
+  `Aerobic chemoheterotrophy (type of metabolism)` = "data/random_forest_models/aerobic_chemoheterotrophy.rds",
   `Fermentation (type of metabolism)` = "data/random_forest_models/fermentation.rds",
+  `Nitrate reduction (type of metabolism)` = "data/random_forest_models/nitrate_reduction.rds",
+  `Sulfur compound respiration (type of metabolism)` = "data/random_forest_models/sulfur_compound_respiration.rds",
+  `Sulfate respiration (type of metabolism)` = "data/random_forest_models/sulfate_respiration.rds",
+  `Sulfur respiration (type of metabolism)` = "data/random_forest_models/sulfur_respiration.rds",
+  `Phototrophy (type of metabolism)` = "data/random_forest_models/phototrophy.rds",
+  `Photoautotrophy (type of metabolism)` = "data/random_forest_models/photoautotrophy.rds",
   `Methanogenesis (type of metabolism)` = "data/random_forest_models/methanogenesis.rds",
-  
-  # Metabolites utilized
-  `Nitrate (metabolites utilized)` = "data/random_forest_models/nitrate.rds",
   
   # Metabolites produced
   `Acetate (end product)` = "data/random_forest_models/acetate.rds",
@@ -39,10 +43,8 @@ model_paths <- list(
   `Anaerobe (oxygen tolerance)` = "data/random_forest_models/anaerobe.rds",
   `Gram positive (gram stain)` = "data/random_forest_models/gram_positive.rds",
   `Spore positive (spore formation)` = "data/random_forest_models/spore_formation.rds",
-  `Motility positive (motility)` = "data/random_forest_models/motility_positive.rds",
+  `Motility positive (motility)` = "data/random_forest_models/motility.rds",
   
   # Growth
-  `Thermophile (temperature for growth)` = "data/random_forest_models/thermophile.rds",
-  `Halophile (salt for growth)` = "data/random_forest_models/halophile.rds",
   `Slow growth (incubation period)` = "data/random_forest_models/slow_growth.rds"
 )

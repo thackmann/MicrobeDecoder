@@ -128,19 +128,13 @@
     
     # --- Get user input (events) ---
     # Get query
-    get_inputs <- shiny::eventReactive({make_predictions_trigger()},
-    {
-      # Get query string (from query builder)
-      query_string  = input$query_builder
-      query_string <- process_query_string(query_string)
-      runValidationModal(need(query_string != "", "Please build a valid query."))
-
+    get_inputs <- shiny::eventReactive(make_predictions_trigger(), {
+      # Launch modal
+      display_modal(ns = ns, message = "Getting inputs")
+      
       # Compile inputs
-      list(
-        query_string = query_string
-      )
-    },
-    label = "get_inputs")
+      get_search_inputs(query_string = input$query_builder)
+    }, label = "get_inputs")
     
     # --- Process input ---
     # Create job for computation
