@@ -2,7 +2,7 @@
 # This script translates KEGG metabolic pathways into reference network models for 
 # the app.  For a given pathway map, it downloads data from KEGG, including the reaction 
 # equation, reaction ID, EC number, and KO name, and KO IDs.  It downloads data 
-# for all modules from the map, including the md definition.  From the module
+# for all modules from the map, including the module definition.  From the module
 # definition, it finds sets of KO IDs that make functional enzymes.  If enzymes
 # are not in modules, an algorithm is used to identify subunits required 
 # to make a functional enzyme.  The final output is a reference network with rows 
