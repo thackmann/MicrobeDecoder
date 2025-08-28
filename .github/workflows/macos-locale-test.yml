@@ -1,0 +1,44 @@
+name: macOS UTF-8 Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.1'   # adjust if you need a different R
+
+      - name: Install remotes
+        run: R -q -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
+
+      # 1) Intentionally run with C/POSIX locale (commonly triggers the error)
+      - name: Test install in C locale (expected problematic)
+        env:
+          LANG: C
+          LC_ALL: C
+          LC_CTYPE: C
+        run: |
+          echo "=== Locale info (C) ==="
+          R -q -e 'print(Sys.getenv(c("LANG","LC_ALL","LC_CTYPE"))); print(l10n_info()); sessionInfo()'
+          echo "=== Attempting install in C locale (may error) ==="
+          R -q -e 'remotes::install_github("thackmann/FileLocator")' || true
+
+      # 2) Run with UTF-8 locale (this should succeed with your fix)
+      - name: Test install in UTF-8 locale (should pass)
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+          LC_CTYPE: en_US.UTF-8
+        run: |
+          echo "=== Locale info (UTF-8) ==="
+          R -q -e 'print(Sys.getenv(c("LANG","LC_ALL","LC_CTYPE"))); print(l10n_info()); sessionInfo()'
+          echo "=== Installing in UTF-8 locale ==="
+          R -q -e 'remotes::install_github("thackmann/FileLocator")'
