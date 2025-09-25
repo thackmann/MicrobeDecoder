@@ -1,0 +1,359 @@
+{
+  "output": {
+    "databaseSearch-treemap_plot": {
+      "x": {
+        "layout": {
+          "margin": {
+            "b": 40,
+            "l": 60,
+            "t": 25,
+            "r": 10
+          },
+          "xaxis": {
+            "title": false,
+            "showgrid": false,
+            "zeroline": false,
+            "showticklabels": true,
+            "ticklen": 4,
+            "showline": false
+          },
+          "yaxis": {
+            "title": false,
+            "showgrid": false,
+            "zeroline": false,
+            "showticklabels": true,
+            "ticklen": 4,
+            "showline": false
+          },
+          "paper_bgcolor": "rgba(0,0,0,0)",
+          "plot_bgcolor": "rgba(0,0,0,0)",
+          "hovermode": "closest",
+          "showlegend": false
+        },
+        "source": "A",
+        "config": {
+          "modeBarButtonsToAdd": [
+            "hoverclosest",
+            "hovercompare"
+          ],
+          "showSendToCloud": false
+        },
+        "data": [
+          {
+            "type": "treemap",
+            "ids": [
+              "Acidobacteriota",
+              "Actinomycetota",
+              "Aquificota",
+              "Armatimonadota",
+              "Bacillota ",
+              "Bacteroidota",
+              "Caldisericota",
+              "Calditrichota",
+              "Chlorobiota",
+              "Chloroflexota",
+              "Coprothermobacterota",
+              "Deferribacterota",
+              "Deinococcota",
+              "Dictyoglomerota",
+              "Fusobacteriota",
+              "Methanobacteriota",
+              "Nanobdellota",
+              "Nitrospirota",
+              "Planctomycetota",
+              "Pseudomonadota",
+              "Rhodothermota",
+              "Spirochaetota",
+              "Synergistota",
+              "Thermodesulfobacteriota",
+              "Thermomicrobiota",
+              "Thermoproteota",
+              "Thermotogota",
+              "Verrucomicrobiota"
+            ],
+            "labels": [
+              "Acidobacteriota",
+              "Actinomycetota",
+              "Aquificota",
+              "Armatimonadota",
+              "Bacillota ",
+              "Bacteroidota",
+              "Caldisericota",
+              "Calditrichota",
+              "Chlorobiota",
+              "Chloroflexota",
+              "Coprothermobacterota",
+              "Deferribacterota",
+              "Deinococcota",
+              "Dictyoglomerota",
+              "Fusobacteriota",
+              "Methanobacteriota",
+              "Nanobdellota",
+              "Nitrospirota",
+              "Planctomycetota",
+              "Pseudomonadota",
+              "Rhodothermota",
+              "Spirochaetota",
+              "Synergistota",
+              "Thermodesulfobacteriota",
+              "Thermomicrobiota",
+              "Thermoproteota",
+              "Thermotogota",
+              "Verrucomicrobiota"
+            ],
+            "parents": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "values": [
+              0.41493775933609961,
+              6.0165975103734439,
+              3.008298755186722,
+              0.1037344398340249,
+              38.485477178423238,
+              1.6597510373443984,
+              0.1037344398340249,
+              0.31120331950207469,
+              0.31120331950207469,
+              2.0746887966804977,
+              0.2074688796680498,
+              0.72614107883817425,
+              4.0456431535269708,
+              0.2074688796680498,
+              0.1037344398340249,
+              12.551867219917012,
+              0.1037344398340249,
+              0.62240663900414939,
+              0.41493775933609961,
+              13.174273858921163,
+              0.31120331950207469,
+              0.51867219917012441,
+              0.82987551867219922,
+              1.2448132780082988,
+              0.51867219917012441,
+              6.8464730290456437,
+              4.8755186721991706,
+              0.2074688796680498
+            ],
+            "textinfo": "label",
+            "hovertemplate": [
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>",
+              "<b>Phylum: %{label}<\/b><br><b>% of matching organisms: %{value:.2f}<\/b><br><extra><\/extra>"
+            ],
+            "marker": {
+              "color": "rgba(31,119,180,1)",
+              "colors": [
+                "#E495A5",
+                "#D2A277",
+                "#ABB065",
+                "#72BB83",
+                "#39BEB1",
+                "#64B5D6",
+                "#ACA4E2",
+                "#D995CF",
+                "#E495A5",
+                "#D2A277",
+                "#ABB065",
+                "#72BB83",
+                "#39BEB1",
+                "#64B5D6",
+                "#ACA4E2",
+                "#D995CF",
+                "#E495A5",
+                "#D2A277",
+                "#ABB065",
+                "#72BB83",
+                "#39BEB1",
+                "#64B5D6",
+                "#ACA4E2",
+                "#D995CF",
+                "#E495A5",
+                "#D2A277",
+                "#ABB065",
+                "#72BB83"
+              ],
+              "line": {
+                "color": "black",
+                "width": 2
+              }
+            },
+            "insidetextfont": {
+              "size": 40
+            },
+            "outsidetextfont": {
+              "size": 0
+            },
+            "textposition": "middle center",
+            "tiling": {
+              "pad": 0
+            },
+            "frame": null
+          }
+        ],
+        "highlight": {
+          "on": "plotly_click",
+          "persistent": false,
+          "dynamic": false,
+          "selectize": false,
+          "opacityDim": 0.20000000000000001,
+          "selected": {
+            "opacity": 1
+          },
+          "debounce": 0
+        },
+        "shinyEvents": [
+          "plotly_hover",
+          "plotly_click",
+          "plotly_selected",
+          "plotly_relayout",
+          "plotly_brushed",
+          "plotly_brushing",
+          "plotly_clickannotation",
+          "plotly_doubleclick",
+          "plotly_deselect",
+          "plotly_afterplot",
+          "plotly_sunburstclick"
+        ],
+        "base_url": "https://plot.ly"
+      },
+      "evals": [
+
+      ],
+      "jsHooks": [
+
+      ],
+      "deps": [
+        {
+          "name": "setprototypeof",
+          "version": "0.1",
+          "src": {
+            "href": "setprototypeof-0.1"
+          },
+          "meta": null,
+          "script": "setprototypeof.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "typedarray",
+          "version": "0.1",
+          "src": {
+            "href": "typedarray-0.1"
+          },
+          "meta": null,
+          "script": "typedarray.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "jquery",
+          "version": "3.5.1",
+          "src": {
+            "href": "jquery-3.5.1"
+          },
+          "meta": null,
+          "script": "jquery.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        },
+        {
+          "name": "crosstalk",
+          "version": "1.2.1",
+          "src": {
+            "href": "crosstalk-1.2.1"
+          },
+          "meta": null,
+          "script": "js/crosstalk.min.js",
+          "stylesheet": "css/crosstalk.min.css",
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        },
+        {
+          "name": "plotly-htmlwidgets-css",
+          "version": "2.11.1",
+          "src": {
+            "href": "plotly-htmlwidgets-css-2.11.1"
+          },
+          "meta": null,
+          "script": null,
+          "stylesheet": "plotly-htmlwidgets.css",
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        },
+        {
+          "name": "plotly-main",
+          "version": "2.11.1",
+          "src": {
+            "href": "plotly-main-2.11.1"
+          },
+          "meta": null,
+          "script": "plotly-latest.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": false
+        }
+      ]
+    }
+  }
+}

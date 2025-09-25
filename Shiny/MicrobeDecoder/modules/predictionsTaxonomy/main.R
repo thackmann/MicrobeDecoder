@@ -306,21 +306,45 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   output_download_modal(
     input_id = "taxonomy_file_modal",
     object_ids = c(
-      "taxa_uncharacterized",
-      "taxa_rumen_cultured",
-      "taxa_rumen_MAGs",
-      "taxa_infant"
+      "taxa_e_coli",
+      "taxa_rumen",
+      "taxa_infant",
+      "taxa_winogradsky",
+      "taxa_sea",
+      "taxa_qiime2",
+      "taxa_metaphlan"
     ),
     labels = c(
-      "Previously uncharacterized bacteria",
-      "Cultured prokaryotes from rumen",
-      "MAGs from rumen",
-      "OTUs from infant gut"
+      "E. coli (generic format)",
+      "Bacterial isolates from the rumen (IMG/M format)",
+      "Metagenomic species from the infant gut (MetaPhlAn format)",
+      "ASVs from the Winogradsky columns (DADA2 format)",
+      "MAGs from Black Sea (GTDB format)",
+      "Bacteria from QIIME2 tutorial (QIIME2 format)",
+      "Bacteria from MetaPhlAn tutorial (MetaPhlAn format)"
     ),
     ns = ns,
     label = "show_data_modal"
   )
 
+  # Output warning text for loading too many models
+  observeEvent({input$model_names},
+   {
+     threshold <- 3
+     n_selected <- length(input$model_names)
+     
+     if (n_selected >= threshold) {
+       output$disconnect_warning <- renderUI({
+         bslib::card(
+           class = "bg-warning border-warning",
+           bslib::card_body("Loading", threshold, "or more models may cause disconnection from server.")
+         )
+       })
+     } else {
+       output$disconnect_warning <- renderUI({ NULL })
+     }
+   })
+  
   # Create observer to navigate user to Help
   navigate_to_help(session = x, selected_tab = "help", selected_panel = "Predict traits from taxonomy")
 

@@ -611,17 +611,17 @@
   #' @return Logical. TRUE if the data follows DADA2 format, FALSE otherwise.
   #' @export
   is_dada2_format <- function(data) {
-    all(c("Phylum", "Class", "Order", "Family", "Genus", "Species") %in% colnames(data))
+    all(c("Phylum", "Class", "Order", "Family", "Genus") %in% colnames(data))
   }
   
-  #' Check if Data Follows DADA2 Format
+  #' Check if Data Follows QIIME2 Format
   #'
-  #' This function checks if the data contains taxonomoy in DADA2-format.
-  #' It does this by scanning all columns for the DADA2 taxonomy pattern.
+  #' This function checks if the data contains taxonomy in QIIME2-format.
+  #' It does this by scanning all columns for the QIIME2 taxonomy pattern.
   #'
   #' @param data Dataframe. The data to check.
   #' 
-  #' @return Logical. TRUE if the data follows DADA2 format, FALSE otherwise.
+  #' @return Logical. TRUE if the data follows QIIME2 format, FALSE otherwise.
   #' @export
   is_qiime2_format <- function(data) {
     if (!is.data.frame(data)) return(FALSE)
@@ -635,7 +635,7 @@
   
   #' Check if Data Follows MetaPhlAn Format
   #'
-  #' This function checks if the data contains taxonomoy in MetaPhlAn-format.
+  #' This function checks if the data contains taxonomy in MetaPhlAn-format.
   #' It does this by scanning all columns for the MetaPhlAn taxonomy pattern.
   #'
   #' @param data A dataframe to check.
@@ -679,8 +679,11 @@
   #' @return A dataframe with `Phylum` to `Species` columns.
   #' @export
   process_dada2_format <- function(data) {
+    if (!"Species" %in% colnames(data)) {
+      data$Species <- NA_character_
+    }
+
     data <- data %>% dplyr::select(Phylum, Class, Order, Family, Genus, Species)
-    
     return(data)
   }
   
@@ -818,93 +821,20 @@
     }
   }
   
-  #' Process Uploaded Taxonomy File
+  #' Get Query Taxa from Uploaded File
   #'
-  #' This function processes an uploaded taxonomy file, detecting whether it follows
-  #' the DADA2, QIIME2, MetaPhlan, or IMG genome format, and reformats the data 
-  #' accordingly.
+  #' This helper function reads and processes a taxonomy file uploaded by the user.
+  #' It first validates and reads the file based on its extension, and then processes it according
+  #' to the detected format (DAADA, QIIME2, MetaPhlAn, IMG)
   #'
-  #' @param query Dataframe. The uploaded taxonomy data.
-  #'
-  #' @return A processed dataframe with standard taxonomic ranks or NULL if format is unrecognized.
-  #' @export
-  process_uploaded_taxonomy <- function(query) {
-    if (!is.data.frame(query)) return(NULL)
-    
-    if (is_dada2_format(query)) {
-      return(process_dada2_format(query))
-    } else if (is_qiime2_format(query)) {
-      return(process_qiime2_format(query))
-    } else if (is_metaphlan_format(query)) {
-      return(process_metaphlan_format(query))
-    } else if (is_img_format(query)) {
-      return(process_img_genome_format(query))
-    } else {
-      return(NULL)
-    }
-  }
-                
-  #' Process IMG Genome Format
-  #'
-  #' Selects and renames GTDB or NCBI taxonomy columns from IMG genome tables.
-  #' By default, it prioritizes NCBI taxonomy columns unless `prefer = "GTDB"` is specified.
-  #' It can also optionally extract just the species epithet (e.g., "coli" from "Escherichia coli").
-  #'
-  #' @param data Dataframe containing GTDB or NCBI taxonomy columns.
-  #' @param prefer Character. Which taxonomy to prioritize if both are present: "NCBI" (default) or "GTDB".
-  #' @param extract_species_epithet Logical. If `TRUE` (default), returns only the species epithet
-  #'   in the `Species` column; if `FALSE`, returns full species name.
-  #'
-  #' @return A dataframe with columns `Phylum` to `Species`, or NULL if neither taxonomy is available.
-  #' @export
-  process_img_genome_format <- function(data, prefer = c("NCBI", "GTDB"), extract_species_epithet = TRUE) {
-    prefer <- match.arg(prefer)
-    
-    gtdb_cols <- c("GTDB Phylum", "GTDB Class", "GTDB Order", "GTDB Family", "GTDB Genus", "GTDB Species")
-    ncbi_cols <- c("NCBI Phylum", "NCBI Class", "NCBI Order", "NCBI Family", "NCBI Genus", "NCBI Species")
-    
-    has_gtdb <- all(gtdb_cols %in% colnames(data))
-    has_ncbi <- all(ncbi_cols %in% colnames(data))
-    
-    select_and_rename <- function(cols, prefix) {
-      df <- data %>%
-        dplyr::select(dplyr::all_of(cols)) %>%
-        dplyr::rename_with(~ gsub(paste0("^", prefix, " "), "", .x))
-      
-      if (extract_species_epithet && "Species" %in% colnames(df)) {
-        df <- df %>%
-          dplyr::mutate(Species = sub(".*\\s", "", Species))
-      }
-      
-      return(df)
-    }
-    
-    if (prefer == "NCBI" && has_ncbi) {
-      return(select_and_rename(ncbi_cols, "NCBI"))
-    } else if (prefer == "GTDB" && has_gtdb) {
-      return(select_and_rename(gtdb_cols, "GTDB"))
-    } else if (has_ncbi) {
-      return(select_and_rename(ncbi_cols, "NCBI"))
-    } else if (has_gtdb) {
-      return(select_and_rename(gtdb_cols, "GTDB"))
-    } else {
-      return(NULL)
-    }
-  }
-  
-  #' Process Uploaded Taxonomy File
-  #'
-  #' This function processes an uploaded taxonomy file, detecting whether it follows
-  #' the DADA2, QIIME2, MetaPhlan, or IMG genome format, and reformats the data 
-  #' accordingly.
-  #'
-  #' @param query Dataframe. The uploaded taxonomy data.
+  #' @param upload_path Character. Path to the uploaded file.
+  #' @param session Shiny session object. Used for triggering validation modals (default: current session).
   #'
   #' @return A processed dataframe with standard taxonomic ranks or NULL if format is unrecognized.
   #' @export
-  process_uploaded_taxonomy <- function(query) {
+  get_query_taxa_from_upload <- function(upload_path, session = shiny::getDefaultReactiveDomain()) {
+    query <- validate_and_read_file(file_path = upload_path)
     if (!is.data.frame(query)) return(NULL)
-    
     if (is_dada2_format(query)) {
       return(process_dada2_format(query))
     } else if (is_qiime2_format(query)) {
@@ -927,24 +857,25 @@
   #' @param taxonomy_from_upload Logical. Use uploaded file?
   #' @param selected_organisms Character vector of selected taxa (if from database).
   #' @param taxonomy_upload_path File path to uploaded taxonomy file.
+  #' @param system_taxonomy A character value of the taxonomy system to use.  Default is 'LPSN'. 
   #'
   #' @return A processed `query_taxa` dataframe.
   get_query_taxa <- function(taxonomy_from_database,
                              taxonomy_from_upload,
                              selected_organisms = NULL,
-                             taxonomy_upload_path = NULL) {
+                             taxonomy_upload_path = NULL,
+                             system_taxonomy = "LPSN") {
     if (taxonomy_from_database) {
-      query_taxa <- process_query_taxa(selected_organisms)
+      query_taxa <- get_query_taxa_from_database(selected_organisms = selected_organisms, system_taxonomy = system_taxonomy)
       runValidationModal(need(!is.null(query_taxa) && nrow(query_taxa) > 0, "Please choose a taxon"))
     } else if (taxonomy_from_upload) {
-      query_taxa <- validate_and_read_file(file_path = taxonomy_upload_path)
-      
-      query_taxa <- process_uploaded_taxonomy(query_taxa)
+      query_taxa <- get_query_taxa_from_upload(upload_path = taxonomy_upload_path)
       
       runValidationModal(need(!is.null(query_taxa) && nrow(query_taxa) > 0, "Please check the format of the taxonomy file and try again."))
     } else {
       stop("No valid taxonomy input specified.")
     }
+
     return(query_taxa)
   }
   
@@ -1010,7 +941,8 @@
       taxonomy_from_database = taxonomy_from_database,
       taxonomy_from_upload = taxonomy_from_upload,
       selected_organisms = selected_organisms,
-      taxonomy_upload_path = taxonomy_upload_path
+      taxonomy_upload_path = taxonomy_upload_path,
+      system_taxonomy = system_taxonomy
     )
     
     traits_info <- get_traits_input(
@@ -1181,29 +1113,36 @@
     return(taxonomy_data)
   }
   
-  #' Process Selected Taxa into a Query Dataframe
-  #'
-  #' This function converts a vector of taxon strings (formatted as "Taxon_Name (Rank)") 
-  #' into a dataframe where the taxon is assigned to the correct rank column, with all 
-  #' other ranks filled with `NA`.
+  #' Get Query Taxa from the Database
+  #' 
+  #' This function takes query organisms and retrieves their taxonomy from the 
+  #' database.  Query organisms are formatted as "Taxon_Name (Rank)".  The 
+  #' function takes a dataframe with columns for taxonomic ranks and puts the 
+  #' query organisms in it.  It fills in names for other ranks using values from
+  #' the database.  Only names for higher ranks (e.g., Phylum) are filled in, and 
+  #' lower ranks (e.g., Species) are set to `NA`.
   #'
   #' @param selected_organisms A character vector of taxon strings, where each entry 
-  #'   follows the format "Taxon_Name (Rank)".
-  #'
+  #'   follows the format "Taxon_Name (Rank)"
+  #' @param system_taxonomy A character value of the taxonomy system to use.  Default is 'LPSN'. 
   #' @return A dataframe with columns "Phylum", "Class", "Order", "Family", "Genus", "Species", 
-  #'   with the provided taxon names placed in the appropriate rank columns and all other 
-  #'   values set to `NA`.
+  #'   with the provided taxon names placed in the appropriate rank columns and
+  #'   other values filled in
   #'
   #' @examples
   #' selected_taxa <- c("Abditibacteriota (Phylum)", "Bacilli (Class)", "Lactobacillales (Order)")
-  #' process_query_taxa(selected_taxa)
+  #' get_query_taxa_from_database(selected_taxa)
   #'
   #' @export
-  process_query_taxa <- function(selected_organisms) {
-    # Define the fixed column names
-    ranks <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+  get_query_taxa_from_database <- function(selected_organisms, system_taxonomy = "LPSN") {
+    # Load database
+    database <- load_database()
+    col_name <- paste0(system_taxonomy, " Taxonomy")
+    database <- expand_and_merge_taxonomy(data = database, col_name = col_name)
     
-    # Initialize an empty dataframe
+    
+    # Initialize the dataframe to hold the query
+    ranks <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
     query <- as.data.frame(matrix(NA, nrow = length(selected_organisms), ncol = length(ranks)))
     colnames(query) <- ranks
     
@@ -1215,6 +1154,28 @@
       # Assign the extracted value to the correct column, if the rank exists
       if (rank %in% ranks) {
         query[i, rank] <- extracted
+      } else {
+        warning(sprintf("Invalid rank: '%s' in '%s'. Expected one of %s", 
+                        rank, selected_organisms[i], paste(ranks, collapse = ", ")))
+      }
+      
+      # Fill in higher ranks 
+      matches <- database[!is.na(database[[rank]]) & database[[rank]] == extracted, , drop = FALSE]
+      if (nrow(matches) > 0) {
+        key_cols <- intersect(colnames(matches), ranks)
+        
+        # Most common row among matches (ties broken arbitrarily)
+        top_row <- matches |>
+          dplyr::count(dplyr::across(dplyr::all_of(key_cols)), name = "..n") |>
+          dplyr::arrange(dplyr::desc(.data[["..n"]])) |>
+          dplyr::slice(1) |>
+          dplyr::select(-"..n")
+        
+        higher_cols <- ranks[seq_len(match(rank, ranks))]
+        for (col in higher_cols) {
+          val <- top_row[[col]][[1]]
+          if (!is.null(val) && !is.na(val)) query[i, col] <- val
+        }
       } else {
         warning(sprintf("Invalid rank: '%s' in '%s'. Expected one of %s", 
                         rank, selected_organisms[i], paste(ranks, collapse = ", ")))

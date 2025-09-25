@@ -363,7 +363,7 @@
   #' @param output_id The ID that appears in the output file (e.g., `file` in `output$file`).
   #' @param object_ids A character vector of object IDs that map to `load_` functions.
   #' @param labels A character vector of human-readable labels corresponding to the `object_ids`.
-  #' @param file_types Optional character vector indicating file type for each object (`"csv"` by default).
+  #' @param file_types Optional character vector indicating file type for each object (`"zip"` by default).
   #' @param ns A namespace function for module compatibility.
   #' @param title The title to display in the modal.
   #' @param label An optional label for the observer (for debugging).
@@ -372,7 +372,7 @@
   output_download_modal <- function(input = getDefaultReactiveDomain()$input,
                                     output = getDefaultReactiveDomain()$output,
                                     input_id, output_id = "file", object_ids, labels,
-                                     file_types = rep("csv", length(object_ids)),
+                                     file_types = rep("zip", length(object_ids)),
                                      ns = identity, title = "Example files", label = NULL) {
     # Create observer
     shiny::observeEvent(input[[input_id]], {

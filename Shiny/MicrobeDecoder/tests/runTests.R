@@ -24,7 +24,7 @@
 # === Record expected results ===
   # Uncomment to run; do this if only needing to replace previous results
   # results_directory <- FileLocator::getCurrentFileLocation()
-  # results_directory <- paste0(results_directory, "tests/testthat/_snaps/windows-4.4/shinytest2")
+  # results_directory <- paste0(results_directory, "/testthat/_snaps/windows-4.4/shinytest2")
   # files_to_delete <- list.files(results_directory, full.names = TRUE)
   # file.remove(files_to_delete)
   # shinytest2::test_app(path_to_app = app_directory)
