@@ -9,6 +9,9 @@ Click [here](https://microbe-decoder.org) to access.
 1) Click [here](https://github.com/thackmann/MicrobeDecoder/archive/refs/heads/main.zip) to download the ZIP file
 2) Upzip the downloaded folder, locate `app.R`, open in [R Studio](https://posit.co/download/rstudio-desktop/), and click `Run App`.
 
+### Video overview
+Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
+
 ### More information
 Hackmann TJ, Zhang B. The phenotype and genotype of fermentative prokaryotes Sci Adv. 2023 Sep 29;9(39):eadg8687. doi: 10.1126/sciadv.adg8687 [PMID: 37756392](https://pubmed.ncbi.nlm.nih.gov/37756392/)
 

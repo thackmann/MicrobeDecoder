@@ -26,10 +26,11 @@ testthat::test_that("predictionsTaxonomyResults", {
   # Perform actions
   Sys.sleep(10)
   app$click("predictionsTaxonomy-make_predictions")
-  Sys.sleep(45)
+  Sys.sleep(30)
 
   # Record output
   app$set_inputs(`predictionsTaxonomy-results_tabs` = "Heatmap")
+  Sys.sleep(5)
   app$expect_values(output = "predictionsTaxonomy-heatmap_plot")
 })
 
@@ -50,10 +51,11 @@ testthat::test_that("predictionsNetworkResults", {
   # Perform actions
   Sys.sleep(10)
   app$click("predictionsNetwork-make_predictions")
-  Sys.sleep(45)
+  Sys.sleep(30)
 
   # Record output
   app$set_inputs(`predictionsNetwork-results_tabs` = "Heatmap")
+  Sys.sleep(5)
   app$expect_values(output = "predictionsNetwork-heatmap_plot")
 })
 
@@ -75,10 +77,11 @@ testthat::test_that("predictionsMachineLearningResults", {
   # Perform actions
   Sys.sleep(10)
   app$click("predictionsMachineLearning-make_predictions")
-  Sys.sleep(45)
+  Sys.sleep(30)
 
   # Record output
   app$set_inputs(`predictionsMachineLearning-results_tabs` = "Heatmap")
+  Sys.sleep(5)
   app$expect_values(output = "predictionsMachineLearning-heatmap_plot")
 })
 
@@ -97,7 +100,7 @@ testthat::test_that("databaseSearchResults", {
   # Perform actions
   Sys.sleep(10)
   app$click("databaseSearch-make_predictions")
-  Sys.sleep(45)
+  Sys.sleep(30)
 
   # Record output
   app$expect_values(output = "databaseSearch-treemap_plot")

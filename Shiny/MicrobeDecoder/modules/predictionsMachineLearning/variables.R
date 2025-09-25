@@ -22,7 +22,6 @@ model_path_config <- list(
   `Sulfate respiration (type of metabolism)` = "data/random_forest_models/sulfate_respiration.rds",
   `Sulfur respiration (type of metabolism)` = "data/random_forest_models/sulfur_respiration.rds",
   `Phototrophy (type of metabolism)` = "data/random_forest_models/phototrophy.rds",
-  `Photoautotrophy (type of metabolism)` = "data/random_forest_models/photoautotrophy.rds",
   `Methanogenesis (type of metabolism)` = "data/random_forest_models/methanogenesis.rds",
   
   # Metabolites produced

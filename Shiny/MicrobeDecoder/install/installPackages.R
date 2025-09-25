@@ -97,11 +97,11 @@
 # === Install packages ===
   # Define required packages
   cran_packages <- cran_packages <- c(
-    "ape", "base", "BiocManager", "bslib", "caret", "colorspace", "digest", 
-    "dplyr", "DT", "fbar", "fs", "htmltools", "igraph", "import", "jqbr", 
-    "jsonlite", "magrittr", "plotly", "purrr", "randomForest", "reactlog", 
-    "readr", "remotes", "rlang", "rsconnect", "shiny", "shinycssloaders", 
-    "shinyjs", "shinyWidgets", "stats", "stringr", "tidyr", "tidyselect", "uuid"
+    "ape", "BiocManager", "bslib", "caret", "colorspace", "digest", "dplyr", 
+    "DT", "fbar", "fs", "htmltools", "igraph", "import", "jqbr", "jsonlite", 
+    "magrittr", "plotly", "purrr", "randomForest", "reactlog", "readr", 
+    "readxl", "remotes", "rlang", "rsconnect", "shiny", "shinycssloaders", 
+    "shinyjs", "shinyWidgets", "stringr", "tidyr", "tidyselect", "uuid"
   )
   
   github_packages <- c("thackmann/FileLocator" = "FileLocator")

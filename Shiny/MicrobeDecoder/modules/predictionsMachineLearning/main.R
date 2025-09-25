@@ -35,7 +35,7 @@
     														     style = "display: flex; gap: 10px; align-items: baseline; margin-top: -8px;",
     														     span(
     														       style = "margin-top: -8px; padding: 0;",
-    														       fileInput_link(ns("upload_names"), label = "Upload names")
+    														       fileInput_link(ns("upload_names"), label = "Choose with file")
     														     )
     														   )
     														 )
@@ -55,7 +55,7 @@
     														create_query_builder(ns = ns, input_id = "query_builder"),
     										),
     										bslib::nav_panel(title = "Model upload",
-    													  fileInput_modal(ns("model_upload"), accept = c(".rds"), modalId = ns("model_modal"))
+    													  fileInput_modal(ns("model_upload"), accept = c(".rds", ".zip"), modalId = ns("model_modal"))
     										),
     										
     										# Advanced inputs
@@ -65,6 +65,7 @@
     										  ns = ns,
     										  shiny::sliderInput(ns("threshold"), "Probability threshold", min = 0, max = 1, value = 0.5),
     										  create_switch_input(inputId = ns("enable_saving"), label = "Enable saving of models", value = FALSE),
+    										  create_switch_input(inputId = ns("cache_models"), label = "Keep models in cache", value = FALSE),
     										),
     										shiny::conditionalPanel(
     										  condition = "input.show_advanced && input.subtabs == `Other traits`",
@@ -198,7 +199,8 @@
 	      ntree = input$ntree,
 	      maxnodes = input$maxnodes,
 	      positive_class_weight = input$positive_class_weight,
-	      training_split = input$training_split
+	      training_split = input$training_split,
+	      keep_models = (input$cache_models | input$enable_saving)
 	    )
 	  }, label = "get_inputs")
 	  
@@ -235,32 +237,12 @@
         maxnodes = get_inputs()$maxnodes,
         positive_class_weight = get_inputs()$positive_class_weight,
         training_split = get_inputs()$training_split,
-        ns = ns
+        keep_models = get_inputs()$keep_models
       )
       
       return(results)
     },
     label = "compute_job")
-	  
-	  # Get metadata for models
-	  get_model_metadata <- shiny::eventReactive({make_predictions_trigger()}, {
-	    models <- compute_job()$models
-
-	    # Named model list
-	    model_names <- names(models)
-	    
-	    metadata <- lapply(model_names, function(name) {
-	      model <- models[[name]]
-	      list(
-	        n_predictors = length(model$forest$ncat),
-	        n_responses = length(model$y),
-	        evaluation  = model$evaluation_results
-	      )
-	    })
-	    names(metadata) <- model_names
-
-	    return(metadata)
-	  }, label = "get_model_metadata")
 	  
 	  # --- Save and get results ---
 	  # Save results
@@ -274,12 +256,12 @@
         list(
           predict_traits = compute_job()$probabilities,
           get_models = compute_job()$models,
-          get_model_metadata = get_model_metadata()
+          get_model_metadata = compute_job()$metadata
         )
       }else{
         list(
           predict_traits = compute_job()$probabilities,
-          get_model_metadata = get_model_metadata()
+          get_model_metadata = compute_job()$metadata
         )
       }
       
@@ -379,15 +361,21 @@
 	    input_id = "gene_functions_modal",
 	    object_ids = c(
 	      "gene_functions_e_coli",
-	      "gene_functions_uncharacterized",
-	      "gene_functions_rumen_cultured",
-	      "gene_functions_rumen_MAGs"
+	      "gene_functions_b_subtilis",
+	      "gene_functions_p_aeruginosa",
+	      "gene_functions_rumen",
+	      "gene_functions_winogradsky",
+	      "gene_functions_sea",
+	      "gene_functions_humann"
 	    ),
 	    labels = c(
-	      "E. coli",
-	      "Previously uncharacterized bacteria",
-	      "Cultured prokaryotes from rumen",
-	      "MAGs from rumen"
+	      "E. coli (generic format)",
+	      "B. subtilis (eggNOG format)",
+	      "P. aeruginosa (KAAS format)",
+	      "Bacterial isolates from the rumen (IMG/M format)",
+	      "ASVs from the Winogradsky columns (PICRUSt2 format)",
+	      "MAGs from Black Sea (generic format)",
+	      "Bacteria from HUMAnN tutorial (HUMAnN format)"
 	    ),
 	    ns = ns,
 	    label = "show_gene_functions_modal"
@@ -403,7 +391,6 @@
 	      "Fermentation",
 	      "Methanogenesis"
 	    ),
-	    file_types = c("rds", "rds"),
 	    ns = ns,
 	    label = "show_model_modal"
 	  )
@@ -440,11 +427,11 @@
 	  
 	  # Output downloadable csv of results
 	  output$download_data <- create_download_handler(
-		filename_prefix = "results",
-		data_source = function() {
-		  table <- get_results()$predict_traits
-		  table
-		},
+  		filename_prefix = "results",
+  		data_source = function() {
+  		  table <- get_results()$predict_traits
+  		  table
+  		},
 	  )
 	  
 	  # Output overview plots
@@ -571,7 +558,7 @@
 	  # Output warning text for loading too many models
 	  observeEvent({input$model_names},
     {
-	    threshold <- 5
+	    threshold <- 3
 	    n_selected <- length(input$model_names)
 
       if (n_selected >= threshold) {

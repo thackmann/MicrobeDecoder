@@ -71,32 +71,30 @@ helpServer <- function(input, output, session, x, selected_tab) {
     switch(input$subtabs,
            "Video tutorials" = div(
              p(h3("Video tutorials")),
-             p(h5("How to predict traits from taxonomy:")),
-             p(shiny::uiOutput(ns("video_predictionsTaxonomy"))),
-             p(h5("How to predict traits with metabolic networks:")),
-             p(shiny::uiOutput(ns("video_predictionsNetwork")))
+             p(h5("Overview of Microbe Decoder")),
+             p(shiny::uiOutput(ns("video_overview"))),
+             # p(h5("How to predict traits from taxonomy")),
+             # p(shiny::uiOutput(ns("video_predictionsTaxonomy"))),
+             # p(h5("How to predict traits with metabolic networks")),
+             # p(shiny::uiOutput(ns("video_predictionsNetwork")))
            ),
            "Predict traits from taxonomy" = div(
              p(h3("Predict traits from taxonomy")),
              p("This tool predicts traits for organisms given their taxonomy. After the user selects organisms for prediction, the tool finds organisms with matching taxonomy in the internal database. The tool then calculates the fraction (0 to 1) of matching taxa positive for a trait.  This fraction is the probability of the trait.  This approach is similar to that used by ", url_FAPROTAX, ", except the latter reports only traits with probability of 1."),
              p(h4("Organisms (taxa)")),
              p("The user chooses organisms from the database or by uploading a file."),
-             p("An uploaded file should be a *csv and follow one of two formats."),
-             tags$i("Column-separated format"),
-             p(shiny::tagList("This format follows the output of ", url_DADA2, ". Taxonomic ranks are in columns and organisms in rows. Column names should include \"Phylum\", \"Class\", \"Order\", \"Family\", \"Genus\", \"Species\". Additional columns (e.g., kingdom) can be provided but will be ignored. If a taxonomic rank (e.g., species) is not known for an organism, it can be reported as \"NA\".")),
-             p(shiny::tagList("Genome carts from ", url_IMG, " are also accepted.  If multiple columns contain \"Phylum\" or another rank, only the first will be used.")),
+             p("An uploaded file should be a .csv, .txt, .xlsx, or .zip and follow one of the formats below."),
              p("Example files:"),
              tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_1"), label = "Previously uncharacterized bacteria")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_2"), label = "Cultured prokaryotes from rumen")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_3"), label = "MAGs from rumen"))
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_1"), label = "E. coli (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_2"), label = "Bacterial isolates from the rumen (IMG/M format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_3"), label = "Metagenomic species from the infant gut (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_4"), label = "ASVs from the Winogradsky columns (DADA2 format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_5"), label = "MAGs from Black Sea (GTDB format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_6"), label = "Bacteria from QIIME2 tutorial (QIIME2 format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_7"), label = "Bacteria from MetaPhlAn tutorial (MetaPhlAn format)"))
              ),
-             tags$i("Semicolon-separated format"),
-             p(shiny::tagList("This format follows the output of ", url_QIIME2, ". Taxonomic ranks should be separated by semi-colons. The format should be \"p__name; c__name; o__name; f__name; g__name; s__name\". Additional values (e.g., \"k__name\") can be provided but will be ignored. If the species is not known for an organism, it can be reported as \"s__unclassified\" or \"s__?\"; the same principle holds for other taxonomic ranks.")),
-             p("Example file:"),
-             tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadTaxa_4"), label = "OTUs from infant gut"))
-             ),
+            
              p(h4("Traits")),
              p("The user specifies the traits to predict here.  For the Other traits tab, the user can specific detailed traits using a query builder."),
              p(h4("Show advanced settings")),
@@ -111,26 +109,38 @@ helpServer <- function(input, output, session, x, selected_tab) {
              tags$i("Taxonomy"),
              p("This switch controls the taxonomy in the internal database used for matching."),
              p(h4("Output format")),
-             p("The *csv for probabilities of predicted traits can be downloaded.")
+             p("The .csv for probabilities of predicted traits can be downloaded.")
            ),
            "Predict traits with metabolic networks" = div(
              p(h3("Predict traits with metabolic networks")),
              p("This tool predicts traits for an organism by building a metabolic network from the genome. After the user selects gene functions for a genome, the tool builds a network of biochemical reactions.  It then uses flux balance analysis (FBA) to determine if the network is complete and can metabolize a chosen substrate to end products."),
              p(h4("Organisms (gene functions)")),
              p("The user chooses gene functions from the database or by uploading a file."),  
-             p(shiny::tagList("An uploaded file should be a *csv or a *ko file.  It should follow the output of KEGG Automatic Annotation Server (", url_KAAS, "). The rows are KO IDs for the gene functions. To analyze more than one genome, include a column named \"Genome\" with rows containing genome IDs.")),
-             p(shiny::tagList("Gene carts from ", url_IMG, " are also accepted.")),
+             p("An uploaded file should be a .csv, .tsv, .txt, .ko, or .zip and follow one of the formats below."),
              p("Example files:"),
              tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_1"), label = "E. coli")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_2"), label = "Previously uncharacterized bacteria")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_3"), label = "Cultured prokaryotes of rumen")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "MAGs from rumen"))
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_1"), label = "E. coli (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_2"), label = "B. subtilis (eggNOG format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_3"), label = "P. aeruginosa (KAAS format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "Bacterial isolates from the rumen (IMG/M format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_5"), label = "ASVs from the Winogradsky columns (PICRUSt2 format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_6"), label = "MAGs from Black Sea (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_7"), label = "Bacteria from HUMAnN tutorial (HUMAnN format)"))
+             ),
+             
+             p(h5("Load examples")),
+             p("This will load organisms from the database known to carry out the type of metabolism chosen below.  The user can select these to check the sensitivity of model predictions."),
+             
+             p(h5("Choose with file")),
+             p("To make a large number of selections from the database, a file with names of organisms can be uploaded.  The file should be a .csv or .zip and follow the format below."),
+             p("Example files:"),
+             tags$ol(class = "circled-list",
+                     tags$li(shiny::downloadLink(outputId = ns("downloadNames_1"), label = "Metagenomic species from the infant gut")),
              ),
              
              p(h4("Type of metabolism (reference network)")),
              p("The user chooses a reference network from the database or by uploading a file.  The tool will check if these reactions are in the genome and if so add them to the biochemical network.  All reactions needed to metabolize a chosen substrate to end products should be included."),
-             p(shiny::tagList("An uploaded file should be a *csv and follow the format below.  Information can come from ", url_KEGG, ".")), # debug
+             p(shiny::tagList("An uploaded file should be a .csv or .zip and follow the format below.  Information can come from ", url_KEGG, ".")), 
              p("Example files:"),
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadReference_1"), label = "Glucose fermentation")),
@@ -148,7 +158,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              tags$i("Enzymes must have all subunits"),
              p("When turned on, a biochemical reaction is included in the network only if its enzyme has all subunits (KO IDs).  Turning it off will lead to more reactions being included."),
              p(h4("Output format")),
-             p("The *csv for fluxes and for network model can be downloaded. The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000.")
+             p("The .csv for fluxes and for network model can be downloaded. The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000.")
            ),
            "Predict traits with machine learning" = div(
              p(h3("Predict traits with machine learning")),
@@ -156,15 +166,25 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("The user can predict simple traits using pre-trained models.  They can also train their own models to predict more complex traits."),
              p(h4("Organisms (gene functions)")),
              p("The user chooses gene functions from the database or by uploading a file."),
-             p(shiny::tagList("An uploaded file should be a *csv or a *ko file.  It should follow the output of KEGG Automatic Annotation Server (", url_KAAS, "). The rows are KO IDs for the gene functions. To analyze more than one genome, include a column named \"Genome\" with rows containing genome IDs.")),
-             p(shiny::tagList("Gene carts from ", url_IMG, " are also accepted.")),
+             p("An uploaded file should be a .csv, .tsv, .txt, or .zip and follow one of the formats below."),
              p("Example files:"),
              tags$ol(class = "circled-list",
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_1"), label = "E. coli")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_2"), label = "Previously uncharacterized bacteria")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_3"), label = "Cultured prokaryotes from rumen")),
-                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "MAGs from rumen"))
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_1"), label = "E. coli (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_2"), label = "B. subtilis (eggNOG format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_3"), label = "P. aeruginosa (KAAS format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_4"), label = "Bacterial isolates from the rumen (IMG/M format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_5"), label = "ASVs from the Winogradsky columns (PICRUSt2 format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_6"), label = "MAGs from Black Sea (generic format)")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadFunctions_7"), label = "Bacteria from HUMAnN tutorial (HUMAnN format)"))
              ),
+             
+             p(h5("Choose with file")),
+             p("To make a large number of selections from the database, a file with names of organisms can be uploaded.  The file should be a .csv or .zip and follow the format below."),
+             p("Example files:"),
+             tags$ol(class = "circled-list",
+                     tags$li(shiny::downloadLink(outputId = ns("downloadNames_1"), label = "Metagenomic species from the infant gut")),
+             ),
+             
              p(h4("Traits or models")),
              p("The user has several options for predicting traits."),
              tags$i("Standard traits"),
@@ -172,7 +192,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              tags$i("Other traits"),
              p("The user chooses a trait using a query builder, and the tool trains a random forest model for it."),
              tags$i("Model upload"),
-             p("The user uploads one or more *rds files of random forest models.  These files typically come from other tabs."),
+             p("The user uploads one or more .rds files of random forest models.  These files typically come from other tabs."),
              p("Example files:"),
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadModel_1"), label = "Fermentation")),
@@ -182,6 +202,8 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("When this slider is set to 0.5, only traits with predicted probability of at least 0.5 are shown."),
              tags$i("Enable saving of models"),
              p("When turned on, random forest models are saved and available for download.  For speed, this is turned off by default."),
+             tags$i("Keep models in cache"),
+             p("When turned on, random forest models that were previously loaded are kept in cache.  To preserve memory, this is turned off by default."),
              tags$i("Ignore missing values in database"),
              p("When turned on, matching organisms with \"NA\" for a trait are ignored.  This leads to more traits being predicted."),
              tags$i("Proportion of predictors to keep."),
@@ -201,8 +223,8 @@ helpServer <- function(input, output, session, x, selected_tab) {
              tags$i("Name of trait"),
              p("This sets the name of trait in the output, and it does not affect predictive performance.  Only alphanumeric characters are allowed."),
              p(h4("Output format")),
-             p("The *csv for probabilities of predicted traits can be downloaded."),
-             p("Additionally, an *rds file for the random forest can be downloaded. It can be re-uploaded using the Model upload tab.")
+             p("The .csv for probabilities of predicted traits can be downloaded."),
+             p("Additionally, an .rds file for the random forest can be downloaded. It can be re-uploaded using the Model upload tab.")
            ),
            "Search database" = div(
              p(h3("Search database")),
@@ -210,12 +232,12 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p(h4("Build query")),
              p("The user can generate simple or complex queries with the query builder at the left. Note that capitalization and spaces matter."),
              p(h4("Output format")),
-             p("The *csv for matching organisms can be downloaded."),
+             p("The .csv for matching organisms can be downloaded."),
              p("Matching organisms are also shown in a phylogenetic tree and t-SNE plot of gene functions. The phylogenetic tree is of n = 14 ribosomal genes from n = 3,822 prokaryotes. The t-SNE plot is of n = 30,805 gene functions from n = 4,301 prokaryotes. Organisms that cluster together in this plot have similar functions.")
            ),
            "Download database" = div(
              p(h3("Download database")),
-             p("This tool allows the user to download the internal database. The *csv includes all organisms and all information available.")
+             p("This tool allows the user to download the internal database. The .csv includes all organisms and all information available.")
            ),
            "History" = div(
              p(h3("History")),
@@ -230,6 +252,10 @@ helpServer <- function(input, output, session, x, selected_tab) {
   shiny::observeEvent({tab_selected_trigger()},
   {
     # Output videos for tutorial
+    output$video_overview <- shiny::renderUI({
+      shiny::HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/W1_e6f9_7x4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>')
+    })
+    
     output$video_predictionsTaxonomy <- shiny::renderUI({
       shiny::HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/Lhlk-4vRmL4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>')
     })
@@ -239,20 +265,28 @@ helpServer <- function(input, output, session, x, selected_tab) {
     })
     
     # Output example data for download
-    output$downloadTaxa_1 <- create_download_handler("taxa_uncharacterized", function() load_taxa_uncharacterized())
-    output$downloadTaxa_2 <- create_download_handler("taxa_rumen_cultured", function() load_taxa_rumen_cultured())
-    output$downloadTaxa_3 <- create_download_handler("taxa_rumen_MAGs", function() load_taxa_rumen_MAGs())
-    output$downloadTaxa_4 <- create_download_handler("taxa_infant", function() load_taxa_infant())
+    output$downloadTaxa_1 <- create_download_handler("taxa_e_coli", function() load_taxa_e_coli())
+    output$downloadTaxa_2 <- create_download_handler("taxa_rumen", function() load_taxa_rumen())
+    output$downloadTaxa_3 <- create_download_handler("taxa_infant", function() load_taxa_infant())
+    output$downloadTaxa_4 <- create_download_handler("taxa_winogradsky", function() load_taxa_winogradsky())
+    output$downloadTaxa_5 <- create_download_handler("taxa_sea", function() load_taxa_sea())
+    output$downloadTaxa_6 <- create_download_handler("taxa_qiime2", function() load_taxa_qiime2())
+    output$downloadTaxa_7 <- create_download_handler("taxa_metaphlan", function() load_taxa_metaphlan())
     
     output$downloadFunctions_1 <- create_download_handler("gene_functions_e_coli", function() load_gene_functions_e_coli())
-    output$downloadFunctions_2 <- create_download_handler("gene_functions_uncharacterized", function() load_gene_functions_uncharacterized())
-    output$downloadFunctions_3 <- create_download_handler("gene_functions_rumen_cultured", function() load_gene_functions_rumen_cultured())
-    output$downloadFunctions_4 <- create_download_handler("gene_functions_rumen_MAGs", function() load_gene_functions_rumen_MAGs())
+    output$downloadFunctions_2 <- create_download_handler("gene_functions_b_subtilis", function() load_gene_functions_b_subtilis())
+    output$downloadFunctions_3 <- create_download_handler("gene_functions_p_aeruginosa", function() load_gene_functions_p_aeruginosa())
+    output$downloadFunctions_4 <- create_download_handler("gene_functions_rumen", function() load_gene_functions_rumen())
+    output$downloadFunctions_5 <- create_download_handler("gene_functions_winogradsky", function() load_gene_functions_winogradsky())
+    output$downloadFunctions_6 <- create_download_handler("gene_functions_sea", function() load_gene_functions_sea())
+    output$downloadFunctions_7 <- create_download_handler("gene_functions_humann", function() load_gene_functions_humann())
+    
+    output$downloadNames_1 <- create_download_handler("names_infant", function() load_names_infant())
     
     output$downloadReference_1 <- create_download_handler("reference_network_glucose_fermentation", function() load_reference_network_glucose_fermentation())
     output$downloadReference_3 <- create_download_handler("reference_network_methanogenesis", function() load_reference_network_methanogenesis())
 
-    output$downloadModel_1 <- create_download_handler("random_forest_fermentation", function() load_model_fermentation(), file_type = "rds")
-    output$downloadModel_2 <- create_download_handler("random_forest_methanogenesis", function() load_model_methanogenesis(), file_type = "rds")
+    output$downloadModel_1 <- create_download_handler("random_forest_fermentation", function() load_model_fermentation())
+    output$downloadModel_2 <- create_download_handler("random_forest_methanogenesis", function() load_model_methanogenesis())
   })
 }

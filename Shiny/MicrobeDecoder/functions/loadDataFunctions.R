@@ -6,11 +6,11 @@
 # Date: 26 February 2025
 
 # === Define functions ===
-# --- Utility functions for loading data ---
+  # --- Utility functions for loading data ---
   #' Check if an Object Exists and Load if Not Present
   #'
   #' This function checks if an object exists in the environment and loads it from a file if it is not present.
-  #' It supports loading from CSV, TXT, RDS, and ZIP files containing these formats. 
+  #' It supports loading from CSV, TSV, TXT, XLS, XLSX, RDS, and ZIP files containing these formats. 
   #' Optionally, it can force reload even if the object is already in the environment.
   #'
   #' @param file_path A character string specifying the path to the file.
@@ -38,32 +38,23 @@
     extension <- tools::file_ext(file_path)
     
     # Handle ZIP files
-    if (extension == "zip") {
-      temp_dir <- tempfile()
-      dir.create(temp_dir)
-      
-      # Unzip files into the temporary directory
-      unzip(file_path, exdir = temp_dir)
-      
-      # List extracted files and identify supported types
-      extracted_files <- list.files(temp_dir, full.names = TRUE)
-      valid_files <- extracted_files[grepl("\\.(csv|txt|rds)$", extracted_files)]
-      
-      if (length(valid_files) == 0) {
-        stop("No CSV, TXT, or RDS files found in the ZIP archive.")
-      }
-      
-      # Load the first valid file found
-      file_path <- valid_files[1]
-      extension <- tools::file_ext(file_path)
+    if (tolower(extension) == "zip") {
+      z <- extract_from_zip(file_path)
+      # Ensure temp_dir gets cleaned up even if downstream code errors
+      on.exit(unlink(z$temp_dir, recursive = TRUE, force = TRUE), add = TRUE)
+      file_path <- z$path
+      extension <- z$extension
     }
     
-    # Determine the load function if not provided
+    # Determine the load function
     if (is.null(load_function)) {
       load_function <- switch(extension,
                               "rds" = readRDS,
                               "csv" = function(file, ...) readr::read_csv(file, show_col_types = FALSE, ...),
+                              "tsv" = function(file, ...) readr::read_tsv(file, show_col_types = FALSE, ...),
                               "txt" = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
+                              "xlsx" = function(file, ...) readxl::read_excel(path = file, ...),
+                              "xls"  = function(file, ...) readxl::read_excel(path = file, ...),
                               "ko"  = function(file, ...) read.table(file, sep = "\t", header = FALSE, fill = TRUE, ...),
                               stop("Unsupported file extension"))
     }
@@ -74,38 +65,8 @@
     
     return(obj)
   }
-
-  # Load Selected Models
-  #'
-  #' This function loads a list of models based on the selected model names and paths provided.
-  #' The function checks and loads each model file from the specified paths.
-  #'
-  #' @param session The Shiny session object.
-  #' @param model_names A character vector of selected model names to be loaded.
-  #' @param model_paths A vector of file paths corresponding to the models.
-  #' @param file_upload A Boolean describing if files are uploaded. 
-  #' @return A named list of loaded model objects.
-  #' @export
-  #' @importFrom base lapply
-  load_models <- function(session = getDefaultReactiveDomain(), 
-                          model_names, model_paths, file_upload = FALSE) {
-    if(!file_upload) {
-      model_list <- lapply(seq_along(model_names), function(i) {
-        obj <- check_and_load(file_path = model_paths[[i]])
-        return(obj)
-      })
-    } else if(file_upload) {
-      model_list <- lapply(seq_along(model_names), function(i) {
-        obj <- validate_and_read_file(session = session, file_path = model_paths[[i]])
-        return(obj)
-      })
-    }
-    
-    names(model_list) <- model_names
-    return(model_list)
-  }
   
-# --- Functions for loading specific objects or files ---
+  # --- Functions for loading specific objects or files ---
   #' Load Clean Database
   #' 
   #' This function loads the clean (formatted) database from a CSV file.
@@ -146,7 +107,7 @@
       col_types = readr::cols(
         IMG_Genome_ID = readr::col_character(),
         NCBI_Taxonomy_ID = readr::col_character()
-        )
+      )
     )
     
     return(obj)
@@ -199,157 +160,6 @@
     return(obj)
   }
   
-  #' Load Taxa for Uncharacterized Bacteria
-  #'
-  #' This function loads an example dataset from a zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_taxa_uncharacterized <- function() {
-    data_fp <- "data/taxa/taxa_uncharacterized.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Taxa for Cultured Rumen Bacteria
-  #'
-  #' This function loads an example dataset from a zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_taxa_rumen_cultured <- function() {
-    data_fp <- "data/taxa/taxa_rumen_cultured.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Taxa for Rumen MAGs
-  #'
-  #' This function loads an example dataset from a zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_taxa_rumen_MAGs <- function() {
-    data_fp <- "data/taxa/taxa_rumen_MAGs.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Taxa from Infants
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_taxa_infant <- function() {
-    data_fp <- "data/taxa/taxa_infant.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Gene Functions for E. coli
-  #'
-  #' This function loads an example dataset from a zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_gene_functions_e_coli <- function() {
-    data_fp <- "data/gene_functions/gene_functions_e_coli.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Gene Functions for Uncharacterized Bacteria
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_gene_functions_uncharacterized <- function() {
-    data_fp <- "data/gene_functions/gene_functions_uncharacterized.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Gene Functions for Rumen Cultured Bacteria
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_gene_functions_rumen_cultured <- function() {
-    data_fp <- "data/gene_functions/gene_functions_rumen_cultured.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  
-  #' Load Gene Functions for Rumen MAGs
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_gene_functions_rumen_MAGs <- function() {
-    data_fp <- "data/gene_functions/gene_functions_rumen_MAGs.zip"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Reference Network for Glucose Fermentation
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_reference_network_glucose_fermentation <- function() {
-    data_fp <- "data/reference_networks/fermentation_of_glucose.csv"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Reference Network for Methanogenesis
-  #'
-  #' This function loads an example dataset from an zip file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A list containing the query filters
-  #' @export
-  load_reference_network_methanogenesis <- function() {
-    data_fp <- "data/reference_networks/methanogenesis.csv"
-    
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
   #' Load Main Reference Network
   #'
   #' This function loads an example dataset from an zip file.
@@ -358,36 +168,8 @@
   #' @return A list containing the query filters
   #' @export
   load_main_reference_network <- function() {
-    data_fp <- "data/reference_networks/main.csv"
+    data_fp <- "data/reference_networks/main.zip"
     
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Random Forest Model for Fermentation
-  #'
-  #' This function loads an example random forest model (for fermentation) from a rds file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A data frame of the predictor variables
-  #' @export
-  load_model_fermentation <- function() {
-    data_fp <- "data/random_forest_models/fermentation.rds"
-    obj <- check_and_load(data_fp)
-    
-    return(obj)
-  }
-  
-  #' Load Random Forest Model for Methanogenesis
-  #'
-  #' This function loads an example random forest model (for methanogenesis) from a rds file.
-  #' The data is loaded and stored in the environment if it is not already present.
-  #'
-  #' @return A data frame of the predictor variables
-  #' @export
-  load_model_methanogenesis <- function() {
-    data_fp <- "data/random_forest_models/methanogenesis.rds"
     obj <- check_and_load(data_fp)
     
     return(obj)
@@ -560,7 +342,7 @@
     
     return(obj)
   }
-
+  
   #' Load Placeholder Filters for Query Builder
   #'
   #' This function loads the query filters for the query builder from an RDS file.
@@ -606,4 +388,236 @@
     obj <- check_and_load(data_fp)
     
     return(obj)
+  }
+  
+  # --- Functions for file paths ---
+  #' Load Taxa for E. coli
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_e_coli <- function() {
+    data_fp <- "data/taxa/taxa_e_coli.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa for Bacterial Isolates from the Rumen
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_rumen <- function() {
+    data_fp <- "data/taxa/taxa_rumen.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa from Infants
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_infant <- function() {
+    data_fp <- "data/taxa/taxa_infant.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa for Winogradsky Columns
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_winogradsky <- function() {
+    data_fp <- "data/taxa/taxa_winogradsky.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa for Black Sea
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_sea <- function() {
+    data_fp <- "data/taxa/taxa_sea.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa from QIIME2 Tutorial
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_qiime2 <- function() {
+    data_fp <- "data/taxa/taxa_qiime2.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Taxa from MetaPhlAn Tutorial
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_taxa_metaphlan <- function() {
+    data_fp <- "data/taxa/taxa_metaphlan.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for E. coli
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_e_coli <- function() {
+    data_fp <- "data/gene_functions/gene_functions_e_coli.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for B. subtilis
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_b_subtilis <- function() {
+    data_fp <- "data/gene_functions/gene_functions_b_subtilis.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for P. aeruginosa
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_p_aeruginosa <- function() {
+    data_fp <- "data/gene_functions/gene_functions_p_aeruginosa.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for Bacterial Isolates from the Rumen
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_rumen <- function() {
+    data_fp <- "data/gene_functions/gene_functions_rumen.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for Winogradsky Columns
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_winogradsky <- function() {
+    data_fp <- "data/gene_functions/gene_functions_winogradsky.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for Black Sea
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_sea <- function() {
+    data_fp <- "data/gene_functions/gene_functions_sea.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Gene Functions for HUMAnN Tutorial
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_humann <- function() {
+    data_fp <- "data/gene_functions/gene_functions_humann.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Names for Infants
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_names_infant <- function() {
+    data_fp <- "data/names/names_infant.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Reference Network for Glucose Fermentation
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_reference_network_glucose_fermentation <- function() {
+    data_fp <- "data/reference_networks/fermentation_of_glucose.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Reference Network for Methanogenesis
+  #'
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_reference_network_methanogenesis <- function() {
+    data_fp <- "data/reference_networks/methanogenesis.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Random Forest Model for Fermentation
+  #'
+  #' This function returns the file path for the rds file of an example random
+  #' forest model.
+  #'
+  #' @return The file path
+  #' @export
+  load_model_fermentation <- function() {
+    data_fp <- "data/random_forest_models/fermentation.zip"
+    
+    return(data_fp)
+  }
+  
+  #' Load Random Forest Model for Methanogenesis
+  #'
+  #' This function returns the file path for the rds file of an example random
+  #' forest model.
+  #'
+  #' @return The file path
+  #' @export
+  load_model_methanogenesis <- function() {
+    data_fp <- "data/random_forest_models/methanogenesis.zip"
+    
+    return(data_fp)
   }

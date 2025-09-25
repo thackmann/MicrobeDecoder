@@ -140,7 +140,7 @@
       # bslib::bs_themer()
 
       # Set maximum file upload size
-      options(shiny.maxRequestSize=100*1024^2)
+      options(shiny.maxRequestSize = 250*1024^2)
 
       # Set variables
       session$userData$modal_open <- reactiveVal(FALSE) # For tracking if modals are open

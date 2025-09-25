@@ -53,7 +53,7 @@
       query_string = input$query_string %||% NULL,
       traits_to_predict = input$traits_to_predict,
       ignore_NA = input$ignore_NA %||% TRUE,
-      match_all_ranks = input$match_all_ranks %||% TRUE,
+      match_all_ranks = input$match_all_ranks %||% FALSE,
       ignore_species = input$ignore_species %||% TRUE,
       system_taxonomy = input$system_taxonomy %||% "LPSN"
     )
@@ -154,7 +154,8 @@
       ntree = NULL,
       maxnodes = NULL,
       positive_class_weight = NULL,
-      training_split = NULL
+      training_split = NULL,
+      keep_models = FALSE
     )
     
     # Keep only results to be sent back

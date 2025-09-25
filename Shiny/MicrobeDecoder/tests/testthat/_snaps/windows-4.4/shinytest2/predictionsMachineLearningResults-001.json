@@ -1,6 +1,6 @@
 {
   "output": {
-    "predictionsNetwork-heatmap_plot": {
+    "predictionsMachineLearning-heatmap_plot": {
       "x": {
         "layout": {
           "margin": {
@@ -24,16 +24,12 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": [
-              "(R)-Lactate",
-              "(S)-Lactate",
-              "Acetate",
-              "Butanoic acid",
-              "Ethanol",
-              "Formate",
-              "Hydrogen",
-              "Propanoate",
-              "Succinate"
-            ]
+              "Fermentation (t...",
+              "Methanogenesis ..."
+            ],
+            "scaleanchor": "y",
+            "scaleratio": 1,
+            "constrain": "domain"
           },
           "yaxis": {
             "domain": [
@@ -49,13 +45,10 @@
             "showline": false,
             "type": "category",
             "categoryorder": "array",
-            "categoryarray": [
-              "Clostridium butyricum",
-              "Escherichia coli",
-              "Lactiplantibacillus plantarum",
-              "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
-            ]
+            "categoryarray": "Escherichia coli",
+            "scaleanchor": "x",
+            "scaleratio": 1,
+            "constrain": "domain"
           },
           "paper_bgcolor": "rgba(0,0,0,0)",
           "plot_bgcolor": "rgba(0,0,0,0)",
@@ -130,7 +123,7 @@
             {
               "x": 1.05,
               "y": 0.57699999999999996,
-              "text": "Flux",
+              "text": "% probability",
               "showarrow": false,
               "xref": "paper",
               "yref": "paper",
@@ -160,7 +153,7 @@
             {
               "x": 1.075,
               "y": 0.53499999999999992,
-              "text": "250",
+              "text": "25",
               "showarrow": false,
               "xref": "paper",
               "yref": "paper",
@@ -174,7 +167,7 @@
             {
               "x": 1.075,
               "y": 0.50499999999999989,
-              "text": "500",
+              "text": "50",
               "showarrow": false,
               "xref": "paper",
               "yref": "paper",
@@ -188,7 +181,7 @@
             {
               "x": 1.075,
               "y": 0.47499999999999992,
-              "text": "750",
+              "text": "75",
               "showarrow": false,
               "xref": "paper",
               "yref": "paper",
@@ -202,7 +195,7 @@
             {
               "x": 1.075,
               "y": 0.4449999999999999,
-              "text": "1000",
+              "text": "100",
               "showarrow": false,
               "xref": "paper",
               "yref": "paper",
@@ -252,81 +245,17 @@
             "type": "heatmap",
             "z": [
               [
-                1999.9999999987799,
-                1999.999999998746,
-                1999.9999998734204,
-                999.99999997876296,
-                1000.0000000000633,
-                999.99999979517816,
-                1000.0000000043642,
-                0,
-                0
-              ],
-              [
-                2333.3333333321089,
-                1999.9999999955928,
-                2333.3333333311616,
-                0,
-                2000.0000000006739,
-                1000.0000000000911,
-                1000.0000000001567,
-                0,
-                2000.0000000001367
-              ],
-              [
-                999.99999997888585,
-                999.99999999778913,
-                1000.0000000091701,
-                0,
-                1000.000000005931,
-                999.9999999780174,
-                0,
-                0,
-                0
-              ],
-              [
-                999.99999996262511,
-                999.99999999340196,
-                1999.9999999211511,
-                0,
-                0,
-                0,
-                0,
-                999.99999997935208,
-                999.99999999907459
-              ],
-              [
-                0,
-                0,
-                999.99999999983265,
-                0,
-                0,
-                0,
-                1000.0000000130769,
-                0,
+                100,
                 0
               ]
             ],
             "x": [
-              "(R)-Lactate",
-              "(S)-Lactate",
-              "Acetate",
-              "Butanoic acid",
-              "Ethanol",
-              "Formate",
-              "Hydrogen",
-              "Propanoate",
-              "Succinate"
+              "Fermentation (t...",
+              "Methanogenesis ..."
             ],
-            "y": [
-              "Clostridium butyricum",
-              "Escherichia coli",
-              "Lactiplantibacillus plantarum",
-              "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
-            ],
+            "y": "Escherichia coli",
             "zmin": 0,
-            "zmax": 1000,
+            "zmax": 100,
             "hoverinfo": "none",
             "xaxis": "x",
             "yaxis": "y",
@@ -351,88 +280,24 @@
             "type": "heatmap",
             "z": [
               [
-                1999.9999999987799,
-                1999.999999998746,
-                1999.9999998734204,
-                999.99999997876296,
-                1000.0000000000633,
-                999.99999979517816,
-                1000.0000000043642,
-                0,
-                0
-              ],
-              [
-                2333.3333333321089,
-                1999.9999999955928,
-                2333.3333333311616,
-                0,
-                2000.0000000006739,
-                1000.0000000000911,
-                1000.0000000001567,
-                0,
-                2000.0000000001367
-              ],
-              [
-                999.99999997888585,
-                999.99999999778913,
-                1000.0000000091701,
-                0,
-                1000.000000005931,
-                999.9999999780174,
-                0,
-                0,
-                0
-              ],
-              [
-                999.99999996262511,
-                999.99999999340196,
-                1999.9999999211511,
-                0,
-                0,
-                0,
-                0,
-                999.99999997935208,
-                999.99999999907459
-              ],
-              [
-                0,
-                0,
-                999.99999999983265,
-                0,
-                0,
-                0,
-                1000.0000000130769,
-                0,
+                100,
                 0
               ]
             ],
             "x": [
-              "(R)-Lactate",
-              "(S)-Lactate",
-              "Acetate",
-              "Butanoic acid",
-              "Ethanol",
-              "Formate",
-              "Hydrogen",
-              "Propanoate",
-              "Succinate"
+              "Fermentation (t...",
+              "Methanogenesis ..."
             ],
-            "y": [
-              "Clostridium butyricum",
-              "Escherichia coli",
-              "Lactiplantibacillus plantarum",
-              "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
-            ],
+            "y": "Escherichia coli",
             "zmin": 0,
-            "zmax": 1000,
+            "zmax": 100,
             "xgap": 2,
             "ygap": 2,
             "text": [
               "structure(function (x, ...) ",
               "UseMethod(\"text\"), apiSrc = TRUE)"
             ],
-            "hovertemplate": "<b>Endproduct: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>Flux: %{z:.0f}<\/b><br><extra><\/extra>",
+            "hovertemplate": "<b>Trait: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>% probability: %{z:.2f}<\/b><br><extra><\/extra>",
             "xaxis": "x",
             "yaxis": "y",
             "frame": null

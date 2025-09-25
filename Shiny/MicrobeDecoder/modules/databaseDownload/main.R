@@ -13,8 +13,12 @@
           create_title_div("Download database"),
           p(""),
           p(""),
-          p(h5("Click below to download the full database in csv format.")),
-          create_download_button(ns('download_data'), label = "Download"),
+          p(h5("Download the database in csv format.")),
+          create_download_button(ns('download_clean_database'), label = "Download"),
+          p(""),
+          p(""),
+          p(h5("Download the unprocessed (raw) database in csv format.")),
+          create_download_button(ns('download_raw_database'), label = "Download"),
           width = 8
         ),
         shiny::column(width = 2)
@@ -25,12 +29,20 @@
 # === Define server ===
   databaseDownloadServer <- function(input, output, session) {
     # --- Generate outputs ---
-    # Output downloadable csv of full database
-    output$download_data <- create_download_handler(
+    # Output downloadable csv of the clean database
+    output$download_clean_database <- create_download_handler(
       filename_prefix = "database",
       data_source = function() {
         load_database() %>%
           dplyr::select(-dplyr::ends_with("link"))
+      }
+    )
+    
+    # Output downloadable csv of the raw database
+    output$download_raw_database <- create_download_handler(
+      filename_prefix = "database_raw",
+      data_source = function() {
+        load_raw_database()
       }
     )
   }

@@ -391,6 +391,36 @@ run_random_forest <- function(df, models) {
   return(prediction_df)
 }
 
+# Load Selected Models
+#'
+#' This function loads a list of models based on the selected model names and paths provided.
+#' The function checks and loads each model file from the specified paths.
+#'
+#' @param session The Shiny session object.
+#' @param model_names A character vector of selected model names to be loaded.
+#' @param model_paths A vector of file paths corresponding to the models.
+#' @param file_upload A Boolean describing if files are uploaded. 
+#' @return A named list of loaded model objects.
+#' @export
+#' @importFrom base lapply
+load_models <- function(session = getDefaultReactiveDomain(), 
+                        model_names, model_paths, file_upload = FALSE) {
+  if(!file_upload) {
+    model_list <- lapply(seq_along(model_names), function(i) {
+      obj <- check_and_load(file_path = model_paths[[i]])
+      return(obj)
+    })
+  } else if(file_upload) {
+    model_list <- lapply(seq_along(model_names), function(i) {
+      obj <- validate_and_read_file(session = session, file_path = model_paths[[i]])
+      return(obj)
+    })
+  }
+  
+  names(model_list) <- model_names
+  return(model_list)
+}
+
 #' Load or train machine learning models
 #'
 #' This function either loads pre-trained models from paths or trains new models
@@ -405,11 +435,18 @@ run_random_forest <- function(df, models) {
 #' @param maxnodes Max terminal nodes for random forest.
 #' @param positive_class_weight Numeric weight for positive class.
 #' @param training_split Proportion of data to use for training.
-#' @param ns The Shiny namespace function.
 #'
 #' @return A named list of trained or loaded models.
 #' @export
-get_models <- function(model_names, model_paths, predictors, response, seed, ntree, maxnodes, positive_class_weight, training_split, ns) {
+get_models <- function(model_names, 
+                       model_paths = NULL, 
+                       predictors = NULL, 
+                       response = NULL, 
+                       seed = NULL, 
+                       ntree = NULL, 
+                       maxnodes = NULL, 
+                       positive_class_weight = NULL, 
+                       training_split = NULL) {
   # Initialize variables
   models <- NULL
   
@@ -474,9 +511,67 @@ predict_traits_ml <- function(df, models, ns) {
   return(probabilities)
 }
 
+#' Get metadata from random forest models
+#'
+#' Given a named list of \code{randomForest} classification models, return per-model
+#' metadata needed by the UI (number of predictors, number of responses used to
+#' train, and any attached evaluation results).
+#'
+#' @param models A \strong{named} list of fitted \code{randomForest} models.
+#'   Each element should have the usual slots (e.g., \code{$forest}, \code{$y}).
+#' @return A named list. For each model name, a list with:
+#'   \itemize{
+#'     \item \code{n_predictors}: integer, number of predictors the model expects.
+#'     \item \code{n_responses}:  integer, number of training responses used.
+#'     \item \code{evaluation}:   the object stored at \code{$evaluation_results} if present; otherwise \code{NULL}.
+#'   }
+#' @examples
+#' \dontrun{
+#' md <- get_metadata_from_models(models)
+#' str(md[["Fermentation (type of metabolism)"]])
+#' }
+#' @export
+get_metadata_from_models <- function(models) {
+  if (is.null(models) || !length(models)) return(list())
+  
+  stopifnot(!is.null(names(models)), all(nzchar(names(models))))
+  
+  meta <- lapply(models, function(m) {
+    # Get number of predictors
+    n_pred <- tryCatch({
+      if (!is.null(m$forest) && !is.null(m$forest$ncat)) {
+        length(m$forest$ncat)
+      } else if (!is.null(m$importance)) {
+        nrow(m$importance)
+      } else {
+        NA_integer_
+      }
+    }, error = function(...) NA_integer_)
+    
+    # Get number of responses
+    n_resp <- tryCatch({
+      if (!is.null(m$y)) length(m$y) else NA_integer_
+    }, error = function(...) NA_integer_)
+    
+    # Get evaluation results
+    eval_obj <- if (!is.null(m$evaluation_results)) m$evaluation_results else NULL
+    
+    list(
+      n_predictors = n_pred,
+      n_responses  = n_resp,
+      evaluation   = eval_obj
+    )
+  })
+  
+  names(meta) <- names(models)
+  
+  return(meta)
+}
+
 #' Compute predictions using machine learning models
 #'
-#' Loads or trains models and predicts trait probabilities.
+#' Loads or trains models, predicts trait probabilities, and gets metadata for 
+#' models.
 #'
 #' @param df A dataframe of gene functions
 #' @param model_names A character vector of names of pre-trained models
@@ -488,20 +583,35 @@ predict_traits_ml <- function(df, models, ns) {
 #' @param maxnodes Maximum number of terminal nodes in a tree
 #' @param positive_class_weight Numeric weight for positive class
 #' @param training_split Proportion of data to use for training
+#' @param keep_models Logical.  If TRUE, return models with results.  If FALSE, models are not returned and instead removed from memory.
 #' @param ns The namespace function for the Shiny module
 #'
 #' @return A named list with trained models and predicted probabilities.
 #' @export
-compute_ml_predictions <- function(df, model_names, model_paths, response, predictors, seed, ntree, maxnodes, positive_class_weight, training_split, ns = NULL){
+compute_ml_predictions <- function(df, 
+                                   model_names, 
+                                   model_paths, 
+                                   response, 
+                                   predictors, 
+                                   seed, 
+                                   ntree, 
+                                   maxnodes, 
+                                   positive_class_weight, 
+                                   training_split, 
+                                   keep_models = FALSE,
+                                   ns = NULL){
   # Update progress
   if (!is.null(ns)) display_modal(ns = ns, message = "Getting machine learning models", value = 0)
   cat(file = stderr(), paste0("Started getting models at ", Sys.time(), "\n"))
-  
+
   # Get models
-  models <- get_models(model_names, model_paths, predictors, response, seed, ntree, maxnodes, positive_class_weight, training_split, ns)
+  env_before <- ls(envir = .GlobalEnv)
+  models <- get_models(model_names, model_paths, predictors, response, seed, ntree, maxnodes, positive_class_weight, training_split)
+  env_after <- ls(envir = .GlobalEnv)
+  loaded_objects <- setdiff(env_after, env_before)
   
   # Update progress
-  cat(file = stderr(), paste0("Started getting models at ", Sys.time(), "\n"))
+  cat(file = stderr(), paste0("Ended getting models at ", Sys.time(), "\n"))
   
   # Update progress
   if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 50)
@@ -512,10 +622,23 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
   
   # Update progress
   if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 50)
-  cat(file = stderr(), paste0("Started prediction at ", Sys.time(), "\n"))
+  cat(file = stderr(), paste0("Ended prediction at ", Sys.time(), "\n"))
+  
+  # Get model metadata
+  metadata <- get_metadata_from_models(models)
   
   # Compile results
-  results <- list(models = models, probabilities = probabilities)
+  if (keep_models) {
+    results = list(models = models, probabilities = probabilities, metadata = metadata)
+  } else {
+    # Get results
+    results = list(probabilities = probabilities, metadata = metadata)
+    
+    # Remove models from memory
+    if (length(loaded_objects)) {
+      rm(list = loaded_objects, envir = .GlobalEnv)
+    }
+  }
   
   return(results)
 }
@@ -677,6 +800,7 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
   #' @param maxnodes Maximum number of terminal nodes (if applicable).
   #' @param positive_class_weight Numeric weight for positive class (if applicable).
   #' @param training_split Training data proportion (if applicable).
+  #' @param keep_models Logical.  If TRUE, return models with results.  If FALSE, models are not returned and instead removed from memory.
   #'
   #' @return A named list of all ML input components.
   get_ml_inputs <- function(
@@ -700,7 +824,8 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
       ntree = NULL,
       maxnodes = NULL,
       positive_class_weight = NULL,
-      training_split = NULL
+      training_split = NULL,
+      keep_models = FALSE
   ) {
     gene_functions <- get_gene_functions(
       functions_from_database = functions_from_database,
@@ -749,7 +874,8 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
       ntree = if (models_from_other) ntree else NULL,
       maxnodes = if (models_from_other) maxnodes else NULL,
       positive_class_weight = if (models_from_other) positive_class_weight else NULL,
-      training_split = if (models_from_other) training_split else NULL
+      training_split = if (models_from_other) training_split else NULL,
+      keep_models = keep_models
     )
   }
   

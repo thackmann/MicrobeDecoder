@@ -426,7 +426,7 @@ create_input_label <- function(inputId, label = NULL) {
 #' @param inputId The input ID for the file input.
 #' @param label A label for the file input. Default is NULL (no label).
 #' @param multiple Logical. If TRUE, allows multiple file selection. Default is TRUE.
-#' @param accept A character vector of accepted file types. Default includes csv, txt, rds, KO, xlx, and xlsx formats.
+#' @param accept A character vector of accepted file types. Default includes csv, txt, rds, KO, xlx, xlsx, and zip formats.
 #' @param width A character string specifying the width of the input box. Default is NULL.
 #' @param buttonLabel The label for the file browse button. Default is "Browse...".
 #' @param placeholder Placeholder text for when no file is selected. Default is "No file selected".
@@ -442,7 +442,7 @@ fileInput_modal <- function(inputId, label = NULL, multiple = TRUE,
                                        "text/tab-separated-values", 
                                        "application/vnd.ms-excel", 
                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                       ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx"), 
+                                       ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx", ".zip"), 
                             width = NULL, buttonLabel = "Browse...", 
                             placeholder = "No file selected", 
                             modalId, modalLabel = "Download example") {
@@ -512,7 +512,7 @@ fileInput_link <- function(inputId,
                              "text/tab-separated-values", 
                              "application/vnd.ms-excel", 
                              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                             ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx"),
+                             ".csv", ".tsv", ".txt", ".rds", ".ko", ".xls", ".xlsx", ".zip"),
                            multiple = FALSE,
                            width = NULL) {
   
