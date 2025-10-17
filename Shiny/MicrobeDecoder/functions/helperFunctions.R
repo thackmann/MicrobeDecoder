@@ -1006,85 +1006,104 @@
 	#' @importFrom readr read_csv read_delim
 	#' @importFrom base readRDS
 	#' @importFrom readxl read_excel
-	validate_and_read_file <- function(session = getDefaultReactiveDomain(), 
-	                                   file_path, 
-	                                   accepted_extensions = c("csv", "tsv", "txt", "rds", "ko", "xls", "xlsx", "zip"),
-	                                   detect_comments = TRUE) {
+	validate_and_read_file <- function(
+    session = getDefaultReactiveDomain(),
+    file_path,          # <- input$foo$datapath
+    original_name = NA, # <- input$foo$name
+    accepted_extensions = c("csv","tsv","txt","rds","ko","xls","xlsx","zip"),
+    detect_comments = TRUE
+	) {
 	  if (is.null(file_path) || file_path == "") {
-	    runValidationModal(session = session, "No file selected. Please upload a file.")
+	    runValidationModal(session, "No file selected. Please upload a file.")
 	    return(NULL)
 	  }
 	  
-	  file_ext <- tolower(tools::file_ext(file_path))
+	  # Prefer extension from original filename; fall back to path.
+	  ext_from_name <- tolower(tools::file_ext(if (is.na(original_name)) "" else original_name))
+	  ext_from_path <- tolower(tools::file_ext(file_path))
+	  file_ext <- if (nzchar(ext_from_name)) ext_from_name else ext_from_path
+	  
+	  # Fallback: light content sniff for ZIP (xlsx containers)
+	  if (!nzchar(file_ext)) {
+	    con <- file(file_path, "rb"); on.exit(try(close(con), silent = TRUE), add = TRUE)
+	    sig <- try(readBin(con, what = "raw", n = 4), silent = TRUE)
+	    if (!inherits(sig, "try-error") && length(sig) == 4 && identical(as.raw(c(0x50,0x4B,0x03,0x04)), sig)) {
+	      # Could be .xlsx (or a generic .zip). We'll try xlsx first.
+	      file_ext <- "xlsx"
+	    }
+	  }
 	  
 	  if (!file_ext %in% accepted_extensions) {
-	    runValidationModal(session = session, paste("Invalid file type. Please upload a", vector_to_phrase(accepted_extensions)))
+	    runValidationModal(session, paste(
+	      "Invalid file type. Please upload a", vector_to_phrase(accepted_extensions)
+	    ))
 	    return(NULL)
 	  }
 	  
-	  # Handle ZIP files
-	  if (file_ext %in% "zip") {
-	    # Build pattern from accepted_extensions without 'zip'
+	  # --- ZIP handling (explicit .zip uploads of data files) ---
+	  if (identical(file_ext, "zip")) {
 	    inner_exts <- setdiff(tolower(accepted_extensions), "zip")
 	    pattern <- paste0("\\.(", paste(inner_exts, collapse = "|"), ")$")
-	    
-	    z <- tryCatch({
-	      extract_from_zip(file_path, pattern = pattern)
-	    }, error = function(e) {
-	      runValidationModal(session = session, paste("Invalid zip file.  Please ensure it contains a", vector_to_phrase(accepted_extensions)))
-	      return(NULL)
-	    })
+	    z <- tryCatch(
+	      extract_from_zip(file_path, pattern = pattern),
+	      error = function(e) {
+	        runValidationModal(
+	          session,
+	          paste("Invalid zip file. Please ensure it contains a", vector_to_phrase(accepted_extensions))
+	        )
+	        NULL
+	      }
+	    )
 	    if (is.null(z)) return(NULL)
 	    on.exit(unlink(z$temp_dir, recursive = TRUE, force = TRUE), add = TRUE)
 	    file_path <- z$path
 	    file_ext  <- tolower(z$extension)
 	  }
 	  
-	  # Check file for comment lines (those starting with #)
+	  # --- Optional comment handling for plain text files ---
 	  if (detect_comments && file_ext %in% c("csv","tsv","txt")) {
 	    lines <- readLines(file_path, warn = FALSE)
-	    
 	    if (length(lines) > 0 && startsWith(trimws(lines[1]), "#")) {
-	      # find the first non-# line
 	      non_comment_idx <- which(!startsWith(trimws(lines), "#"))
 	      cutoff <- if (length(non_comment_idx) > 0) min(non_comment_idx) - 1L else length(lines)
-	      
-	      # only the initial block of # lines up to cutoff
-	      comment_idx <- seq_len(cutoff)
-	      
-	      # keep the last of those
-	      last_idx <- tail(comment_idx, 1)
-	      
-	      # Remove extra comment lines and rewrite to a temp file
+	      last_idx <- cutoff
 	      header <- sub("^\\s*#+\\s*", "", lines[last_idx])
 	      body   <- if (last_idx < length(lines)) lines[(last_idx+1):length(lines)] else character(0)
-	      
 	      tmp <- tempfile(fileext = paste0(".", file_ext))
 	      writeLines(c(header, body), tmp)
 	      file_path <- tmp
 	    }
 	  }
 	  
-	  # Determine the appropriate function to read the file
-	  load_function <- switch(file_ext,
-	                          "rds"  = readRDS,
-	                          "csv"  = function(file, ...) readr::read_csv(file, show_col_types = FALSE, ...),
-	                          "tsv"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
-	                          "txt"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
-	                          "ko"   = function(file, ...) read.table(file, sep = "\t", header = FALSE, fill = TRUE, ...),
-	                          "xls"  = function(file, ...) readxl::read_excel(file, ...),
-	                          "xlsx" = function(file, ...) readxl::read_excel(file, ...),
-	                          stop("Unsupported file extension"))
-
-	  data <- tryCatch({
-	    do.call(load_function, list(file_path))
-	  }, error = function(e) {
-	    runValidationModal(session = session, "Error reading the file. Please check the file format.")
-	    return(NULL)
-	  })
+	  # --- Reader dispatch ---
+	  load_function <- switch(
+	    file_ext,
+	    "rds"  = readRDS,
+	    "csv"  = function(file, ...) readr::read_csv(file, show_col_types = FALSE, ...),
+	    "tsv"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
+	    "txt"  = function(file, ...) readr::read_delim(file, delim = "\t", show_col_types = FALSE, ...),
+	    "ko"   = function(file, ...) utils::read.table(file, sep = "\t", header = FALSE, fill = TRUE, ...),
+	    "xls"  = function(file, ...) readxl::read_excel(path = file, ...),
+	    "xlsx" = function(file, ...) readxl::read_excel(path = file, ...),
+	    stop(sprintf("Unsupported file extension: %s", file_ext))
+	  )
 	  
-	  return(data)
+	  data <- tryCatch(
+	    do.call(load_function, list(file_path)),
+	    error = function(e) {
+	      # More actionable feedback (still shows your modal)
+	      msg <- sprintf("Failed reading '%s' as %s: %s",
+	                     ifelse(is.na(original_name), basename(file_path), original_name),
+	                     toupper(file_ext), conditionMessage(e))
+	      cat("[validate_and_read_file] ", msg, "\n")  # server log
+	      runValidationModal(session, "Error reading the file. Please check the file format.")
+	      NULL
+	    }
+	  )
+	  
+	  data
 	}
+	
 
 # === Processing gene functions ===
 	#' Detect Columns Matching a Pattern

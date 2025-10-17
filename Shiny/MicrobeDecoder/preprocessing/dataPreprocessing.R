@@ -407,7 +407,7 @@ Sys.setlocale("LC_ALL", "C")
               "motility" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE)",
 
               # Growth
-              "slow_growth" = "`Incubation period in days (BacDive)` > 7",
+              "slow_growth" = "`Incubation period in days (BacDive)` > 7"
             )
             
           # Process each variable
