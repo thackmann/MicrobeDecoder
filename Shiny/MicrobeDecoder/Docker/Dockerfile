@@ -22,14 +22,46 @@ RUN apt-get update && apt-get install -y \
 
 # Install R packages required by the Shiny app
 RUN R -e "install.packages(c( \
-  'ape', 'bslib', 'colorspace', 'dplyr', 'DT', 'fbar', 'ggplot2', 'grDevices', \
-  'igraph', 'import', 'jqbr', 'phyloseq', 'plotly', 'remotes', 'rlang', \
-  'shiny', 'shinycssloaders', 'shinyjs', 'shinyWidgets', 'stringr', 'tidyverse', \
-  'BiocManager', 'caret', 'randomForest', 'reactlog', 'rsconnect' \
+  'ape', \
+  'BiocManager', \
+  'bslib', \
+  'caret', \
+  'colorspace', \
+  'digest', \
+  'dplyr', \
+  'DT', \
+  'fbar', \
+  'fs', \
+  'htmltools', \
+  'igraph', \
+  'import', \
+  'jqbr', \
+  'jsonlite', \
+  'magrittr', \
+  'plotly', \
+  'purrr', \
+  'randomForest', \
+  'reactlog', \
+  'readr', \
+  'readxl', \
+  'remotes', \
+  'rlang', \
+  'rsconnect', \
+  'shiny', \
+  'shinycssloaders', \
+  'shinyjs', \
+  'shinyWidgets', \
+  'stringr', \
+  'tidyr', \
+  'tidyselect', \
+  'uuid' \
 ))"
 
+# Install Bioconductor packages
+RUN R -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager'); BiocManager::install('ggtree', ask=FALSE, update=FALSE)"
+
 # Install GitHub packages
-RUN R -e "remotes::install_github('YuLab-SMU/ggtree'); remotes::install_github('thackmann/FileLocator/FileLocator')"
+RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
 
 # Copy app files
 COPY . /srv/shiny-server/
@@ -38,7 +70,7 @@ COPY . /srv/shiny-server/
 EXPOSE 3838
 
 #Allow permission
-RUN sudo chown -R shiny:shiny /srv/shiny-server
+RUN chown -R shiny:shiny /srv/shiny-server
 
 #Copy further configuration files into the Docker image
 COPY ../Docker/shiny-server.sh /usr/bin/shiny-server.sh
