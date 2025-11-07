@@ -6,10 +6,14 @@
 Click [here](https://microbe-decoder.org) to access.
 
 ### Download as R Shiny app
-1. [Download the ZIP file](https://github.com/thackmann/MicrobeDecoder/archive/refs/heads/main.zip)  
+1. Download the [.zip file](https://github.com/thackmann/MicrobeDecoder/archive/refs/heads/main.zip)  
 2. Unzip the folder  
 3. Locate `MicrobeDecoder/Shiny/MicrobeDecoder/app.R`  
 4. Open `app.R` in [RStudio](https://posit.co/download/rstudio-desktop/) and click **Run App**
+
+### Download as Docker image
+In command prompt, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
+Open browser with address http://localhost:3838/. Refresh browser periodically until app loads.
 
 ### Video overview
 Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
@@ -25,3 +29,4 @@ This work is licensed under a
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+[![DOI](https://zenodo.org/badge/17553516.svg)](https://zenodo.org/badge/latestdoi/17553516)
