@@ -12,8 +12,9 @@ Click [here](https://microbe-decoder.org) to access.
 4. Open `app.R` in [RStudio](https://posit.co/download/rstudio-desktop/) and click **Run App**
 
 ### Download as Docker image
-In command prompt, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
-Open browser with address http://localhost:3838/. Refresh browser periodically until app loads.
+1. In command prompt, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
+2. Open browser with address http://localhost:3838/. 
+3. Refresh browser periodically until app loads.
 
 ### Video overview
 Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
