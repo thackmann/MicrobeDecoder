@@ -16,7 +16,7 @@ Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
 
 ### Download as Docker image
 1. Start [Docker](https://www.docker.com/get-started/).
-2. In s terminal, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
+2. In a terminal, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
 3. Open browser with address http://localhost:3838/. 
 4. Refresh browser periodically until app loads.
 
