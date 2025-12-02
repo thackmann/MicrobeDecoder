@@ -57,6 +57,7 @@
             shiny::conditionalPanel(
               condition = "input.show_advanced",
               ns = ns,
+              create_switch_input(inputId = ns("poor_traits"), label = "Hide poorly predicted traits", value = TRUE),
               shiny::sliderInput(ns("threshold"), "Probability threshold", min = 0, max = 1, value = 0.5),
               create_switch_input(inputId = ns("match_all_ranks"), label = "All taxonomic ranks must match", value = FALSE),
               create_switch_input(inputId = ns("ignore_species"), label = "Ignore species names for taxa"),
@@ -164,6 +165,7 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
       taxonomy_upload_path = input$taxonomy_upload$datapath,
       traits_to_predict = input$set_traits,
       query_string = input$query_builder,
+      poor_traits = input$poor_traits,
       ignore_NA = input$ignore_missing,
       match_all_ranks = input$match_all_ranks,
       ignore_species = input$ignore_species,
@@ -228,16 +230,21 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   
   # --- Update user interface (UI) elements ---
   # Update choices for traits
-  shiny::observeEvent({tab_selected_trigger()},
+  shiny::observeEvent({list(tab_selected_trigger(), input$poor_traits)},
   {
+    # Get choices
     choices <- choices_traits_taxonomy
+    
+    if (!isFALSE(input$poor_traits)) {
+      choices <- setdiff(choices, poor_traits_taxonomy)
+    }
+    
     selected <-  c(
                     "Type of metabolism (FAPROTAX)", 
                     "Type of metabolism (Fermentation Explorer)", 
-                    "Metabolites utilized (BacDive)", 
-                    "Metabolites produced (BacDive)",
                     "Metabolites utilized (Fermentation Explorer)", 
-                    "Metabolites produced (Fermentation Explorer)"
+                    "Metabolites produced (Fermentation Explorer)",
+                    "Oxygen tolerance (BacDive)"
                    )
     update_select_input(inputId = "set_traits", choices = choices, selected = selected)
   },
@@ -285,7 +292,9 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   # Update query builder
   shiny::observeEvent({tab_selected_trigger()},
   {
-    update_query_builder("query_builder", choices_traits_taxonomy)
+    choices <- choices_traits_taxonomy
+
+    update_query_builder("query_builder", choices)
   },
   ignoreInit = TRUE, label="update_query_builder")
   

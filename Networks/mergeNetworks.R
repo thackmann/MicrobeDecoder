@@ -196,7 +196,7 @@
   
   merged_network <- merged_network %>%
     fill_info(
-      ko_match = "k21566",
+      ko_match = "K21566",
       new_eq = "(4-Hydroxyphenyl)acetate + Cl- + Quinone + H+ <=> 3-Chloro-4-hydroxyphenylacetate + Hydroquinone",
       new_ec = "1.21.99.A",
       new_rn = "R1.21.99.A"
@@ -652,8 +652,7 @@
   
   merged_network <- merged_network %>% 
     combine_ko(list(
-      c("K08352", "K16293", "K16294"),
-      c("K08352", "K08353", "K08354")
+      c("K08352", "K16293", "K16294")
     )
     )
   
@@ -1099,7 +1098,6 @@
   merged_network <- merged_network %>% remove_rn(ko = "K00196")
   merged_network <- merged_network %>% remove_rn(ko = "K00192, K00195")
   merged_network <- merged_network %>% remove_rn(ko = "K21648")
-  merged_network <- merged_network %>% remove_rn(ko = "K08352")
   merged_network <- merged_network %>% remove_rn(rn = "R08034")
 
 # === Final processing ===    

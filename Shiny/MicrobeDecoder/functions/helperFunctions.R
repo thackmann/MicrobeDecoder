@@ -465,18 +465,28 @@
   #' @param max_age_days Maximum file age in days before deletion. Default is 30.
   #' @param max_size_MB Maximum file size in MB before deletion. Default is 50.
   #' @param verbose Logical; if TRUE, prints messages. Default is TRUE.
+  #' @param exclude_subdirs Character vector of subdirectory names to exclude from deletion.
   #' @return Character vector of deleted file paths (invisible).
   #' @export
   cleanup_old_large_files <- function(dir,
                                       file_extension = "rds",
                                       max_age_days = 30,
                                       max_size_MB = 50,
+                                      exclude_subdirs = NULL,
                                       verbose = TRUE) {
     if (!dir.exists(dir)) return(invisible(character()))
     
     # Find matching files
     pattern <- paste0("(?i)\\.", file_extension, "$")
     files <- list.files(dir, pattern = pattern, full.names = TRUE, recursive = TRUE)
+    
+    # Exclude subdirectories if specified
+    if (!is.null(exclude_subdirs) && length(files) > 0) {
+      esc  <- paste0("/", exclude_subdirs, "/")
+      excl <- paste(esc, collapse = "|")
+      files <- files[!grepl(excl, files)]
+    }
+    
     if (length(files) == 0) {
       if (verbose) message("No matching files found.")
       return(invisible(character()))
@@ -522,6 +532,7 @@
                                  max_age_days = 30,
                                  max_size_MB = 50,
                                  interval_hours = 6,
+                                 exclude_subdirs = "demo_user",
                                  verbose = TRUE) {
     auto_cleanup_timer <- reactiveTimer(interval_hours * 60 * 60 * 1000, session = session)
     
@@ -536,6 +547,7 @@
         file_extension = file_extension,
         max_age_days = max_age_days,
         max_size_MB = max_size_MB,
+        exclude_subdirs = exclude_subdirs,
         verbose = verbose
       )
       t2 <- Sys.time()
@@ -867,14 +879,13 @@
 	    # Create the modal content
 	    modal_content <- list(
 	      shiny::tags$h4(id = "modal-text", message),
-	      # debug
-	      # if (!is.null(url)) shiny::tags$div(
-	      #   id = "modal-link",
-	      #   class = "modal-link-text",
-	      #   "Results will be stored at ",
-	      #   shiny::tags$a(href = url, "this link", target = "_blank"),
-	      #   "."
-	      # ),
+	      if (!is.null(url)) shiny::tags$div(
+	        id = "modal-link",
+	        class = "modal-link-text",
+	        "Results will be stored at ",
+	        shiny::tags$a(href = url, "this link", target = "_blank"),
+	        "."
+	      ),
 	      shinyWidgets::progressBar(id = id, value = value, display_pct = TRUE)
 	    )
 	    

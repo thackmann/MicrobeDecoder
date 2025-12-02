@@ -50,11 +50,17 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": [
+              "Bacteroides fragilis",
               "Clostridium butyricum",
+              "Enterococcus faecalis",
               "Escherichia coli",
               "Lactiplantibacillus plantarum",
+              "Lactococcus lactis lactis",
               "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
+              "Pseudobutyrivibrio ruminis",
+              "Pyrococcus furiosus",
+              "Thermotoga maritima",
+              "Zymomonas mobilis mobilis"
             ]
           },
           "paper_bgcolor": "rgba(0,0,0,0)",
@@ -252,6 +258,17 @@
             "type": "heatmap",
             "z": [
               [
+                1999.9999999790971,
+                0,
+                1999.9999999992106,
+                0,
+                0,
+                1000.0000000001617,
+                0,
+                999.99999999375575,
+                999.99999999921192
+              ],
+              [
                 1999.9999999987799,
                 1999.999999998746,
                 1999.9999998734204,
@@ -259,6 +276,17 @@
                 1000.0000000000633,
                 999.99999979517816,
                 1000.0000000043642,
+                0,
+                0
+              ],
+              [
+                1000.0000000001124,
+                999.99999999951149,
+                999.99999999991678,
+                0,
+                999.99999999988484,
+                999.99999999982208,
+                0,
                 0,
                 0
               ],
@@ -285,6 +313,17 @@
                 0
               ],
               [
+                0,
+                999.99999996417534,
+                1000.0000000002711,
+                0,
+                1000.0000000002085,
+                999.9999999787168,
+                0,
+                0,
+                0
+              ],
+              [
                 999.99999996262511,
                 999.99999999340196,
                 1999.9999999211511,
@@ -296,6 +335,17 @@
                 999.99999999907459
               ],
               [
+                1000.0000000000709,
+                999.99999999937347,
+                999.99999999975637,
+                499.99999999953047,
+                0,
+                999.99999999980935,
+                1000.0000000002505,
+                0,
+                0
+              ],
+              [
                 0,
                 0,
                 999.99999999983265,
@@ -303,6 +353,28 @@
                 0,
                 0,
                 1000.0000000130769,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2000.0000000074335,
+                0,
+                0
+              ],
+              [
+                1999.9999998772428,
+                0,
+                0,
+                0,
+                999.99999999755642,
+                0,
+                0,
                 0,
                 0
               ]
@@ -319,11 +391,17 @@
               "Succinate"
             ],
             "y": [
+              "Bacteroides fragilis",
               "Clostridium butyricum",
+              "Enterococcus faecalis",
               "Escherichia coli",
               "Lactiplantibacillus plantarum",
+              "Lactococcus lactis lactis",
               "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
+              "Pseudobutyrivibrio ruminis",
+              "Pyrococcus furiosus",
+              "Thermotoga maritima",
+              "Zymomonas mobilis mobilis"
             ],
             "zmin": 0,
             "zmax": 1000,
@@ -351,6 +429,17 @@
             "type": "heatmap",
             "z": [
               [
+                1999.9999999790971,
+                0,
+                1999.9999999992106,
+                0,
+                0,
+                1000.0000000001617,
+                0,
+                999.99999999375575,
+                999.99999999921192
+              ],
+              [
                 1999.9999999987799,
                 1999.999999998746,
                 1999.9999998734204,
@@ -358,6 +447,17 @@
                 1000.0000000000633,
                 999.99999979517816,
                 1000.0000000043642,
+                0,
+                0
+              ],
+              [
+                1000.0000000001124,
+                999.99999999951149,
+                999.99999999991678,
+                0,
+                999.99999999988484,
+                999.99999999982208,
+                0,
                 0,
                 0
               ],
@@ -384,6 +484,17 @@
                 0
               ],
               [
+                0,
+                999.99999996417534,
+                1000.0000000002711,
+                0,
+                1000.0000000002085,
+                999.9999999787168,
+                0,
+                0,
+                0
+              ],
+              [
                 999.99999996262511,
                 999.99999999340196,
                 1999.9999999211511,
@@ -395,6 +506,17 @@
                 999.99999999907459
               ],
               [
+                1000.0000000000709,
+                999.99999999937347,
+                999.99999999975637,
+                499.99999999953047,
+                0,
+                999.99999999980935,
+                1000.0000000002505,
+                0,
+                0
+              ],
+              [
                 0,
                 0,
                 999.99999999983265,
@@ -402,6 +524,28 @@
                 0,
                 0,
                 1000.0000000130769,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2000.0000000074335,
+                0,
+                0
+              ],
+              [
+                1999.9999998772428,
+                0,
+                0,
+                0,
+                999.99999999755642,
+                0,
+                0,
                 0,
                 0
               ]
@@ -418,16 +562,22 @@
               "Succinate"
             ],
             "y": [
+              "Bacteroides fragilis",
               "Clostridium butyricum",
+              "Enterococcus faecalis",
               "Escherichia coli",
               "Lactiplantibacillus plantarum",
+              "Lactococcus lactis lactis",
               "Propionibacterium freudenreichii",
-              "Pyrococcus furiosus"
+              "Pseudobutyrivibrio ruminis",
+              "Pyrococcus furiosus",
+              "Thermotoga maritima",
+              "Zymomonas mobilis mobilis"
             ],
             "zmin": 0,
             "zmax": 1000,
             "xgap": 2,
-            "ygap": 2,
+            "ygap": 1,
             "text": [
               "structure(function (x, ...) ",
               "UseMethod(\"text\"), apiSrc = TRUE)"

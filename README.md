@@ -15,9 +15,10 @@ Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
 4. Open `app.R` in [RStudio](https://posit.co/download/rstudio-desktop/) and click **Run App**
 
 ### Download as Docker image
-1. In command prompt, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
-2. Open browser with address http://localhost:3838/. 
-3. Refresh browser periodically until app loads.
+1. Start [Docker](https://www.docker.com/get-started/).
+2. In a terminal, run `docker run -p 3838:3838 tjhackmann/microbedecoder:latest`
+3. Open browser with address http://localhost:3838/. 
+4. Refresh browser periodically until app loads.
 
 ### More information
 Hackmann TJ, Zhang B. The phenotype and genotype of fermentative prokaryotes Sci Adv. 2023 Sep 29;9(39):eadg8687. doi: 10.1126/sciadv.adg8687 [PMID: 37756392](https://pubmed.ncbi.nlm.nih.gov/37756392/)
