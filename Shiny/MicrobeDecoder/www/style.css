@@ -710,3 +710,41 @@ ol.circled-list li::before {
   0%, 50%, 100% { opacity: 1; }  
   25%, 75% { opacity: 0; }
 }
+
+/* === Footer === */
+.page-wrapper {
+  min-height: 100vh;
+  padding-bottom: 40px;   /* space so content isn't hidden behind footer */
+}
+
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  height: 34px;
+  padding: 6px 14px;
+
+  background: rgba(240, 240, 240, 0.85);
+  border-top: 1px solid #ddd;
+
+  display: flex;
+  justify-content: flex-end; /* puts icon on the right */
+  align-items: center;
+  z-index: 2000;
+  font-size: 13px;
+}
+
+.cc-icon {
+  height: 18px;
+  width: auto;
+  margin-left: 2px;
+  opacity: 0.7;
+  filter: grayscale(30%);
+  transition: 0.2s;
+}
+.cc-icon:hover {
+  opacity: 1;
+  filter: grayscale(0%);
+}

@@ -81,6 +81,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
            "Predict traits from taxonomy" = div(
              p(h3("Predict traits from taxonomy")),
              p("This tool predicts traits for organisms given their taxonomy. After the user selects organisms for prediction, the tool finds organisms with matching taxonomy in the internal database. The tool then calculates the fraction (0 to 1) of matching taxa positive for a trait.  This fraction is the probability of the trait.  This approach is similar to that used by ", url_FAPROTAX, ", except the latter reports only traits with probability of 1."),
+             
              p(h4("Organisms (taxa)")),
              p("The user chooses organisms from the database or by uploading a file."),
              p("An uploaded file should be a .csv, .txt, .xlsx, or .zip and follow one of the formats below."),
@@ -97,7 +98,10 @@ helpServer <- function(input, output, session, x, selected_tab) {
             
              p(h4("Traits")),
              p("The user specifies the traits to predict here.  For the Other traits tab, the user can specific detailed traits using a query builder."),
+             
              p(h4("Show advanced settings")),
+             tags$i("Hide poorly predicted traits"),
+             p("When turned on, traits that are known to be predicted poorly are hidden and cannot be selected by the user.  This applies to standard traits only."),
              tags$i("Probability threshold"),
              p("When this slider is set to 0.5, only traits with predicted probability of at least 0.5 are shown."),
              tags$i("All taxonomic ranks must match"),
@@ -108,12 +112,26 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("When turned on, matching organisms with \"NA\" for a trait are ignored.  This leads to more traits being predicted."),
              tags$i("Taxonomy"),
              p("This switch controls the taxonomy in the internal database used for matching."),
+             
              p(h4("Output format")),
-             p("The .csv for probabilities of predicted traits can be downloaded.")
+             p("The .csv for probabilities of predicted traits can be downloaded."),
+             
+             p(h4("Interactive example")),
+             tags$ol(class = "circled-list",
+                     tags$li(
+                       shiny::actionLink(
+                         ns("open_demo_taxonomy_rumen"),
+                         "Bacterial isolates from the rumen"
+                       )
+                     )
+             ),
+             p("Results are for metabolites produced by previously uncharacterized bacteria from the rumen.  Some metabolites (e.g., acetate) are predicted with high probability across bacteria, while others (e.g., H2) are predicted across fewer organisms.  The specific pattern closely matches ", tags$a(href = "https://www.science.org/doi/10.1126/sciadv.adg8687", target = "_blank", "observed values"), ".")
            ),
+           
            "Predict traits with metabolic networks" = div(
              p(h3("Predict traits with metabolic networks")),
              p("This tool predicts traits for an organism by building a metabolic network from the genome. After the user selects gene functions for a genome, the tool builds a network of biochemical reactions.  It then uses flux balance analysis (FBA) to determine if the network is complete and can metabolize a chosen substrate to end products."),
+             
              p(h4("Organisms (gene functions)")),
              p("The user chooses gene functions from the database or by uploading a file."),  
              p("An uploaded file should be a .csv, .tsv, .txt, .ko, or .zip and follow one of the formats below."),
@@ -146,10 +164,13 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadReference_1"), label = "Glucose fermentation")),
                      tags$li(shiny::downloadLink(outputId = ns("downloadReference_3"), label = "Methanogenesis"))
              ),
+             
              p(h4("Substrates")),
              p("The user specifies one or more substrates for the metabolic network here. Any metabolite in the reference network can be chosen."),
+             
              p(h4("End products")),
              p("The user specifies end products to check here. Any metabolite in the reference network can be chosen."),
+             
              p(h4("Show advanced settings")),
              tags$i("Unbalanced intermediates"),
              p("Metabolites chosen here are allowed to be produced (or consumed) in infinite quantities. NADH and ATP are examples of metabolites usually chosen to be unbalanced. In the metabolic model, these can accumulate without needing to be regenerated to NAD+ or ADP. This simplifies the model, as reactions for consuming NADH and ATP do not have to be included."),
@@ -157,9 +178,22 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("When this slider is set to 1, only end products with a flux of at least 1 are shown."),
              tags$i("Enzymes must have all subunits"),
              p("When turned on, a biochemical reaction is included in the network only if its enzyme has all subunits (KO IDs).  Turning it off will lead to more reactions being included."),
+             
              p(h4("Output format")),
-             p("The .csv for fluxes and for network model can be downloaded. The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000.")
+             p("The .csv for fluxes and for network model can be downloaded. The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000."),
+           
+             p(h4("Interactive example")),
+             tags$ol(class = "circled-list",
+                     tags$li(
+                       shiny::actionLink(
+                         ns("open_demo_network_rumen"),
+                         "Bacterial isolates from the rumen"
+                       )
+                     )
+             ),
+             p("Results are for pathways of glucose fermentation for previously uncharacterized bacteria from the rumen.  Some end products (e.g., acetate) are predicted with high probability across bacteria, while others (e.g., hydrogen) are predicted across fewer organisms.  The specific pattern closely matches ", tags$a(href = "https://www.science.org/doi/10.1126/sciadv.adg8687", target = "_blank", "observed values"), ".")
            ),
+           
            "Predict traits with machine learning" = div(
              p(h3("Predict traits with machine learning")),
              p("This tool predicts traits for an organism from its genome using machine learning.  After the user selects gene functions for a genome, the tool uses a machine learning algorithm (random forest classifier) to predict traits.  The tool calculates the fraction of trees (0 to 1) of trees giving a positive prediction.  This fraction is the probability of the trait."),
@@ -198,6 +232,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
                      tags$li(shiny::downloadLink(outputId = ns("downloadModel_1"), label = "Fermentation")),
                      tags$li(shiny::downloadLink(outputId = ns("downloadModel_2"), label = "Methanogenesis"))
              ),
+             
              p(h4("Show advanced settings")),
              p("When this slider is set to 0.5, only traits with predicted probability of at least 0.5 are shown."),
              tags$i("Enable saving of models"),
@@ -222,9 +257,21 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("When this slider is set to 0.5, positive and negative responses receive equal weight during training.  Increasing it will give more weight to positive responses."),
              tags$i("Name of trait"),
              p("This sets the name of trait in the output, and it does not affect predictive performance.  Only alphanumeric characters are allowed."),
+             
              p(h4("Output format")),
              p("The .csv for probabilities of predicted traits can be downloaded."),
-             p("Additionally, an .rds file for the random forest can be downloaded. It can be re-uploaded using the Model upload tab.")
+             p("Additionally, an .rds file for the random forest can be downloaded. It can be re-uploaded using the Model upload tab."),
+             
+             p(h4("Interactive example")),
+             tags$ol(class = "circled-list",
+                     tags$li(
+                       shiny::actionLink(
+                         ns("open_demo_ML_rumen"),
+                         "Bacterial isolates from the rumen"
+                       )
+                     )
+             ),
+             p("Results are for metabolites produced by previously uncharacterized bacteria from the rumen.  Some metabolites (e.g., acetate) are predicted with high probability across bacteria, while others (e.g., H2) are predicted across fewer organisms.  The specific pattern closely matches ", tags$a(href = "https://www.science.org/doi/10.1126/sciadv.adg8687", target = "_blank", "observed values"), ".")
            ),
            "Search database" = div(
              p(h3("Search database")),
@@ -288,5 +335,30 @@ helpServer <- function(input, output, session, x, selected_tab) {
 
     output$downloadModel_1 <- create_download_handler("random_forest_fermentation", function() load_model_fermentation())
     output$downloadModel_2 <- create_download_handler("random_forest_methanogenesis", function() load_model_methanogenesis())
+  })
+  
+  # Open links to demo jobs
+  shiny::observeEvent(input$open_demo_taxonomy_rumen, {
+    open_demo_job(
+      session,
+      demo_tab  = "predictionsTaxonomy",
+      demo_job  = "rumen"
+    )
+  })
+  
+  shiny::observeEvent(input$open_demo_network_rumen, {
+    open_demo_job(
+      session,
+      demo_tab  = "predictionsNetwork",
+      demo_job  = "rumen"
+    )
+  })
+  
+  shiny::observeEvent(input$open_demo_ML_rumen, {
+    open_demo_job(
+      session,
+      demo_tab  = "predictionsMachineLearning",
+      demo_job  = "rumen"
+    )
   })
 }

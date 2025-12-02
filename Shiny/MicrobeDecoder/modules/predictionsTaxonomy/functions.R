@@ -917,6 +917,7 @@
   #' @param taxonomy_upload_path File path to uploaded taxonomy file.
   #' @param traits_to_predict Character vector of traits to predict.
   #' @param query_string Raw query string for custom trait.
+  #' @param ignore_NA Logical. Show poorly predicted traits?
   #' @param ignore_NA Logical. Ignore NA in response variable?
   #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
   #' @param ignore_species Logical. Collapse species to genus?
@@ -932,6 +933,7 @@
     taxonomy_upload_path = NULL,
     traits_to_predict = NULL,
     query_string = NULL,
+    poor_traits,
     ignore_NA,
     match_all_ranks,
     ignore_species,
@@ -956,6 +958,7 @@
       query_taxa = query_taxa,
       traits_to_predict = traits_info$traits_to_predict,
       query_string = traits_info$query_string,
+      poor_traits = poor_traits,
       ignore_NA = ignore_NA,
       match_all_ranks = match_all_ranks,
       ignore_species = ignore_species,
