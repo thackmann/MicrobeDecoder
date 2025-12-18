@@ -571,6 +571,18 @@
     return(data_fp)
   }
   
+  #' Load Names for Model Organisms
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_names_model <- function() {
+    data_fp <- "data/names/names_model.zip"
+    
+    return(data_fp)
+  }
+  
   #' Load Reference Network for Glucose Fermentation
   #'
   #' This function returns the file path for the zip file of an example dataset.

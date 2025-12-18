@@ -1,0 +1,212 @@
+# -----------------------------------------------------------------------------
+# Default HTTP server for LOCAL TESTING
+#
+# Purpose:
+# - Allows access via http://localhost/ and http://127.0.0.1/
+# - Acts as the default_server so nginx does NOT serve random hostnames
+# - Uses the same routing logic as the production domain
+# -----------------------------------------------------------------------------
+server {
+    # Listen on port 80 and act as the default server
+    listen 80 default_server;
+
+    # Only respond to localhost requests
+    server_name localhost 127.0.0.1;
+
+    # Allow large uploads (e.g., genome files)
+    client_max_body_size 200M;
+
+    # -------------------------------------------------------------------------
+    # Landing page
+    #
+    # Redirect "/" to a unique instance URL using millisecond timestamp.
+    # This creates a per-session path like /inst-<timestamp>/.
+    # -------------------------------------------------------------------------
+    location = / {
+        return 302 /inst-$msec/;
+    }
+
+    # -------------------------------------------------------------------------
+    # Internal auth_request endpoint
+    #
+    # - Called internally by nginx (never exposed to the client)
+    # - Queries the Node.js launcher to determine which backend container
+    #   should handle the current session
+    # - Caches results briefly to reduce load on the launcher
+    # -------------------------------------------------------------------------
+    location = /_get_target {
+        internal;
+
+        # Abuse protection: rate-limit calls into the launcher (per client IP)
+        # Note: nginx also caches 200 responses for 30s per instance ID.
+        limit_req zone=md_auth burst=20 nodelay;
+
+        # Ask the launcher which backend to use
+        proxy_pass http://127.0.0.1:3000/get_target;
+
+        # Pass the instance ID extracted from the URL
+        proxy_set_header X-Instance-Id $saved_id;
+
+        # Preserve original client IP for launcher logs / optional app logic
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Do not forward request bodies to the launcher
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+
+        # Cache launcher responses per instance ID
+        proxy_cache md_launcher;
+        proxy_cache_key $saved_id;
+        proxy_cache_valid 200 30s;
+        proxy_cache_valid 404 1s;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    }
+
+    # -------------------------------------------------------------------------
+    # Main application routing (Shiny app instances)
+    #
+    # - Matches URLs like /inst-<id>/...
+    # - Uses auth_request to dynamically select a backend container
+    # - Fully supports WebSockets (required by Shiny)
+    # -------------------------------------------------------------------------
+    location ~ ^/(?<instance_id>inst-[^/]+)(?<nd_path>.*)$ {
+        # Save the instance ID for use by auth_request
+        set $saved_id $instance_id;
+
+        # Ask the launcher where to route this request
+        auth_request /_get_target;
+        auth_request_set $target_url $upstream_http_x_forward_target;
+
+        # Abuse protection (per client IP):
+        # - rate limit HTTP request bursts
+        # - cap concurrent connections (incl. WebSockets)
+        limit_req zone=md_app burst=60 nodelay;
+        limit_conn md_conn 30;
+
+        # Required for WebSocket support
+        proxy_http_version 1.1;
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket headers (critical for Shiny)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # Shiny-friendly proxy settings
+        proxy_buffering off;
+        proxy_connect_timeout 7s;
+        proxy_send_timeout 86400;
+        proxy_read_timeout 86400;
+        proxy_redirect off;
+
+        # Forward the request to the selected backend container
+        # Preserve the full path and query string
+        proxy_pass $target_url$nd_path$is_args$args;
+    }
+}
+
+# -----------------------------------------------------------------------------
+# Production HTTP server for microbe-decoder.org
+#
+# Purpose:
+# - Serves the app on a real hostname (microbe-decoder.org)
+# - Uses per-session instance paths (/inst-.../) to route users
+# - Uses auth_request to ask the Node.js launcher which backend container
+#   should handle each instance
+#
+# Note:
+# - Once TLS is enabled, this server block is typically converted to a
+#   HTTP->HTTPS redirect server, and the main logic moves to the 443 block.
+# -----------------------------------------------------------------------------
+server {
+    # Listen on port 80 for the domain
+    listen 80;
+    server_name microbe-decoder.org dev.microbe-decoder.org;
+
+    # Allow large uploads (e.g., genome files)
+    client_max_body_size 200M;
+
+    # -------------------------------------------------------------------------
+    # Landing page
+    #
+    # Redirect "/" to a unique instance URL using millisecond timestamp.
+    # This creates a per-session path like /inst-<timestamp>/.
+    # -------------------------------------------------------------------------
+    location = / {
+        return 302 /inst-$msec/;
+    }
+
+    # -------------------------------------------------------------------------
+    # Internal auth_request endpoint
+    #
+    # - Called internally by nginx (never exposed to the client)
+    # - Queries the Node.js launcher to determine which backend container
+    #   should handle the current session
+    # - Caches results briefly to reduce load on the launcher
+    # -------------------------------------------------------------------------
+    location = /_get_target {
+        internal;
+
+        # Ask the launcher which backend to use
+        proxy_pass http://127.0.0.1:3000/get_target;
+
+        # Pass the instance ID extracted from the URL
+        proxy_set_header X-Instance-Id $saved_id;
+
+        # Do not forward request bodies to the launcher
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+
+        # Cache launcher responses per instance ID
+        proxy_cache md_launcher;
+        proxy_cache_key $saved_id;
+        proxy_cache_valid 200 30s;
+        proxy_cache_valid 404 1s;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    }
+
+    # -------------------------------------------------------------------------
+    # Main application routing (Shiny app instances)
+    #
+    # - Matches URLs like /inst-<id>/...
+    # - Uses auth_request to dynamically select a backend container
+    # - Fully supports WebSockets (required by Shiny)
+    # -------------------------------------------------------------------------
+    location ~ ^/(?<instance_id>inst-[^/]+)(?<nd_path>.*)$ {
+        # Save the instance ID for use by auth_request
+        set $saved_id $instance_id;
+
+        # Ask the launcher where to route this request
+        auth_request /_get_target;
+        auth_request_set $target_url $upstream_http_x_forward_target;
+
+        # Required for WebSocket support
+        proxy_http_version 1.1;
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket headers (critical for Shiny)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        # Shiny-friendly proxy settings
+        proxy_buffering off;
+        proxy_connect_timeout 7s;
+        proxy_send_timeout 86400;
+        proxy_read_timeout 86400;
+        proxy_redirect off;
+
+        # Forward the request to the selected backend container
+        # Preserve the full path and query string
+        proxy_pass $target_url$nd_path$is_args$args;
+    }
+}

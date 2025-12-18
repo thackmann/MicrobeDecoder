@@ -223,12 +223,18 @@
   seq = ShortRead::sread(combined_fasta)
   names(seq) = ShortRead::id(combined_fasta)
 
-# === Add ribosomal sequences to organism data ===
-  idx <- match(lpsn_organisms$LPSN_ID, names(seq))
-  lpsn_organisms$`16S_ribosomal_sequence` <- NA
-  lpsn_organisms$`16S_ribosomal_sequence`[!is.na(idx)] <- as.character(seq[idx[!is.na(idx)]])
+# === Optional:  Add ribosomal sequences to organism data ===
+  # Uncomment to run
+  # idx <- match(lpsn_organisms$LPSN_ID, names(seq))
+  # lpsn_organisms$`16S_ribosomal_sequence` <- NA
+  # lpsn_organisms$`16S_ribosomal_sequence`[!is.na(idx)] <- as.character(seq[idx[!is.na(idx)]])
 
 # === Export ===
-  Biostrings::writeXStringSet(seq, filepath = paste0("LPSN\\data\\16S_ribosomal_sequences.fasta"), format = "fasta")
-
-  write.csv(lpsn_organisms, "LPSN\\data\\lpsn_ribosomal_sequences.csv")
+  fasta_fp <- "LPSN/data/16S_ribosomal_sequences.fasta"
+  zip_fp   <- "LPSN/data/16S_ribosomal_sequences.fasta.zip"
+  Biostrings::writeXStringSet(seq, filepath = fasta_fp, format = "fasta")
+  zip(zipfile = zip_fp, files = fasta_fp, flags = "-j")
+  file.remove(fasta_fp)
+  
+  # Uncomment to run
+  # write.csv(lpsn_organisms, "LPSN\\data\\lpsn_ribosomal_sequences.csv")

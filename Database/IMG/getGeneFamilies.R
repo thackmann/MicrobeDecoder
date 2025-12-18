@@ -21,7 +21,7 @@
 # ===  Use files with IMG genome IDs to download genomes from IMG ===
   ## Navigate to IMG, log on, and then navigate to Find Genomes (https://img.jgi.doe.gov/cgi-bin/mer/main.cgi?section=GenomeSearch&page=searchForm)
   ## Get values of IMG genomes_ID_max_quality from database.csv using command below (uncomment to run)
-  ## write_project_ids_to_files(project_IDs = database$'IMG_Genome_ID_max_quality', batch_size = 500, file_prefix = "genome_IDs_batch")
+  ## write_project_ids_to_files(project_IDs = database$'IMG_Genome_ID_max_quality', batch_size = 1000, file_prefix = "genome_IDs_batch")
   ## Paste these values into search bar.  In "Search by ID (list)" field, choose "IMG Genome ID (IMG Taxon ID)".  Click "Search".
   ## In the screen that appears, click "Select All" and "Add Selected to Genome Cart".  Repeat for remaining files.
   ## In the Genome Cart screen that appears, click the check box in the left corner (to select all genomes).

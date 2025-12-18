@@ -2,9 +2,10 @@
 # This script gets names of organisms from the LPSN database.
 # Requirements:
 # - Packages in install/installPackages.R
-# - Data downloaded from LPSN at links below
+# - Data from getLpsnNonCyanobacteria.R script
+# - Data from getLpsnCyanobacteria.R script
 # Author: Timothy Hackmann
-# Date: 17 December 2024
+# Date: 3 December 2025
 
 # === Get database directory ===
   database_directory <- FileLocator::getCurrentFileLocation()
@@ -20,23 +21,16 @@
   setwd(database_directory)
 
   # From https://lpsn.dsmz.de/downloads
-  lpsn_data =  read.csv(paste0(database_directory, "\\LPSN\\data\\lpsn_gss_2025-05-26.csv"))
-
+  lpsn_non_cyanobacteria <- read.csv("LPSN\\data\\lpsn_non_cyanobacteria.csv")
+  lpsn_cyanobacteria <- read.csv("LPSN\\data\\lpsn_cyanobacteria.csv")
+  
 # === Format data ===
-  # Select type strains with correct name
-  df = lpsn_data
-  df = df %>% dplyr::filter(grepl(pattern = "correct name", x = status, ignore.case = TRUE))
-  df = df %>% dplyr::filter(sp_epithet!="")
-
-  # Rename columns
-  df = df %>% dplyr::select(genus_name, sp_epithet, subsp_epithet, nomenclatural_type, status, record_no, address)
-  df = df %>% dplyr::rename(Genus = "genus_name", Species = "sp_epithet", Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
-
-  # Replace blank values with NA
-  df = df %>% dplyr::mutate_all(~ifelse(. == "", NA, .))
-
-  # For subspecies, keep only entries that have subspecies specified (e.g., keep Selenomonas ruminantium lactilytica but not Selenomonas ruminantium)
-  df <- df %>% dplyr::group_by(Genus, Species) %>% dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) %>% dplyr::ungroup()
-
+  # Combine data for non-cyanobacteria and cyanobacteria
+  lpsn_organisms <- dplyr::bind_rows(
+    lpsn_non_cyanobacteria,
+    lpsn_cyanobacteria
+  ) %>%
+  dplyr::distinct(LPSN_ID, .keep_all = TRUE)
+  
 # === Export ===
-  write.csv(df, paste0(database_directory, "\\LPSN\\data\\lpsn_organisms.csv"), row.names = FALSE)
+  write.csv(lpsn_organisms, paste0(database_directory, "\\LPSN\\data\\lpsn_organisms.csv"), row.names = FALSE)

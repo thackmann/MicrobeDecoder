@@ -1,0 +1,7 @@
+Genus,Species,Subspecies,Strain,LPSN_ID,GOLD_Organism_ID,GOLD_Project_ID
+Prochlorococcus,marinus,NA,CBFS A-122-1; MIT 9313,45116,Go0000621,Gp0000621
+Parasynechococcus,marenigrum,NA,CBFS A-94-1; WH 8102,65671,Go0000622,Gp0000622
+Crocosphaera,subtropica,NA,ATCC 51142; CBFS A-78-1,7717,Go0001249,Gp0001249
+Crinalium,epipsammum,NA,ATCC 49662; SAG 22.89,794502,Go0005067,Gp0005067
+Neosynechococcus,sphagnicola,NA,CAUPA 1101; OLM 9217,8065,Go0108899,Gp0108899
+Gloeomargarita,lithophora,NA,Alchichica-D10; CCAP 1437/1; D10; FCME PueAl-43a; PMC 919.15; PueAl-43a,6550,Go0364492,Gp0203606

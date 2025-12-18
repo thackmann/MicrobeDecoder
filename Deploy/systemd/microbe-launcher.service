@@ -1,0 +1,19 @@
+[Unit]
+Description=Microbe Decoder Launcher (Node)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/microbedecoder-deploy/launcher
+ExecStart=/usr/bin/node /srv/microbedecoder-deploy/launcher/server.js
+Restart=always
+RestartSec=2
+Environment=VERBOSE=1
+
+# Hardening (optional, safe defaults)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

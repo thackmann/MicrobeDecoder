@@ -63,6 +63,14 @@ RUN R -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('
 # Install GitHub packages
 RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
 
+# Modify configuration file for Shiny Server
+## Set infinite idle timeout
+RUN if grep -q "app_idle_timeout" /etc/shiny-server/shiny-server.conf; then \
+      sed -i 's/app_idle_timeout.*/app_idle_timeout 0;/' /etc/shiny-server/shiny-server.conf; \
+    else \
+      sed -i '/server {/a \  app_idle_timeout 0;' /etc/shiny-server/shiny-server.conf; \
+    fi
+
 # Copy app files
 COPY . /srv/shiny-server/
 
