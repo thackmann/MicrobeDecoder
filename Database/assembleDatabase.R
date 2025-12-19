@@ -11,6 +11,7 @@
 # - Data from Bergey's Manual from Bergey/addBergeyLabels.R script
 # - Data downloaded from NCBI at links below
 # - Data downloaded from GOLD at links below
+# - Additional data from GOLD found following instructions below
 # - Data downloaded from IMG following instructions below
 # - Data from FAPROTAX from FAPROTAX/getFAPROTAXpredictions.R script
 # - Data from primary literature
@@ -25,6 +26,9 @@
   setwd(database_directory)
   source("functions\\helperFunctions.R", local = TRUE) 
   
+# === Enable progress bar ===
+    progressr::handlers(global = TRUE)  
+  
 # === Read in data ===
   setwd(database_directory)
 
@@ -33,7 +37,7 @@
     lpsn_organisms =  readr::read_csv("LPSN\\data\\lpsn_organisms.csv")
     # From LPSN/getLpsnPhylogeny.R script
     lpsn_phylogeny =  readr::read_csv("LPSN\\data\\lpsn_phylogeny.csv")
-    # From getLpsnRibosomalSequencs.R script
+    # From getLpsnRibosomalSequences.R script
     lpsn_ribosomal_sequences =  readr::read_csv("LPSN\\data\\lpsn_ribosomal_sequences.csv")
 
   # Read in data from GTDB
@@ -55,7 +59,9 @@
                                             na = "",
                                             guess_max = 1000000,
                                             name_repair = "minimal")
-
+    # From https://gold.jgi.doe.gov/ (follow instructions below to compile)
+    GOLD_manual_data <- readr::read_csv("GOLD\\data\\gold_manual_data.csv")
+    
   # Read in data from IMG
     # From https://img.jgi.doe.gov/ (follow instructions below to download)
     IMG_data <- openxlsx::read.xlsx("IMG\\data\\IMG.xlsx")
@@ -157,7 +163,7 @@
   # Read in data from FAPROTAX
     # From FAPROTAX/getFAPROTAXpredictions.R script
     FAPROTAX_data <- readr::read_csv("FAPROTAX\\data\\FAPROTAX_data.csv")
-
+    
 # === Start database using data from LPSN ===
   database = lpsn_organisms
 
@@ -238,7 +244,7 @@
     ) %>%
     tidyr::unnest_wider(taxonomy_split)
   
-  # Find matches between database and GOLD
+  # Find matches between database and GTDB
   matches_GTDB = perform_matching(
     table_data = gtdb_data,
     table_genus_col = "Genus",
@@ -251,7 +257,9 @@
     x_strain_col = "Strain",
     x_delim = ";",
     collection_names = collection_names,
-    output_file = NULL
+    output_file = NULL,
+    chunk_size = 500,
+    workers = 10
   )
   
   # Filter indices to keep only the best matches
@@ -317,7 +325,9 @@
     x_strain_col = "Strain",
     x_delim = ";",
     collection_names = collection_names,
-    output_file = NULL
+    output_file = NULL,
+    chunk_size = 500,
+    workers = 10
   )
 
   # Filter indices to keep only the best matches
@@ -353,6 +363,12 @@
       )
     )
 
+    # Add data that were found by manually searching https://gold.jgi.doe.gov/
+    # These belong to organisms where automatic matching failed 
+    matches_manual_data = match(x = GOLD_manual_data$LPSN_ID, table = database$LPSN_ID)
+    database$GOLD_Organism_ID[matches_manual_data] <- GOLD_manual_data$GOLD_Organism_ID
+    database$GOLD_Project_ID[matches_manual_data]  <- GOLD_manual_data$GOLD_Project_ID
+    
 # === Add data from IMG ===
   # Instructions for downloading data (IMG.xlsx) from IMG
     ## Get GOLD organism IDs from database and output to file using command below (uncomment to run)
@@ -446,7 +462,9 @@
         x_strain_col = "Strain",
         x_delim = ";",
         collection_names = collection_names,
-        output_file = NULL
+        output_file = NULL,
+        chunk_size = 500,
+        workers = 10
       )
 
     # Filter indices to keep only the best matches
@@ -529,7 +547,10 @@
     table_delim = ";",
     x_delim = ";",
     collection_names = collection_names,
-    output_file = NULL
+    output_file = NULL,
+    ignore_missing_x_strain = FALSE,
+    chunk_size = 500,
+    workers = 10
   )
 
   # Filter indices to keep only the best matches
@@ -598,7 +619,10 @@
       table_delim = ";",
       x_delim = ",",
       collection_names = collection_names,
-      output_file = NULL
+      output_file = NULL,
+      ignore_missing_x_strain = FALSE,
+      chunk_size = 100,
+      workers = 3
     )
 
     # Filter indices to keep only the best matches
@@ -663,7 +687,10 @@
     table_delim = ";",
     x_delim = ",",
     collection_names = collection_names,
-    output_file = NULL
+    output_file = NULL,
+    ignore_missing_x_strain = FALSE,
+    chunk_size = 50,
+    workers = 2
   )
 
   # Filter indices to keep only the best matches
@@ -710,27 +737,19 @@
   FAPROTAX_data$Species = sapply(FAPROTAX_data$taxonomy, get_nth_element, delimiter = ";", n = 6)
 
   # Find matches between database and FAPROTAX
-  matches_FAPROTAX = FAPROTAX_data %>%
-    dplyr::mutate(
-      index = match(
-        paste(Genus, Species),
-        paste(database$Genus, database$Species)
-      )
-    ) %>%
-    dplyr::pull(index)
+  matches_FAPROTAX <- match(
+    paste(database$Genus, database$Species),
+    paste(FAPROTAX_data$Genus, FAPROTAX_data$Species)
+  )
 
   # Use indices to add FAPROTAX data to database
   database <- add_columns_based_on_indices(
-    target_df =  database,
-    source_df = FAPROTAX_data,
-    target_index = matches_FAPROTAX,
-    source_index = seq_along(matches_FAPROTAX),
-    source_col_names = c(
-      "group"
-    ),
-    target_col_names = c(
-      "FAPROTAX_Type_of_metabolism"
-    )
+    target_df       = database,
+    source_df       = FAPROTAX_data,
+    target_index    = seq_len(nrow(database)),    
+    source_index    = matches_FAPROTAX,        
+    source_col_names = "group",
+    target_col_names = "FAPROTAX_Type_of_metabolism",
   )
 
 # === Format data in database ===
@@ -740,4 +759,3 @@
 
 # === Export database ===
     save_as_zip(database, "database.csv")
-    

@@ -6,6 +6,7 @@
 # Requirements:
 # - Packages in install/installPackages.R
 # - Data from getLpsnPhylogeny.R script
+# - Data from getLpsnCyanobacteria.R script
 # - Access to FAPROTAX (http://www.loucalab.com/archive/FAPROTAX/)
 # Author: Timothy Hackmann
 # Date: 13 February 2025
@@ -23,13 +24,20 @@
 # === Load database ===
   # Read in data from getLpsnPhylogeny.R script
   setwd(database_directory)
-  lpsn_phylogeny <- utils::read.csv("LPSN\\data\\lpsn_phylogeny.csv")
+  lpsn_phylogeny <- read.csv("LPSN\\data\\lpsn_phylogeny.csv")
 
 # === Format data for FAPROTAX ===
-  # Format taxonomy
-    taxonomy = lpsn_phylogeny %>% dplyr::select(Phylum, Class, Order, Family, Genus, Species)
-    taxonomy = apply(taxonomy, 1, paste, collapse = ";")
-
+  # Get taxonomy
+    taxonomy <- lpsn_phylogeny %>%
+    dplyr::select(Phylum, Class, Order, Family, Genus, Species)
+    
+  # Make names consistent with FAPROTAX
+    taxonomy$Phylum <- dplyr::if_else(taxonomy$Phylum == "Cyanobacteriota", "Cyanobacteria", taxonomy$Phylum) 
+    taxonomy$Class <- dplyr::if_else(taxonomy$Class == "Chroococcophyceae", "Cyanobacteriia", taxonomy$Class)
+    
+  # Further format taxonomy
+    taxonomy <- apply(taxonomy, 1, paste, collapse = ";")
+    
   # Get OTU table
     otu_table <- data.frame(`#OTU` = seq_along(taxonomy), ID = "1.0", taxonomy = taxonomy, check.names = FALSE)
 
@@ -65,15 +73,15 @@
   # C:\Users\UserName\Downloads
   #
   # In Anaconda prompt, run
-  # cd C:\Users\UserName\Downloads\FAPROTAX_1.2.10\FAPROTAX_1.2.10
+  # cd C:\Users\UserName\Downloads\FAPROTAX_1.2.12\FAPROTAX_1.2.12
   # python collapse_table.py -h
   # If help file is displayed, installation was successful.
   #
   # To make predictions, use otu_table.tsv exported above and run
-  # cd C:\Users\UserName\Downloads\FAPROTAX_1.2.10\FAPROTAX_1.2.10
+  # cd C:\Users\UserName\Downloads\FAPROTAX_1.2.12\FAPROTAX_1.2.12
   # python collapse_table.py -i otu_table.tsv -o functional_table.tsv -g FAPROTAX.txt -c "#" -d "taxonomy" --omit_columns 0 --column_names_are_in last_comment_line -r report.txt -n columns_after_collapsing -v
   #
-  # If an error occurs, compare structure of otu_table.tsv against expample table from
+  # If an error occurs, compare structure of otu_table.tsv against example table from
   # https://pages.uoregon.edu/slouca/LoucaLab/archive/FAPROTAX/SECTION_Instructions/files/example_01/otu_table.tsv
 
 # === Read in predictions from FAPROTAX ===

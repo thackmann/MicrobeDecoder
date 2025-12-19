@@ -1,0 +1,9 @@
+[Unit]
+Description=Microbe Decoder age-based container cleanup
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+Environment=MAX_AGE_SECONDS=86400
+ExecStart=/usr/local/bin/md-age-sweep.sh

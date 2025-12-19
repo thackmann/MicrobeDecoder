@@ -368,41 +368,78 @@
   #' @param table_delim Character. Delimiter used to split the strain strings in the reference table. Default is NULL.
   #' @param collection_names Character vector. List of prefixes of large culture collection names (e.g., DSM, ATCC).
   #' @param best_matches Logical. If TRUE, only the highest-ranked matches are returned. Default is FALSE.
+  #' @param ignore_missing_x_strain Logical. If TRUE, organisms with a missing x_strain will not be matched. Default is TRUE.
+  #' @param ignore_missing_table_strain Logical. If TRUE, organisms with a missing table_strain will not be matched. Default is TRUE.
   #'
   #' @return A dataframe with matched entries including a calculated rank.
   #' @import dplyr stringr
   #' @export
   #' @examples
   #' match_organism("Escherichia", "coli", NULL, "ATCC 25922", table_genus, table_species, NULL, table_strain)
-  match_organism <- function(x_genus, x_species, x_subspecies = NULL, x_strain, x_delim = NULL,
-                             table_genus, table_species, table_subspecies = NULL, table_strain, table_delim = NULL,
-                             collection_names = c(
-                               "DSM", "JCM", "KCTC", "LMG", "NBRC", "ATCC", "CCUG", "CIP", "CGMCC", "KACC",
-                               "IFO", "CECT", "NCTC", "NCIMB", "MCCC", "BCRC", "CCM", "GDMCC", "HAMBI",
-                               "NCIB", "CBS", "CCRC", "RIA", "CFBP", "NCCB", "YIM", "IAM", "KCCM",
-                               "MTCC", "ICMP", "KMM", "TBRC"
-                             ),
-                             best_matches = FALSE) {
-    # Step 1: Find matches for genus, species, and subspecies separately
+  match_organism <- function(
+    x_genus, x_species, x_subspecies = NULL, x_strain, x_delim = NULL,
+    table_genus, table_species, table_subspecies = NULL, table_strain, table_delim = NULL,
+    collection_names = c(
+      "DSM", "JCM", "KCTC", "LMG", "NBRC", "ATCC", "CCUG", "CIP", "CGMCC", "KACC",
+      "IFO", "CECT", "NCTC", "NCIMB", "MCCC", "BCRC", "CCM", "GDMCC", "HAMBI",
+      "NCIB", "CBS", "CCRC", "RIA", "CFBP", "NCCB", "YIM", "IAM", "KCCM",
+      "MTCC", "ICMP", "KMM", "TBRC"
+    ),
+    best_matches   = FALSE,
+    ignore_missing_x_strain = TRUE,
+    ignore_missing_table_strain = TRUE
+  ) {
+    # Step 1:  Determine if strain is specified
+    x_strain_missing <- all(is.na(x_strain) | x_strain == "")
+    
+    # If strain is required but missing, return NA row
+    if (x_strain_missing && ignore_missing_x_strain) {
+      return(data.frame(
+        Index = NA_integer_,
+        Genus_Match = NA,
+        Species_Match = NA,
+        Subspecies_Match = NA,
+        Strain_Match = NA,
+        Culture_Collection_Match = NA,
+        Strain_Missing = TRUE,
+        Rank = NA_integer_
+      ))
+    }
+    
+    # Step 2: Find matches for genus, species, and subspecies
     match_genus <- which(x_genus == table_genus)
     match_species <- which(x_species == table_species)
-    # match_subspecies <- if (!is.null(x_subspecies) && !is.null(table_subspecies)) which(x_subspecies == table_subspecies) else NULL
     match_subspecies <- if (!is.null(table_subspecies)) which(x_subspecies == table_subspecies) else NULL
     
-    # Step 2: Split strain data if delimiters are provided
-    if(is.null(x_delim)) {
-      x = x_strain
+    ## Remove any matches where strains are missing
+    if (ignore_missing_table_strain) {
+      valid_strain <- !is.na(table_strain)
+      
+      match_genus   <- match_genus[ valid_strain[match_genus] ]
+      match_species <- match_species[ valid_strain[match_species] ]
+      if (!is.null(match_subspecies)) {
+        match_subspecies <- match_subspecies[ valid_strain[match_subspecies] ]
+      }
+    }
+    
+    # Step 3: Split strain IDs
+    if (x_strain_missing) {
+      x <- character(0)
+    } else if (is.null(x_delim)) {
+      x <- x_strain
     } else {
       x <- stringr::str_split(x_strain, paste0(x_delim, "\\s*"))[[1]]
     }
     
-    if(is.null(table_delim)) {
-      y = table_strain
+    if (is.null(table_delim)) {
+      y <- table_strain
     } else {
-      y <- lapply(table_strain, function(str) stringr::str_split(str, paste0(table_delim, "\\s*"))[[1]])
+      y <- lapply(table_strain, function(str)
+        stringr::str_split(str, paste0(table_delim, "\\s*"))[[1]]
+      )
     }
     
-    # Step 3: Find matches for strain
+    # Step 4: Find matches for strain
     match_strain <- c()
     for (i in seq_along(y)) {
       if (any(x %in% y[[i]])) {
@@ -410,7 +447,7 @@
       }
     }
     
-    # Step 4: Find matches for culture collection (e.g., DSM, ATCC, etc.)
+    # Step 5: Find matches for culture collection (e.g., DSM, ATCC, etc.)
     pattern <- paste0(collection_names, collapse = "|")
     pattern <- paste0("^(", pattern, ")\\s\\d+")
     z <- x[grepl(pattern, x)]
@@ -422,38 +459,41 @@
       }
     }
     
-    # Step 5: Create match dataframe
+    # Step 6: Create match dataframe
     match_dataframe <- data.frame(
       Index = seq_along(table_genus),
       Genus_Match = seq_along(table_genus) %in% match_genus,
       Species_Match = seq_along(table_genus) %in% match_species,
       Subspecies_Match = if (!is.null(match_subspecies)) seq_along(table_genus) %in% match_subspecies else NA,
       Strain_Match = seq_along(table_genus) %in% match_strain,
-      Culture_Collection_Match = seq_along(table_genus) %in% match_culture_collection
+      Culture_Collection_Match = seq_along(table_genus) %in% match_culture_collection,
+      Strain_Missing = rep(x_strain_missing, length(table_genus))
     )
     
-    # Step 6: Assign rank based on matching criteria
+    # Step 7: Assign rank based on matching criteria
     match_dataframe <- match_dataframe %>%
-      dplyr::mutate(Rank = dplyr::case_when(
-        Genus_Match & Species_Match & Subspecies_Match & Strain_Match ~ 1,
-        Genus_Match & Species_Match & Strain_Match ~ 2,
-        Species_Match & Subspecies_Match & Strain_Match ~ 3,
-        Species_Match & Strain_Match ~ 4,
-        Genus_Match & Strain_Match ~ 5,
-        Culture_Collection_Match ~ 6,
-        Genus_Match & Species_Match & Subspecies_Match ~ 7,
-        Genus_Match & Species_Match ~ 8,
-        TRUE ~ NA_real_
-      )) %>%
+      dplyr::mutate(
+        Rank = dplyr::case_when(
+          Genus_Match & Species_Match & Subspecies_Match & Strain_Match ~ 1,
+          Genus_Match & Species_Match & Strain_Match                    ~ 2,
+          Species_Match & Subspecies_Match & Strain_Match               ~ 3,
+          Species_Match & Strain_Match                                  ~ 4,
+          Genus_Match & Strain_Match                                    ~ 5,
+          Culture_Collection_Match                                      ~ 6,
+          Genus_Match & Species_Match & Subspecies_Match                ~ 7,
+          Genus_Match & Species_Match                                   ~ 8,
+          TRUE                                                          ~ NA_real_
+        )
+      ) %>%
       dplyr::filter(!is.na(Rank))
     
-    # Step 7: Return best matches if specified
+    # Step 8: Return best matches if specified
     if (nrow(match_dataframe) > 0) {
       match_dataframe <- match_dataframe %>%
         dplyr::arrange(Rank)
       
-      if(best_matches){
-        match_dataframe = match_dataframe %>% dplyr::filter(Rank == min(Rank))
+      if (best_matches) {
+        match_dataframe <- match_dataframe %>% dplyr::filter(Rank == min(Rank))
       }
       return(match_dataframe)
     } else {
@@ -464,6 +504,7 @@
         Subspecies_Match = NA,
         Strain_Match = NA,
         Culture_Collection_Match = NA,
+        Strain_Missing = x_strain_missing,
         Rank = NA_integer_
       ))
     }
@@ -473,6 +514,7 @@
   #'
   #' This function performs organism matching for multiple organisms based on genus, species, subspecies, and strain.
   #' It iterates through a dataset and calls the `match_organism` function to find the best matches.
+  #' Matching is done in chunks, which can be processed in parallel using the \pkg{future} and \pkg{furrr} packages.
   #'
   #' @param table_data Dataframe. The reference table containing the genus, species, and strain information.
   #' @param table_genus_col Character. The name of the genus column in the reference table.
@@ -487,68 +529,134 @@
   #' @param table_delim Character. Delimiter used to split the strain strings in the reference table. Default is ",".
   #' @param x_delim Character. Delimiter used to split the strain strings in the query dataset. Default is ";".
   #' @param collection_names Character vector. List of names of culture collections (e.g., DSM, ATCC).
+  #' @param ignore_missing_x_strain Logical. If TRUE, organisms with a missing x_strain will not be matched. Default is TRUE.
+  #' @param ignore_missing_table_strain Logical. If TRUE, organisms with a missing table_strain will not be matched. Default is TRUE.
   #' @param output_file Character. File path for saving the output as CSV. Default is NULL.
+  #' @param chunk_size Integer. Number of query rows per chunk for parallel processing. Default is 1000.
+  #' @param workers Integer. Number of parallel workers to use via \code{future::plan()}. Default is \code{future::availableCores()}.
   #'
   #' @return A dataframe of matched organisms with genus, species, strain, and culture collection matches, along with ranks.
-  #' @import dplyr stringr
+  #' @import dplyr stringr future furrr progressr
   #' @export
+  #'
   #' @examples
-  #' perform_matching(reference_table, "Genus", "Species", "Strain", query_data, "Genus", "Species", "Strain")
+  #' # Sequential use (set workers = 1 if desired):
+  #' # perform_matching(reference_table, "Genus", "Species", NULL, "Strain",
+  #' #                  query_data, "Genus", "Species", NULL, "Strain")
   perform_matching <- function(table_data, table_genus_col, table_species_col, table_subspecies_col = NULL, table_strain_col,
                                x_data, x_genus_col, x_species_col, x_subspecies_col = NULL, x_strain_col,
                                table_delim = ",", x_delim = ";",
                                collection_names = collection_names,
-                               output_file=NULL) {
-    # Initialize an empty dataframe to store matches
-    matches <- data.frame(
-      x_index = integer(),
-      table_index = integer(),
-      Genus_Match = character(),
-      Species_Match = character(),
-      Subspecies_Match = character(),
-      Strain_Match = character(),
-      Culture_Collection_Match = character(),
-      Rank = character()
+                               ignore_missing_x_strain = TRUE,
+                               ignore_missing_table_strain = TRUE,
+                               output_file = NULL,
+                               chunk_size = Inf,
+                               workers = 1) {
+    
+    # Prepare data from table
+    table_genus      <- table_data[[table_genus_col]]
+    table_species    <- table_data[[table_species_col]]
+    table_subspecies <- if (!is.null(table_subspecies_col)) table_data[[table_subspecies_col]] else NULL
+    table_strain     <- table_data[[table_strain_col]]
+    
+    n <- nrow(x_data)
+    if (n == 0L) {
+      # Return an empty dataframe with the expected columns
+      return(data.frame(
+        x_index = integer(),
+        table_index = integer(),
+        Genus_Match = logical(),
+        Species_Match = logical(),
+        Subspecies_Match = logical(),
+        Strain_Match = logical(),
+        Culture_Collection_Match = logical(),
+        Strain_Missing = logical(),
+        Rank = integer()
+      ))
+    }
+    
+    # Build chunks of row indices
+    all_idx <- seq_len(n)
+    chunks  <- split(all_idx, ceiling(all_idx / chunk_size))
+    
+    # ---- NEW: progressr progressor, one step per chunk ----
+    p <- progressr::progressor(steps = length(chunks))
+    
+    # Set up parallel plan
+    print("Launching workers")
+    future::plan(future::multisession, workers = workers)
+    
+    # Process chunks in parallel, with chunk-level progress
+    chunk_results <- furrr::future_map2(
+      chunks,
+      seq_along(chunks),
+      function(idx_vec, chunk_id) {
+        # Local results for this chunk
+        local_matches <- data.frame(
+          x_index = integer(),
+          table_index = integer(),
+          Genus_Match = logical(),
+          Species_Match = logical(),
+          Subspecies_Match = logical(),
+          Strain_Match = logical(),
+          Culture_Collection_Match = logical(),
+          Strain_Missing = logical(),
+          Rank = integer()
+        )
+        
+        for (i in idx_vec) {
+          # Prepare data from x
+          x_genus      <- x_data[[x_genus_col]][i]
+          x_species    <- x_data[[x_species_col]][i]
+          x_subspecies <- if (!is.null(x_subspecies_col)) x_data[[x_subspecies_col]][i] else NA
+          x_strain_raw <- x_data[[x_strain_col]][i]
+          
+          # Split query strain IDs
+          x_strain <- stringr::str_split(x_strain_raw, paste0(x_delim, "\\s*"))[[1]]
+          
+          result <- match_organism(
+            x_genus        = x_genus,
+            x_species      = x_species,
+            x_subspecies   = if (!is.na(x_subspecies)) x_subspecies else NULL,
+            x_strain       = x_strain,
+            x_delim        = NULL,
+            table_genus    = table_genus,
+            table_species  = table_species,
+            table_subspecies = if (!is.null(table_subspecies)) table_subspecies else NULL,
+            table_strain   = table_strain,
+            table_delim    = table_delim,
+            collection_names = collection_names,
+            ignore_missing_x_strain   = ignore_missing_x_strain,
+            ignore_missing_table_strain = ignore_missing_table_strain
+          )
+          
+          if (nrow(result) > 0) {
+            colnames(result)[colnames(result) == "Index"] <- "table_index"
+            result <- cbind(x_index = i, result)
+            local_matches <- rbind(local_matches, result)
+          }
+        }
+        
+        # ---- CHANGED: use progressr instead of svMisc::progress() ----
+        p(message = sprintf("Chunk %d/%d", chunk_id, length(chunks)))
+        
+        local_matches
+      },
+      .options = furrr::furrr_options(
+        seed     = TRUE,
+        packages = c("dplyr", "stringr", "progressr")  # <-- added "progressr"
+      )
     )
     
-    table_genus <- table_data[[table_genus_col]]
-    table_species <- table_data[[table_species_col]]
-    table_subspecies <- if (!is.null(table_subspecies_col)) table_data[[table_subspecies_col]] else NULL
-    table_strain <- table_data[[table_strain_col]]
-    table_strain <- lapply(table_strain, function(str) stringr::str_split(str, paste0(table_delim, "\\s*"))[[1]])
+    # Back to sequential plan
+    future::plan(future::sequential)
     
-    for (i in 1:nrow(x_data)) {
-      x_genus <- x_data[[x_genus_col]][i]
-      x_species <- x_data[[x_species_col]][i]
-      x_subspecies <- if (!is.null(x_subspecies_col)) x_data[[x_subspecies_col]][i] else NA
-      x_strain <- x_data[[x_strain_col]][i]
-      x_strain <- stringr::str_split(x_strain, paste0(x_delim, "\\s*"))[[1]]
-      
-      result <- match_organism(
-        x_genus = x_genus,
-        x_species = x_species,
-        x_subspecies = if (!is.na(x_subspecies)) x_subspecies else NULL,
-        x_strain = x_strain,
-        x_delim = NULL,
-        table_genus = table_genus,
-        table_species = table_species,
-        table_subspecies = if (!is.null(table_subspecies)) table_subspecies else NULL,
-        table_strain = table_strain,
-        collection_names = collection_names,
-        table_delim = NULL
-      )
-      
-      if (nrow(result) > 0) {
-        colnames(result)[colnames(result) == "Index"] <- "table_index"
-        result <- cbind(x_index = i, result)
-        matches <- rbind(matches, result)
-      }
-      
-      if (!is.null(output_file)) {
-        write.csv(matches, output_file, row.names = FALSE)
-      }
-      
-      svMisc::progress(value = i, max = nrow(x_data))
+    # Combine all chunk results
+    matches <- dplyr::bind_rows(chunk_results)
+    
+    # Write CSV once at the end (if requested)
+    if (!is.null(output_file) && nrow(matches) > 0) {
+      utils::write.csv(matches, output_file, row.names = FALSE)
     }
     
     return(matches)

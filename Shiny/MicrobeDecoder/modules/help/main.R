@@ -154,6 +154,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("Example files:"),
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadNames_1"), label = "Metagenomic species from the infant gut")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadNames_2"), label = "Model isolates of bacteria and archaea"))
              ),
              
              p(h4("Type of metabolism (reference network)")),
@@ -217,6 +218,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
              p("Example files:"),
              tags$ol(class = "circled-list",
                      tags$li(shiny::downloadLink(outputId = ns("downloadNames_1"), label = "Metagenomic species from the infant gut")),
+                     tags$li(shiny::downloadLink(outputId = ns("downloadNames_2"), label = "Model isolates of bacteria and archaea"))
              ),
              
              p(h4("Traits or models")),
@@ -329,6 +331,7 @@ helpServer <- function(input, output, session, x, selected_tab) {
     output$downloadFunctions_7 <- create_download_handler("gene_functions_humann", function() load_gene_functions_humann())
     
     output$downloadNames_1 <- create_download_handler("names_infant", function() load_names_infant())
+    output$downloadNames_2 <- create_download_handler("names_model", function() load_names_model())
     
     output$downloadReference_1 <- create_download_handler("reference_network_glucose_fermentation", function() load_reference_network_glucose_fermentation())
     output$downloadReference_3 <- create_download_handler("reference_network_methanogenesis", function() load_reference_network_methanogenesis())
