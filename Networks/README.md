@@ -6,4 +6,5 @@ To execute, open these files in RStudio
 2. `MicrobeDecoder/Networks/otherReactionsToNetworks.R`
 3. `MicrobeDecoder/Networks/mergeNetworks.R`
 4. `MicrobeDecoder/Networks/configureNetwork.R`
+
 Run in order.  After execution, move `MicrobeDecoder/Networks/mainNetwork/main.csv` to app and zip (forming `MicrobeDecoder/Shiny/MicrobeDecoder/data/reference_networks/main.zip`).
