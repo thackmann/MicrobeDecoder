@@ -74,16 +74,19 @@ RUN if grep -q "app_idle_timeout" /etc/shiny-server/shiny-server.conf; then \
 # Copy app files
 COPY . /srv/shiny-server/
 
-#Select port
+# Select port
 EXPOSE 3838
 
-#Allow permission
-RUN chown -R shiny:shiny /srv/shiny-server
+# Allow permission
+RUN chown -R shiny:shiny /srv/shiny-server \
+    && mkdir -p /srv/shiny-server/jobs \
+    && chmod -R u+rwX,g+rwX /srv/shiny-server/jobs \
+    && ln -s /srv/shiny-server/jobs /jobs || true
 
-#Copy further configuration files into the Docker image
+# Copy further configuration files into the Docker image
 COPY ../Docker/shiny-server.sh /usr/bin/shiny-server.sh
 
 RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"]
 
-#Run app
+# Run app
 CMD ["/usr/bin/shiny-server.sh"]
