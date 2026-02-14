@@ -1100,6 +1100,11 @@
   merged_network <- merged_network %>% remove_rn(ko = "K21648")
   merged_network <- merged_network %>% remove_rn(rn = "R08034")
 
+  # Remove extra entries (for subunits for putative enzymes)
+  merged_network <- merged_network %>% remove_rn(ko = "K12527")
+  merged_network <- merged_network %>% remove_rn(ko = "K12528")
+  merged_network <- merged_network %>% remove_rn(ko = "K12529")
+  
 # === Final processing ===    
   # Merge nearly identical rows 
   merged_network$map <- remove_or_replace_target(merged_network$map)

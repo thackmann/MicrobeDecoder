@@ -226,6 +226,7 @@
      "Sulfur reduction by electron carriers",
      "Tetrathionate reduction by electron carriers",
      "Thiosulfate reduction by electron carriers",
+     "Dimethyl sulfoxide reduction by electron carriers",
      "Redox balance"
    ),
     "Sulfate respiration (generic) (dissimilatory sulfate reduction)" = c(

@@ -111,7 +111,9 @@
   --query-select-border: var(--border-color);
 
   /* List Styles */
-  --list-circle-bg-color: #e5e5e5;
+  --list-circle-fill-color: #ffffff;
+  --list-circle-border-color: #9ca3af;
+  --list-circle-text-color: #374151;
 
   /* Button States */
   /*--primary-hover-color: #3768bd; */
@@ -429,6 +431,78 @@
   height: 50vh; 
 }
 
+/* Lists with circled numbers*/
+.circled-number-list {
+  counter-reset: h5-circle;
+}
+
+.circled-number-list h5 {
+  counter-increment: h5-circle;
+  position: relative;
+  padding-left: 42px;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.circled-number-list h5::before {
+  content: counter(h5-circle);
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+
+  width: 26px;
+  height: 26px;
+
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 600;
+  font-size: 14px;
+
+  background-color: var(--list-circle-fill-color);
+  border: 2px solid var(--list-circle-border-color);
+  color: var(--list-circle-text-color);
+}
+
+/* Lists with circled letters */
+ol.circled-letter-list {
+  list-style: none;
+  counter-reset: circled-letter;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+ol.circled-letter-list li {
+  counter-increment: circled-letter;
+  position: relative;
+  margin-bottom: 15px;
+  padding-left: 36px;
+}
+
+ol.circled-letter-list li::before {
+  content: counter(circled-letter, lower-alpha);
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 600;
+  font-size: 13px;
+
+  background-color: var(--list-circle-border-color); 
+  border: 2px solid var(--list-circle-border-color);
+  color: white;
+}
+
 /* Other styles */
 .tight-heading {
   margin-bottom: -16px !important;
@@ -444,32 +518,6 @@
 
 .vertical-container > *:first-child {
   margin-bottom: 5px;
-}
-
-ol.circled-list {
-  list-style: none;
-  counter-reset: circle-counter;
-  padding-left: 0;
-  margin-left: 0;
-}
-
-ol.circled-list li {
-  counter-increment: circle-counter;
-  position: relative;
-  margin-bottom: 15px;
-  padding-left: 30px;
-}
-
-ol.circled-list li::before {
-  content: counter(circle-counter);
-  position: absolute;
-  left: 0;
-  width: 20px;
-  height: 20px;
-  text-align: center;
-  color: var(--text-color-dark);
-  background-color: var(--list-circle-bg-color);
-  border-radius: 50%;
 }
 
 /* Buttons on the home page */
@@ -748,3 +796,26 @@ ol.circled-list li::before {
   opacity: 1;
   filter: grayscale(0%);
 }
+
+/* === Dropdown menus === */
+/* Uncomment to remove height limit for dropdowns */
+/*
+.selectize-dropdown,
+.selectize-dropdown-content {
+  max-height: none !important;
+  height: auto !important;
+  overflow-y: visible !important;
+}
+
+.bootstrap-select .dropdown-menu,
+.bootstrap-select .dropdown-menu .inner {
+  max-height: none !important;
+  height: auto !important;
+  overflow-y: visible !important;
+}
+
+.selectize-dropdown,
+.bootstrap-select .dropdown-menu {
+  z-index: 3000 !important;
+}
+*/

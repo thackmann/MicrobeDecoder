@@ -559,6 +559,18 @@
     return(data_fp)
   }
   
+  #' Load Gene Functions for Ancestrally-Reconstructed Genomes
+  #'
+  #' This function returns the file path for the zip file of an example dataset.
+  #'
+  #' @return The file path
+  #' @export
+  load_gene_functions_ancestral <- function() {
+    data_fp <- "data/gene_functions/gene_functions_ancestral.zip"
+    
+    return(data_fp)
+  }
+  
   #' Load Names for Infants
   #'
   #' This function returns the file path for the zip file of an example dataset.
