@@ -8,6 +8,7 @@ bash "$DIR/install_nginx.sh"
 bash "$DIR/install_node_launcher.sh"
 bash "$DIR/deploy_nginx_config.sh"
 bash "$DIR/install_systemd_launcher.sh"
+bash "$DIR/install_journald_limits.sh"
 bash "$DIR/install_age_sweeper.sh"
 
 # Jobs directory for containers

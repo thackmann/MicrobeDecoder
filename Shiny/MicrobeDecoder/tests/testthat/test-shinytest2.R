@@ -46,6 +46,7 @@ testthat::test_that("predictionsNetworkResults", {
   # Set inputs
   app$set_inputs(tabs = "predictionsNetwork")
   app$set_inputs(`predictionsNetwork-reference_network_database` = "Fermentation of glucose")
+  Sys.sleep(10)
   app$click("predictionsNetwork-update_gene_function_choices")
 
   # Perform actions

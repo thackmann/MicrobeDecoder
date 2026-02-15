@@ -478,25 +478,27 @@
   # --- Generate outputs ---
   # Output modals with example data
     output_download_modal(
-    input_id = "gene_functions_modal",
-    object_ids = c(
-      "gene_functions_e_coli",
-      "gene_functions_b_subtilis",
-      "gene_functions_p_aeruginosa",
-      "gene_functions_rumen",
-      "gene_functions_winogradsky",
-      "gene_functions_sea",
-      "gene_functions_humann"
-    ),
-    labels = c(
-      "E. coli (generic format)",
-      "B. subtilis (eggNOG format)",
-      "P. aeruginosa (KAAS format)",
-      "Bacterial isolates from the rumen (IMG/M format)",
-      "ASVs from the Winogradsky columns (PICRUSt2 format)",
-      "MAGs from Black Sea (generic format)",
-      "Bacteria from HUMAnN tutorial (HUMAnN format)"
-    ),
+      input_id = "gene_functions_modal",
+      object_ids = c(
+        "gene_functions_e_coli",
+        "gene_functions_b_subtilis",
+        "gene_functions_p_aeruginosa",
+        "gene_functions_rumen",
+        "gene_functions_winogradsky",
+        "gene_functions_sea",
+        "gene_functions_humann",
+        "gene_functions_ancestral"
+      ),
+      labels = c(
+        "E. coli (generic format)",
+        "B. subtilis (eggNOG format)",
+        "P. aeruginosa (KAAS format)",
+        "Bacterial isolates from the rumen (IMG/M format)",
+        "ASVs from the Winogradsky columns (PICRUSt2 format)",
+        "MAGs from Black Sea (generic format)",
+        "Bacteria from HUMAnN tutorial (HUMAnN format)",
+        "Ancestral bacteria (generic format)"
+      ),
     ns = ns,
     label = "show_gene_functions_modal"
   )

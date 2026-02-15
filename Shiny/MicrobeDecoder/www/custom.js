@@ -6,6 +6,31 @@ shinyjs.goToTab = function(tabName) {
   }, 0);
 };
 
+// Listen for back/forward button navigation
+(function() {
+  function getTabFromQuery() {
+    var search = window.location.search;
+    var match = search.match(/[?&]tab=([^&]*)/);
+    return match ? decodeURIComponent(match[1]) : 'home';  // Default to 'home' if no tab parameter
+  }
+  
+  function notifyShinyOfTab() {
+    var tab = getTabFromQuery();
+    
+    if (window.Shiny && Shiny.setInputValue) {
+      Shiny.setInputValue('query_tab', tab, {priority: 'event'});
+    } else {
+      setTimeout(notifyShinyOfTab, 50);
+    }
+  }
+  
+  // Listen for browser back/forward
+  window.addEventListener('popstate', notifyShinyOfTab);
+  
+  // Don't fire on initial load (let get_tab_from_query handle that)
+  // Only fire on popstate events
+})();
+
 // Dynamically resize width based on height
 shinyjs.resizeWidthFromHeight = function(containerId, heightToWidthRatio) {
   function resizeContainer() {
@@ -100,4 +125,9 @@ Shiny.addCustomMessageHandler('triggerTypingEffect', function(tab) {
   }
 
   typeChar();
+});
+
+// Redirect to a static page if the Shiny session disconnects
+$(document).on('shiny:disconnected', function () {
+  window.location.replace('/disconnected.html');
 });

@@ -70,7 +70,7 @@ for the virtual machine (e.g., 192.0.2.1).  This is configured through the domai
 and cloud service providers.
 Requirements are satistied if app can be accessed at 
 ```
-http://dev.microbe-decoder.org/
+http://microbe-decoder.org/
 ```
 
 After satisfying requirements, install a firewall.  On the virtual machine, run
@@ -78,12 +78,11 @@ After satisfying requirements, install a firewall.  On the virtual machine, run
 chmod +x /srv/microbedecoder-deploy/scripts/install_firewall.sh
 sudo bash /srv/microbedecoder-deploy/scripts/install_firewall.sh
 ```
-
 Install a security certificate.  On the virtual machine, run
 ```
 chmod +x /srv/microbedecoder-deploy/scripts/install_tls_cert.sh
 sudo bash /srv/microbedecoder-deploy/scripts/install_tls_cert.sh \
-  dev.microbe-decoder.org \
+  microbe-decoder.org \
   admin@microbe-decoder.org
 ```
 This will
@@ -94,7 +93,7 @@ This will
 
 Visit site.  In a browser (e.g., Chrome), navigate to
 ```
-https://dev.microbe-decoder.org/
+https://microbe-decoder.org/
 ```
 
 ### Appendix

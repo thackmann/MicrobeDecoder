@@ -70,32 +70,66 @@ const WARM_POOL_REFILL_COOLDOWN_MS = 2000;
  * Total containers managed by this launcher at once:
  * active session containers + warm spares + containers currently being spawned.
  *
- * Set with env var MAX_CONTAINERS_TOTAL (e.g. 5). Default: 15
+ * Set with env var MAX_CONTAINERS_TOTAL (e.g. 5). Default: 25
  */
-const MAX_CONTAINERS_TOTAL = Number(process.env.MAX_CONTAINERS_TOTAL || 15);
+const MAX_CONTAINERS_TOTAL = Number(process.env.MAX_CONTAINERS_TOTAL || 25);
 
 /**
  * Per-container memory limit policy.
  * Hard RAM cap enforced by Docker cgroups.
  *
- * Set with env var CONTAINER_MEM_GB (default: 6).
+ * Set with env var CONTAINER_MEM_GB (default: 8).
  */
-const CONTAINER_MEM_GB = Number(process.env.CONTAINER_MEM_GB || 6);
+const CONTAINER_MEM_GB = Number(process.env.CONTAINER_MEM_GB || 8);
 const CONTAINER_MEM_BYTES = Math.floor(CONTAINER_MEM_GB * 1024 ** 3);
 
 /**
- * Idle container cleanup policy (CPU-based).
+ *  Idle detection thresholds for CPU
  */
 const IDLE_CPU_THRESHOLD_PCT = 5.0;
 const SWEEP_INTERVAL_MS = 30 * 1000;
+/**
+ * Idle detection thresholds for memory
+ */
+const IDLE_MEMORY_MIN_BYTES = 325 * 1024 * 1024;         // 325 MB - minimum to be "used"
+const IDLE_MEMORY_STABILITY_BYTES = 10 * 1024 * 1024;    // 10 MB - stability threshold
+const IDLE_MEMORY_READING_COUNT = 5;                     // Track last 5 readings
 
 /**
- * Dynamic idle timeout policy (varies by load).
- * - When lightly loaded, allow longer idle time.
- * - When near capacity, stop idles faster.
+ * Idle score definitions
+ * 0: Active User (Low CPU, high/varying memory)
+ * 1: Monitoring (Slightly stable memory or low CPU)
+ * 2: Suspicious (Multiple idle markers triggered)
+ * 3: Likely Bot/Ghost (Low CPU + Stable Memory + Minimal Data Loaded)
  */
-const IDLE_REQUIRED_MS_MIN = 30 * 1000;   // 0.5 min (near capacity)
-const IDLE_REQUIRED_MS_MAX = 300 * 1000;  // 5 min (light load)
+const IDLE_SCORE_LEVELS = {
+  ACTIVE: 0,
+  SUSPICIOUS: 2,
+  GHOST: 3
+};
+
+/**
+ * Container Cleanup Policy
+ * How load and behavior (score) work together to determine session lifespan.
+ */
+const CLEANUP_POLICY = {
+  // Baseline: How long a perfect user (Score 0) can stay idle.
+  // We use a range that slides based on server capacity (Load).
+  LIFESPAN_BASE_MS: {
+	AT_FULL_CAPACITY: 120 * 1000,   // 120s (server is 100% full)
+    AT_ZERO_CAPACITY: 1800 * 1000   // 30m  (server is empty)
+  },
+
+  // Behavior Multipliers:
+  // We multiply the base lifespan by these factors based on the Idle Score.
+  // 1.0 = full time allowed; 0.2 = only 20% of time allowed.
+  SCORE_MULTIPLIERS: {
+    [IDLE_SCORE_LEVELS.ACTIVE]: 1.0,  // Score 0: 100% of time
+    1: 0.75,                          // Score 1: 75% of time
+    [IDLE_SCORE_LEVELS.SUSPICIOUS]: 0.5, // Score 2: 50% of time
+    [IDLE_SCORE_LEVELS.GHOST]: 0.1    // Score 3: 10% of time (Aggressive)
+  }
+};
 
 /**
  * Startup readiness policy.
@@ -112,6 +146,7 @@ const ALIVE_CHECK_EVERY_MS = 10_000;
  * @type {boolean}
  */
 const VERBOSE = /^(1|true|yes|on)$/i.test(String(process.env.VERBOSE || ''));
+
 
 // ============================================================================
 // In-memory state
@@ -187,22 +222,27 @@ function atCapacity() {
 }
 
 /**
- * Compute required idle ms based on current load.
- *
+ * Calculate required idle ms based on system Load (Server health) 
+ * and User Behavior (Idle Score).
+ 
  * @returns {number}
  */
-function idleRequiredMsForLoad() {
-  // "managed" includes running sessions + warm spares + pending spawns
+function getAllowedIdleMs(score) {
+  // 1. Calculate Load-Based Baseline (Linear Interpolation)
   const managed = currentManagedCount();
-
-  // Convert managed count into a 0..1 load fraction vs hard cap
   const cap = Math.max(1, MAX_CONTAINERS_TOTAL);
-  const load = Math.min(1, Math.max(0, managed / cap));
+  const loadFraction = Math.min(1, Math.max(0, managed / cap));
 
-  // Linearly interpolate: load=0 => MAX, load=1 => MIN
-  const ms = IDLE_REQUIRED_MS_MAX + (IDLE_REQUIRED_MS_MIN - IDLE_REQUIRED_MS_MAX) * load;
+  const min = CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_FULL_CAPACITY;
+  const max = CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_ZERO_CAPACITY;
+  
+  // As load increases (0 -> 1), the baseline moves from 5m down to 30s.
+  const loadBaseline = max + (min - max) * loadFraction;
 
-  return Math.round(ms);
+  // 2. Apply Behavior Multiplier
+  const behaviorMultiplier = CLEANUP_POLICY.SCORE_MULTIPLIERS[score] || 0.2;
+
+  return Math.round(loadBaseline * behaviorMultiplier);
 }
 
 // ============================================================================
@@ -385,6 +425,48 @@ async function getContainerCpuPercent(containerId) {
   return cpuPercentFromStats(stats);
 }
 
+/**
+ * Retrieve memory usage in bytes for a container
+ *
+ * Function will return values roughly equal to those from `docker stats`
+ * Docker CLI roughly reports:
+ *   used = memory_stats.usage - memory_stats.stats.total_inactive_file
+ * (cache subtraction; field names vary a bit by cgroup version)
+ *
+ * @param {string} containerId - Docker container ID.
+ * @returns {Promise<number>} Memory usage in bytes (docker-stats-like).
+ */
+async function getContainerMemoryBytes(containerId) {
+  try {
+    const c = docker.getContainer(containerId);
+    const stats = await c.stats({ stream: false });
+
+    const usage = Number(stats?.memory_stats?.usage ?? 0);
+
+    // cgroup v1 (common): total_inactive_file
+    const totalInactiveFile = Number(
+      stats?.memory_stats?.stats?.total_inactive_file ?? 0
+    );
+
+    // cgroup v2 often exposes inactive_file (some daemons also provide total_inactive_file)
+    const inactiveFile = Number(
+      stats?.memory_stats?.stats?.inactive_file ?? 0
+    );
+
+    // Prefer total_inactive_file if present, else inactive_file, else no subtraction
+    const cacheToSubtract = totalInactiveFile > 0 ? totalInactiveFile : inactiveFile;
+
+    // Match docker stats behavior: subtract cache-ish component, never below 0
+    const used = Math.max(0, usage - cacheToSubtract);
+
+    return used;
+  } catch (e) {
+    console.error(`Failed to get memory for ${containerId}:`, e.message);
+    return 0;
+  }
+}
+
+
 // ============================================================================
 // Container orchestration
 // ============================================================================
@@ -456,11 +538,15 @@ async function spawnContainer({ namePrefix }) {
       lastActivity: Date.now(),
       lastAliveCheck: 0,
       lastAlive: true,
-      lowCpuSince: null,
+      idleSince: null,
       lastCpuCheck: 0,
       lastCpuPct: null,
       createdAt: Date.now(),
-      name
+      name,
+	  lastMemoryBytes: null,
+	  peakMemoryBytes: 0,
+	  memoryReadings: [],
+	  lastMemoryCheck: 0
     };
   } catch (e) {
     // Stop “ready-timeout” or other spawn errors from leaving a running container behind
@@ -582,6 +668,50 @@ async function getOrCreateSessionContainer(sessionId) {
   }
 }
 
+/**
+ * Calculate idle score for a container based on multiple metrics.
+ * 
+ * Score interpretation:
+ * - 0-1: Active user
+ * - 2: Possibly idle, monitor closely
+ * - 3: Likely idle/bot, cleanup candidate
+ *
+ * @param {Object} info - Session container info object.
+ * @param {number} now - Current timestamp.
+ * @returns {number} Idle score (0-3).
+ */
+function calculateIdleScore(info, now) {
+  let score = 0;
+  
+  // Criterion 1: Low CPU
+  // If CPU < 5% = +1
+  if (info.lastCpuPct !== null && info.lastCpuPct < IDLE_CPU_THRESHOLD_PCT) {
+    score += 1;
+  }
+  
+  // Criterion 2: Stable memory (not changing)
+  // Calculate standard deviation of recent memory readings
+  if (info.memoryReadings && info.memoryReadings.length >= 3) {
+    const readings = info.memoryReadings;
+    const mean = readings.reduce((a, b) => a + b, 0) / readings.length;
+    const variance = readings.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / readings.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // If memory is stable (std dev < 10 MB), it's not being actively used
+    if (stdDev < IDLE_MEMORY_STABILITY_BYTES) {
+      score += 1;
+    }
+  }
+  
+  // Criterion 3: Minimum memory threshold (never used)
+  // Peak memory never exceeded minimum = bot likely never loaded any data
+  if (info.peakMemoryBytes > 0 && info.peakMemoryBytes < IDLE_MEMORY_MIN_BYTES) {
+    score += 1;
+  }
+  
+  return score;
+}
+
 // ============================================================================
 // Routes
 // ============================================================================
@@ -652,49 +782,93 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 /**
  * Periodic idle container cleanup loop.
+ * 
  */
 setInterval(async () => {
   const now = Date.now();
 
   for (const [sid, info] of activeSessions.entries()) {
     try {
+      // 1. GATHER DATA
       const cpuPct = await getContainerCpuPercent(info.containerId);
-
-      info.lastCpuCheck = now;
+      const memoryBytes = await getContainerMemoryBytes(info.containerId);
+      
+      // Update metadata
       info.lastCpuPct = cpuPct;
+      info.lastMemoryBytes = memoryBytes;
+      if (memoryBytes > info.peakMemoryBytes) info.peakMemoryBytes = memoryBytes;
+      
+      // Track memory history (Initializes if empty - fixed "patchy" initialization)
+      if (!info.memoryReadings) info.memoryReadings = [];
+      info.memoryReadings.push(memoryBytes);
+      if (info.memoryReadings.length > IDLE_MEMORY_READING_COUNT) info.memoryReadings.shift();
 
-      if (cpuPct < IDLE_CPU_THRESHOLD_PCT) {
-        if (info.lowCpuSince === null) info.lowCpuSince = now;
-
-        const lowForMs = now - info.lowCpuSince;
-        const idleRequiredMs = idleRequiredMsForLoad();
-
-        vlog(
-          `[${sid}] CPU ${cpuPct.toFixed(2)}% (<${IDLE_CPU_THRESHOLD_PCT}%), ` +
-          `lowFor=${Math.round(lowForMs / 1000)}s, ` +
-          `required=${Math.round(idleRequiredMs / 1000)}s, ` +
-          `managed=${currentManagedCount()}/${MAX_CONTAINERS_TOTAL}`
-        );
-
-        if (lowForMs >= idleRequiredMs) {
-          console.log(
-            `[${sid}] CPU ${cpuPct.toFixed(2)}% < ${IDLE_CPU_THRESHOLD_PCT}% for ` +
-            `${Math.round(lowForMs / 1000)}s ` +
-            `(required=${Math.round(idleRequiredMs / 1000)}s, managed=${currentManagedCount()}/${MAX_CONTAINERS_TOTAL}) -> stopping`
-          );
-
-          await docker.getContainer(info.containerId).stop({ t: 5 }).catch(() => {});
-          activeSessions.delete(sid);
-          ensureWarmPool().catch(() => {});
-        }
+      // 2. EVALUATE STATE
+      const idleScore = calculateIdleScore(info, now);
+      
+      // Any score above ACTIVE starts the "inactive" timer
+      if (idleScore > IDLE_SCORE_LEVELS.ACTIVE) {
+        if (info.idleSince === null) info.idleSince = now;
       } else {
-        info.lowCpuSince = null;
-        vlog(`[${sid}] CPU ${cpuPct.toFixed(2)}% (active)`);
+        info.idleSince = null;
       }
-    } catch (e) {
-      console.log(
-        `[${sid}] stats failed -> stopping + removing session (${e?.message || e})`
+
+      // 3. DECIDE CLEANUP
+      const inactiveDuration = info.idleSince ? (now - info.idleSince) : 0;
+      
+      // Calculate individual survival time based on BOTH Score and Load
+      const allowedMs = getAllowedIdleMs(idleScore);
+
+      const shouldCleanup = info.idleSince !== null && inactiveDuration >= allowedMs;
+
+      // Log scores
+      const cpuLow = (info.lastCpuPct !== null && info.lastCpuPct < IDLE_CPU_THRESHOLD_PCT);
+      
+      let memMean = null;
+      let memStdDev = null;
+      let memStable = false;
+      
+      if (info.memoryReadings && info.memoryReadings.length >= 3) {
+        const readings = info.memoryReadings;
+        memMean = readings.reduce((a, b) => a + b, 0) / readings.length;
+        const variance = readings.reduce((sum, val) => sum + Math.pow(val - memMean, 2), 0) / readings.length;
+        memStdDev = Math.sqrt(variance);
+        memStable = (memStdDev < IDLE_MEMORY_STABILITY_BYTES);
+      }
+      
+      const peakLow = (info.peakMemoryBytes > 0 && info.peakMemoryBytes < IDLE_MEMORY_MIN_BYTES);
+      
+      // --- allowedMs component logging (load + multiplier) ---
+      const managed = currentManagedCount();
+      const cap = Math.max(1, MAX_CONTAINERS_TOTAL);
+      const loadFraction = Math.min(1, Math.max(0, managed / cap));
+      const min = CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_FULL_CAPACITY;
+      const max = CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_ZERO_CAPACITY;
+      const loadBaseline = max + (min - max) * loadFraction;
+      const behaviorMultiplier = CLEANUP_POLICY.SCORE_MULTIPLIERS[idleScore] || 0.2;
+      
+      vlog(
+        `[${sid}] Score=${idleScore}/3 ` +
+        `(+cpuLow=${cpuLow ? 1 : 0}, +memStable=${memStable ? 1 : 0}, +peakLow=${peakLow ? 1 : 0}) | ` +
+        `Allowed=${Math.round(allowedMs/1000)}s (baseline=${Math.round(loadBaseline/1000)}s * mult=${behaviorMultiplier}, ` +
+        `managed=${managed}/${cap}, load=${loadFraction.toFixed(2)}) | ` +
+        `Inactive=${Math.round(inactiveDuration/1000)}s | ` +
+        `CPU=${cpuPct.toFixed(1)}% (thr=${IDLE_CPU_THRESHOLD_PCT}%) | ` +
+        `Mem=${Math.round((memoryBytes || 0)/1024/1024)}MB ` +
+        `Peak=${Math.round((info.peakMemoryBytes || 0)/1024/1024)}MB (min=${Math.round(IDLE_MEMORY_MIN_BYTES/1024/1024)}MB) | ` +
+        `StdDev=${memStdDev === null ? 'NA' : Math.round(memStdDev/1024/1024) + 'MB'} (thr=${Math.round(IDLE_MEMORY_STABILITY_BYTES/1024/1024)}MB) ` +
+        `n=${info.memoryReadings ? info.memoryReadings.length : 0}`
       );
+
+      if (shouldCleanup) {
+        console.log(`[${sid}] UNIFIED CLEANUP: Session expired (Allowed ${Math.round(allowedMs/1000)}s at Score ${idleScore})`);
+        await docker.getContainer(info.containerId).stop({ t: 5 }).catch(() => {});
+        activeSessions.delete(sid);
+        ensureWarmPool().catch(() => {});
+      }
+
+    } catch (e) {
+      console.error(`[${sid}] Monitor failed:`, e.message);
       await docker.getContainer(info.containerId).stop({ t: 5 }).catch(() => {});
       activeSessions.delete(sid);
       ensureWarmPool().catch(() => {});
@@ -714,10 +888,13 @@ app.listen(LAUNCHER_PORT, LAUNCHER_HOST, () => {
   console.log(`VERBOSE=${VERBOSE ? '1' : '0'}`);
 
   console.log(
-    `Cleanup: stop if CPU < ${IDLE_CPU_THRESHOLD_PCT}% for dynamic idle time in ` +
-    `[${IDLE_REQUIRED_MS_MIN / 1000}s .. ${IDLE_REQUIRED_MS_MAX / 1000}s] ` +
-    `(sweep every ${SWEEP_INTERVAL_MS / 1000}s)`
+    `Cleanup: dynamic idle time baseline ` +
+    `[${CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_FULL_CAPACITY / 1000}s .. ` +
+    `${CLEANUP_POLICY.LIFESPAN_BASE_MS.AT_ZERO_CAPACITY / 1000}s] ` +
+    `scaled by idle score multipliers; CPU idle threshold ${IDLE_CPU_THRESHOLD_PCT}%; ` +
+    `sweep every ${SWEEP_INTERVAL_MS / 1000}s`
   );
+
 
   console.log(
     `Warm pool: keep ${WARM_POOL_SIZE} spare(s) READY (max ${WARM_POOL_MAX})`

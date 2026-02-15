@@ -23,6 +23,8 @@ model_path_config <- list(
   `Sulfur respiration (type of metabolism)` = "data/random_forest_models/sulfur_respiration.rds",
   `Phototrophy (type of metabolism)` = "data/random_forest_models/phototrophy.rds",
   `Methanogenesis (type of metabolism)` = "data/random_forest_models/methanogenesis.rds",
+  `Iron respiration (type of metabolism)` = "data/random_forest_models/iron_respiration.rds",
+  `Oxygenic photoautotrophy (type of metabolism)` = "data/random_forest_models/oxygenic_photoautotrophy.rds",
   
   # Metabolites produced
   `Acetate (end product)` = "data/random_forest_models/acetate.rds",
@@ -40,7 +42,9 @@ model_path_config <- list(
   
   # Physiology/morphology
   `Anaerobe (oxygen tolerance)` = "data/random_forest_models/anaerobe.rds",
+  `Aerobe (oxygen tolerance)` = "data/random_forest_models/aerobe.rds",
   `Gram positive (gram stain)` = "data/random_forest_models/gram_positive.rds",
+  `Gram negative (gram stain)` = "data/random_forest_models/gram_negative.rds",
   `Spore positive (spore formation)` = "data/random_forest_models/spore_formation.rds",
   `Motility positive (motility)` = "data/random_forest_models/motility.rds",
   

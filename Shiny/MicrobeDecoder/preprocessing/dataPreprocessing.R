@@ -385,6 +385,8 @@ Sys.setlocale("LC_ALL", "C")
               "sulfur_compound_respiration" = "grepl(\"(?<=^|;)respiration of sulfur compounds(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
               "sulfate_respiration" = "grepl(\"(?<=^|;)sulfate respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
               "sulfur_respiration" = "grepl(\"(?<=^|;)sulfur respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "iron_respiration" = "grepl(\"(?<=^|;)iron respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "oxygenic_photoautotrophy" = "grepl(\"(?<=^|;)oxygenic photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
               
               # Metabolites produced
               "acetate" = "grepl(\"(?<=^|;)acetate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
@@ -402,6 +404,8 @@ Sys.setlocale("LC_ALL", "C")
               
               # Physiology/morphology
               "anaerobe" = "grepl(\"(?<=^|;)anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)obligate anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE)",
+              "aerobe" = "grepl(\"(?<=^|;)aerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)aerotolerant(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)facultative aerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)facultative anaerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)microaerophile(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)microaerotolerant(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE) | grepl(\"(?<=^|;)obligate aerobe(?=;|$)\", `Oxygen tolerance (BacDive)`, perl = TRUE)",
+              "gram_negative" = "grepl(\"(?<=^|;)negative(?=;|$)\", `Gram stain (BacDive)`, perl = TRUE)",
               "gram_positive" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Gram stain (BacDive)`, perl = TRUE)",
               "spore_formation" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Spore formation (BacDive)`, perl = TRUE)",
               "motility" = "grepl(\"(?<=^|;)positive(?=;|$)\", `Motility (BacDive)`, perl = TRUE)",

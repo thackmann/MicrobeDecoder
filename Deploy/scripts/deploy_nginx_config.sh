@@ -3,6 +3,14 @@ set -euo pipefail
 
 DEPLOY_DIR="/srv/microbedecoder-deploy"
 CFG_DIR="$DEPLOY_DIR/configs/nginx"
+STATIC_DIR="$DEPLOY_DIR/configs/nginx/static"
+
+# Install static assets
+sudo mkdir -p /var/www/microbedecoder/static
+sudo install -m 0644 "$STATIC_DIR/disconnected.html" /var/www/microbedecoder/disconnected.html
+sudo install -m 0644 "$STATIC_DIR/favicon.svg" /var/www/microbedecoder/static/favicon.svg
+sudo install -m 0644 "$STATIC_DIR/MicrobeDecoderLogo.svg" /var/www/microbedecoder/static/MicrobeDecoderLogo.svg
+sudo chown -R root:root /var/www/microbedecoder
 
 # Install configs
 sudo install -m 0644 "$CFG_DIR/websocket-map.conf" /etc/nginx/conf.d/websocket-map.conf

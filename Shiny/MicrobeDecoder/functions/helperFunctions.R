@@ -212,6 +212,12 @@
                                            input = getDefaultReactiveDomain()$input,
                                            tab_input_id = "tabs") {
     observeEvent(input[[tab_input_id]], {
+      # Skip if navigation was triggered by back/forward (not user click)
+      if (isTRUE(session$userData$navigating_from_history)) {
+        session$userData$navigating_from_history <- FALSE
+        return()
+      }
+      
       # Get tab and job name
       tab <- input[[tab_input_id]]
       query <- parseQueryString(session$clientData$url_search)
@@ -240,7 +246,40 @@
       )
       
       # Update query
-      updateQueryString(new_query, mode = "replace", session = session)
+      updateQueryString(new_query, mode = "push", session = session)
+    }, ignoreInit = TRUE)
+  }
+  
+  #' Navigate to Tab Based on Browser History (Back/Forward)
+  #'
+  #' Handles browser back/forward button navigation by reading the `?tab=` query parameter
+  #' from the URL and switching to the corresponding tab. This function sets a flag to prevent
+  #' creating duplicate history entries when the navigation is triggered by the browser rather
+  #' than by a user clicking a tab.
+  #'
+  #' This is the third component of the bidirectional navigation system:
+  #' - `get_tab_from_query()` handles initial page load navigation
+  #' - `get_query_from_tab()` handles user tab clicks ??? URL updates
+  #' - `get_tab_from_history()` handles browser Back/Forward ??? tab navigation
+  #'
+  #' @param session The Shiny session object. Defaults to `getDefaultReactiveDomain()`.
+  #' @param input The Shiny input object. Defaults to `getDefaultReactiveDomain()$input`.
+  #' @param tab_input_id The ID of the tabset input (e.g., `"tabs"`).
+  #'
+  #' @return `NULL`. Called for side effects.
+  #' @export
+  get_tab_from_history <- function(session = getDefaultReactiveDomain(),
+                                   input = getDefaultReactiveDomain()$input,
+                                   tab_input_id = "tabs") {
+    observeEvent(input$query_tab, {
+      req(input$query_tab)
+      
+      # Set flag BEFORE navigating to prevent loop
+      # This prevents get_query_from_tab() from creating a duplicate history entry
+      session$userData$navigating_from_history <- TRUE
+      
+      # Navigate to the tab
+      shinyjs::runjs(sprintf("shinyjs.goToTab('%s');", input$query_tab))
     }, ignoreInit = TRUE)
   }
   
@@ -270,6 +309,9 @@
     
     # Update query when user navigates to new tabs
     get_query_from_tab(session, input, tab_input_id)
+    
+    # Handle browser back/forward navigation
+    get_tab_from_history(session, input, tab_input_id)
   }
   
 # === Job submission and retrieval ===  
@@ -729,7 +771,7 @@
 	showDownloadModal <- function(ns = identity, title = "Example files", downloads, help_link_id = "go_to_help") {
 	  shiny::showModal(shiny::modalDialog(
 		shiny::h3(title),
-		htmltools::tags$ol(class = "circled-list",
+		htmltools::tags$ol(class = "circled-letter-list",
 						   lapply(names(downloads), function(output_id) {
 							 htmltools::tags$li(shiny::downloadLink(outputId = ns(output_id), label = downloads[[output_id]]))
 						   })
@@ -1025,7 +1067,7 @@
     detect_comments = TRUE
 	) {
 	  if (is.null(file_path) || file_path == "") {
-	    runValidationModal(session, "No file selected. Please upload a file.")
+	    runValidationModal(session = session, "No file selected. Please upload a file.")
 	    return(NULL)
 	  }
 	  
@@ -1045,7 +1087,7 @@
 	  }
 	  
 	  if (!file_ext %in% accepted_extensions) {
-	    runValidationModal(session, paste(
+	    runValidationModal(session = session, paste(
 	      "Invalid file type. Please upload a", vector_to_phrase(accepted_extensions)
 	    ))
 	    return(NULL)
@@ -1107,7 +1149,7 @@
 	                     ifelse(is.na(original_name), basename(file_path), original_name),
 	                     toupper(file_ext), conditionMessage(e))
 	      cat("[validate_and_read_file] ", msg, "\n")  # server log
-	      runValidationModal(session, "Error reading the file. Please check the file format.")
+	      runValidationModal(session = session, "Error reading the file. Please check the file format.")
 	      NULL
 	    }
 	  )
@@ -1684,7 +1726,7 @@
 	  } else if (is.data.frame(uploaded) && ncol(uploaded) >= 1) {
 	    organism_names <- uploaded[[1]]
 	  } else {
-	    runValidationModal(session, "Please check the format of your file and try again")
+	    runValidationModal(session = session, "Please check the format of your file and try again")
 	    return(NULL)
 	  }
 	  

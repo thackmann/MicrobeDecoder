@@ -366,7 +366,8 @@
 	      "gene_functions_rumen",
 	      "gene_functions_winogradsky",
 	      "gene_functions_sea",
-	      "gene_functions_humann"
+	      "gene_functions_humann",
+	      "gene_functions_ancestral"
 	    ),
 	    labels = c(
 	      "E. coli (generic format)",
@@ -375,7 +376,8 @@
 	      "Bacterial isolates from the rumen (IMG/M format)",
 	      "ASVs from the Winogradsky columns (PICRUSt2 format)",
 	      "MAGs from Black Sea (generic format)",
-	      "Bacteria from HUMAnN tutorial (HUMAnN format)"
+	      "Bacteria from HUMAnN tutorial (HUMAnN format)",
+	      "Ancestral bacteria (generic format)"
 	    ),
 	    ns = ns,
 	    label = "show_gene_functions_modal"
