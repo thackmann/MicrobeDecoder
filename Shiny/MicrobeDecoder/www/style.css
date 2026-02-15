@@ -503,6 +503,18 @@ ol.circled-letter-list li::before {
   color: white;
 }
 
+<<<<<<< Updated upstream
+=======
+/* Header for navset_card_underline */
+.card-header.bslib-navs-card-title {
+  display: block !important;
+}
+
+.card-header.bslib-navs-card-title > .nav {
+  justify-content: flex-start !important;
+}
+
+>>>>>>> Stashed changes
 /* Other styles */
 .tight-heading {
   margin-bottom: -16px !important;
@@ -520,6 +532,10 @@ ol.circled-letter-list li::before {
   margin-bottom: 5px;
 }
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 /* Buttons on the home page */
 .home-button-box {
   width: 325px;
