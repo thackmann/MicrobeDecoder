@@ -1,9 +1,15 @@
 ## Deploy Server for Microbe Decoder
 This directory contains scripts and configuration files to deploy the
-Microbe Decoder server on an **Ubuntu** system.  It uses Docker, nginx, and
+Microbe Decoder server on an Ubuntu system.  It uses Docker, nginx, and
 a Node.js launcher service.  
 
-### 1. Set up files for server
+### Testing on a local server
+
+Requirements
+- Ubuntu
+- Docker container image for MicrobeDecoder (see `MicrobeDecoder/Shiny/README.md`)
+
+#### 1. Set up files for server
 Make directories for files.  In Ubuntu, run
 ```
 sudo mkdir -p /srv/microbedecoder-deploy
@@ -31,14 +37,13 @@ and verify output is
 `scripts`
 `systemd`
 
-
 Set permissions for files.  Run
 ```
 sudo chown -R "$USER:$USER" /srv/microbedecoder-deploy
 chmod +x /srv/microbedecoder-deploy/scripts/*.sh
 ```	
 	
-### 3. Deploy and test the server locally
+#### 2. Deploy server
 Run deployment script.  In Ubuntu, run
 ```
 bash /srv/microbedecoder-deploy/scripts/deploy.sh
@@ -57,23 +62,28 @@ Visit site.  In a browser (e.g., Chrome), navigate to
 http://localhost/
 ```
 
-### 4. Deploy and test the server for production
-These steps require
--A dedicated server (virtual machine).  Running these commands on a
+### Deploying on a production server 
+Requirements
+- A dedicated server (virtual machine).  Running these commands on a
 personal machine risks permanent misconfiguration.  Virtual machines are purchased
 through a cloud service provider (e.g., Azure).
--IP address for the virtual machine (found via `curl -s https://api.ipify.org`)
--A registered domain name (e.g., microbe-decoder.org).  Domain names are purchased
+- IP address for the virtual machine (found via `curl -s https://api.ipify.org`)
+- A registered domain name (e.g., microbe-decoder.org).  Domain names are purchased
 through a domain service provider (e.g., namecheap.com).
--A DNS record pointing the domain name (e.g., microbe-decoder.org) to IP address 
+- A DNS record pointing the domain name (e.g., microbe-decoder.org) to IP address 
 for the virtual machine (e.g., 192.0.2.1).  This is configured through the domain 
 and cloud service providers.
-Requirements are satistied if app can be accessed at 
-```
-http://microbe-decoder.org/
-```
 
-After satisfying requirements, install a firewall.  On the virtual machine, run
+Requirements are satisfied if app can be accessed at `http://microbe-decoder.org/`
+
+#### 1. Set up files for server
+Follow same steps as for testing on a local server
+
+#### 2. Deploy server
+Follow same steps as for testing on a local server
+
+### 3. Configure server
+Install a firewall.  On the virtual machine, run
 ```
 chmod +x /srv/microbedecoder-deploy/scripts/install_firewall.sh
 sudo bash /srv/microbedecoder-deploy/scripts/install_firewall.sh
@@ -142,4 +152,3 @@ See status of age sweeper
 systemctl status md-age-sweep.timer
 systemctl list-timers | grep md-age-sweep
 journalctl -u md-age-sweep.service --no-pager -n 50
-```

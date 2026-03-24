@@ -237,7 +237,8 @@
         maxnodes = get_inputs()$maxnodes,
         positive_class_weight = get_inputs()$positive_class_weight,
         training_split = get_inputs()$training_split,
-        keep_models = get_inputs()$keep_models
+        keep_models = get_inputs()$keep_models,
+        ns = ns
       )
       
       return(results)
@@ -557,21 +558,21 @@
 	                             title = "No model available",
 	                             message = "Please enable saving of models (advanced settings) and re-run predictions.")
 	  
-	  # Output warning text for loading too many models
-	  observeEvent({input$model_names},
+	  # Output warning text for keeping too many models in memory
+	  shiny::observeEvent(
     {
-	    threshold <- 3
-	    n_selected <- length(input$model_names)
-
-      if (n_selected >= threshold) {
+      list(input$enable_saving, input$cache_models)
+    },
+    {
+      if (isTRUE(input$enable_saving|input$cache_models)) {
 	      output$model_warning <- renderUI({
 	        bslib::card(
 	          class = "bg-warning border-warning",
-	          bslib::card_body("Loading", threshold, "or more models may cause disconnection from server.")
+	          bslib::card_body("Saving multiple models or keeping them in cache may cause disconnection from server.")
 	        )
 	      })
-	    } else {
-	      output$model_warning <- renderUI({ NULL })
-	    }
+      }else {
+        output$model_warning <- shiny::renderUI({ NULL })
+      }
 	  })
 	}

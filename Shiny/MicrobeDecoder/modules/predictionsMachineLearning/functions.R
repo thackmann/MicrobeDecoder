@@ -355,34 +355,27 @@ save_rf = function(rf, data_fp, remove_proximity=TRUE, clean_environment = TRUE,
 #' @return A dataframe in long format with columns: "Organism number", "Organism name", "Model", and "Probability".
 #' @export
 #' @importFrom base lapply setdiff
-run_random_forest <- function(df, models) {
-  predictions <- lapply(models, function(model) {
-    # Check if model has 'importance' before proceeding
-    if (is.null(model$importance)) {
-      stop("Model importance is NULL. Check model structure.")
-    }
-    
-    predictors <- rownames(model$importance)
-    
-    # Ensure all necessary predictors are present
-    missing_predictors <- setdiff(predictors, colnames(df))
-    if (length(missing_predictors) > 0) {
-      df[missing_predictors] <- 0
-    }
-    
-    # Ensure the predictors are in the same order as the model expects
-    df_ordered <- df[, predictors, drop = FALSE]
-    
-    # Predict using the loaded model
-    randomForest:::predict.randomForest(object = model, newdata = df_ordered, type = "prob")[, 2] # Second column is probability of positive class
-  })
+run_random_forest <- function(df, model, model_name) {
+  if (is.null(model$importance)) {
+    stop("Model importance is NULL. Check model structure.")
+  }
   
-  # Convert predictions to a long dataframe
+  predictors <- rownames(model$importance)
+  
+  missing_predictors <- setdiff(predictors, colnames(df))
+  if (length(missing_predictors) > 0) {
+    df[missing_predictors] <- 0
+  }
+  
+  df_ordered <- df[, predictors, drop = FALSE]
+  
+  predictions <- randomForest:::predict.randomForest(object = model, newdata = df_ordered, type = "prob")[, 2]
+  
   prediction_df <- data.frame(
-    "Organism number" = seq_len(nrow(df)),  
-    "Organism name" = rownames(df), 
-    "Model" = rep(names(models), each = nrow(df)), 
-    "Probability" = unlist(predictions, use.names = FALSE), 
+    "Organism number" = seq_len(nrow(df)),
+    "Organism name" = rownames(df),
+    "Model" = model_name,
+    "Probability" = predictions,
     check.names = FALSE
   )
   
@@ -452,8 +445,6 @@ get_models <- function(model_names,
   
   # Load or train models
   if (!is.null(model_paths)) {
-    cat("Exists:", exists("load_models"), "\n")
-    cat("Is function:", is.function(load_models), "\n")
     if (!is.function(load_models)) stop("load_models is not a function")
     models <- load_models(model_names = model_names, model_paths = model_paths, file_upload = FALSE)
   } else {
@@ -474,29 +465,20 @@ get_models <- function(model_names,
   return(models)
 }
 
-#' Predict traits using trained machine learning models
+#' Predict traits using a trained machine learning model
 #'
 #' This function reshapes the input data and generates trait predictions using
-#' provided models.
+#' a single model.
 #'
 #' @param df A data frame of gene functions with organisms as columns.
-#' @param models A named list of trained machine learning models.
+#' @param model A trained machine learning model.
+#' @param model_name A character string naming the model.
 #' @param ns The Shiny namespace function.
 #'
 #' @return A data frame of predicted probabilities.
 #' @export
-predict_traits_ml <- function(df, models, ns) {
+predict_traits_ml <- function(df, model, model_name, ns) {
   # Format data
-  # df <- df %>%
-  #   tidyr::pivot_longer(cols = tidyselect::everything(), names_to = "Organism", values_to = "Database_ID") %>%
-  #   dplyr::mutate(value = 1) %>%
-  #   dplyr::select(Organism, Database_ID) %>%
-  #   dplyr::distinct() %>%
-  #   dplyr::mutate(value = 1) %>%
-  #   tidyr::pivot_wider(names_from = Database_ID, values_from = value, values_fill = list(value = 0)) %>%
-  #   as.data.frame()
-  # row.names(df) <- df$Organism
-  
   df <- df %>% tidyr::pivot_longer(cols = tidyselect::everything(), names_to = "Organism", values_to = "Database_ID") %>%
     dplyr::mutate(value = 1)
   df <- df %>% dplyr::select(Organism, Database_ID) %>% dplyr::distinct() %>%
@@ -505,7 +487,7 @@ predict_traits_ml <- function(df, models, ns) {
   row.names(df) <- df$Organism
   
   # Perform main logic
-  probabilities <- run_random_forest(df = df, models = models)
+  probabilities <- run_random_forest(df = df, model = model, model_name = model_name)
   colnames(probabilities) <- gsub("\\.rds", "", colnames(probabilities))
   
   return(probabilities)
@@ -588,56 +570,57 @@ get_metadata_from_models <- function(models) {
 #'
 #' @return A named list with trained models and predicted probabilities.
 #' @export
-compute_ml_predictions <- function(df, 
-                                   model_names, 
-                                   model_paths, 
-                                   response, 
-                                   predictors, 
-                                   seed, 
-                                   ntree, 
-                                   maxnodes, 
-                                   positive_class_weight, 
-                                   training_split, 
-                                   keep_models = FALSE,
-                                   ns = NULL){
-  # Update progress
-  if (!is.null(ns)) display_modal(ns = ns, message = "Getting machine learning models", value = 0)
-  cat(file = stderr(), paste0("Started getting models at ", Sys.time(), "\n"))
-
-  # Get models
-  env_before <- ls(envir = .GlobalEnv)
-  models <- get_models(model_names, model_paths, predictors, response, seed, ntree, maxnodes, positive_class_weight, training_split)
-  env_after <- ls(envir = .GlobalEnv)
-  loaded_objects <- setdiff(env_after, env_before)
+compute_ml_predictions <- function(df, model_names, model_paths, response, predictors,
+                                   seed, ntree, maxnodes, positive_class_weight,
+                                   training_split, keep_models = FALSE, ns = NULL) {
+  all_probabilities <- list()
+  all_metadata      <- list()
+  all_models        <- list()
   
-  # Update progress
-  cat(file = stderr(), paste0("Ended getting models at ", Sys.time(), "\n"))
-  
-  # Update progress
-  if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 50)
-  cat(file = stderr(), paste0("Started prediction at ", Sys.time(), "\n"))
-  
-  # Get trait probabilities
-  probabilities <- predict_traits_ml(df, models, ns)
-  
-  # Update progress
-  if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 50)
-  cat(file = stderr(), paste0("Ended prediction at ", Sys.time(), "\n"))
-  
-  # Get model metadata
-  metadata <- get_metadata_from_models(models)
-  
-  # Compile results
-  if (keep_models) {
-    results = list(models = models, probabilities = probabilities, metadata = metadata)
-  } else {
-    # Get results
-    results = list(probabilities = probabilities, metadata = metadata)
+  for (i in seq_along(model_names)) {
+    name  <- model_names[[i]]
+    path  <- if (!is.null(model_paths)) model_paths[i] else NULL
     
-    # Remove models from memory
+    # Update progress
+    if (!is.null(ns)) display_modal(ns = ns, message = paste0("Prediction in progress"), value = round(100 * (i - 1) / length(model_names)))
+    cat(file = stderr(), paste0("Started getting model ", i, " of ", length(model_names), " at ", Sys.time(), "\n"))
+    
+    # Load or train model
+    env_before     <- ls(envir = .GlobalEnv)
+    model          <- get_models(name, path, predictors, response, seed, ntree, maxnodes, positive_class_weight, training_split)[[1]]
+    env_after      <- ls(envir = .GlobalEnv)
+    loaded_objects <- setdiff(env_after, env_before)
+    
+    # Predict
+    cat(file = stderr(), paste0("Started prediction for model ", i, " of ", length(model_names), " at ", Sys.time(), "\n"))
+    probs <- predict_traits_ml(df, model = model, model_name = name, ns = ns)
+    all_probabilities[[i]] <- probs
+    
+    # Collect metadata
+    all_metadata[[name]] <- get_metadata_from_models(stats::setNames(list(model), name))[[1]]
+    
+    # Optionally retain model
+    if (keep_models) {
+      all_models[[name]] <- model
+    }
+    
+    # Unload model
+    rm(model)
     if (length(loaded_objects)) {
       rm(list = loaded_objects, envir = .GlobalEnv)
     }
+    gc()
+    
+    cat(file = stderr(), paste0("Ended prediction for model ", i, " of ", length(model_names), " at ", Sys.time(), "\n"))
+  }
+  
+  # Combine results
+  probabilities <- do.call(rbind, all_probabilities)
+  
+  if (keep_models) {
+    results <- list(models = all_models, probabilities = probabilities, metadata = all_metadata)
+  } else {
+    results <- list(probabilities = probabilities, metadata = all_metadata)
   }
   
   return(results)
