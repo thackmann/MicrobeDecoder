@@ -3,6 +3,7 @@ FROM rocker/shiny:latest
 
 # Install system dependencies for Plotly and other packages
 RUN apt-get update && apt-get install -y \
+	xtail \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -17,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libboost-all-dev \
     pandoc \
     libglpk-dev \
+    libnss-wrapper \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -77,16 +79,17 @@ COPY . /srv/shiny-server/
 # Select port
 EXPOSE 3838
 
-# Allow permission
+# Allow permissions
 RUN chown -R shiny:shiny /srv/shiny-server \
     && mkdir -p /srv/shiny-server/jobs \
-    && chmod -R u+rwX,g+rwX /srv/shiny-server/jobs \
+    && chmod -R 0777 /srv/shiny-server/jobs \
+    && mkdir -p /srv/shiny-server/app_cache \ 
+    && chmod -R 0777 /srv/shiny-server/app_cache \
     && ln -s /srv/shiny-server/jobs /jobs || true
 
-# Copy further configuration files into the Docker image
-COPY ../Docker/shiny-server.sh /usr/bin/shiny-server.sh
-
-RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"]
+# Copy entrypoint script that handles non-root users (e.g. NERSC Spin)
+COPY Docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod 0755 /usr/local/bin/entrypoint.sh
 
 # Run app
-CMD ["/usr/bin/shiny-server.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
