@@ -66,21 +66,17 @@
   #' github_packages <- c("r-lib/remotes", "thackmann/FileLocator" = "FileLocator")
   #' install_missing_github_packages(github_packages)
   install_missing_github_packages <- function(packages) {
-    # Ensure remotes package is installed
     if (!requireNamespace("remotes", quietly = TRUE)) {
       install.packages("remotes")
     }
     
-    # Extract package names from repo paths
-    repo_names <- ifelse(names(packages) != "", names(packages), sub(".*/", "", packages))
+    # Extract package names from repo paths (strip the "username/" prefix)
+    repo_names <- ifelse(names(packages) != "", sub(".*/", "", names(packages)), sub(".*/", "", packages))
     
-    # Identify missing packages
     missing_github <- packages[!(repo_names %in% installed.packages()[, "Package"])]
     
-    # Check if there are any missing packages
     if (length(missing_github) > 0) {
       message("Installing missing GitHub packages: ", paste(names(missing_github), collapse = ", "))
-      
       for (repo in names(missing_github)) {
         subdir <- missing_github[repo]
         if (subdir == "") {
@@ -98,13 +94,13 @@
   # Define required packages
   cran_packages <- cran_packages <- c(
     "ape", "BiocManager", "bslib", "caret", "colorspace", "digest", "dplyr", 
-    "DT", "fbar", "fs", "htmltools", "igraph", "import", "jqbr", "jsonlite", 
+    "DT", "fs", "htmltools", "igraph", "import", "jqbr", "jsonlite", 
     "magrittr", "plotly", "purrr", "randomForest", "reactlog", "readr", 
     "readxl", "remotes", "rlang", "rsconnect", "shiny", "shinycssloaders", 
     "shinyjs", "shinyWidgets", "stringr", "tidyr", "tidyselect", "uuid"
   )
   
-  github_packages <- c("thackmann/FileLocator" = "FileLocator")
+  github_packages <- c("maxconway/fbar" = "", "thackmann/FileLocator" = "FileLocator")
   bioc_packages <- c("ggtree")
 
   # Install missing packages
