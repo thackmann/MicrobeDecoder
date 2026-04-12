@@ -55,33 +55,41 @@
                 # Tabs for plots
                 bslib::navset_card_underline(
                   id = ns("results_tabs"),
-                  title = "Plots",
-    
+                  
+                  # Title
+                  bslib::nav_item(
+                    tags$span("Plots", class = "nav-title")
+                  ),
+                  bslib::nav_spacer(),
+                  
+                  # Plot options
+                  div(
+                    class = "plot-options-container",
+                    shiny::conditionalPanel(
+                      condition = "input.results_tabs == 'Treemap'",
+                      ns = ns, 
+                      create_picker_input(inputId = ns("variable_to_display"), label = "Variable")
+                    ),
+                    shiny::conditionalPanel(
+                      condition = "input.results_tabs == 'Tree'",
+                      ns = ns, 
+                      create_picker_input(inputId = ns("set_tree_layout"), label = "Layout")
+                    ),
+                    shiny::conditionalPanel(
+                      condition = "input.results_tabs == 'Tree' | input.results_tabs == `t-SNE`",
+                      ns = ns, 
+                      div(
+                        "Matching organisms are those that are fully colored. Only organisms with genome sequences are shown."
+                      )
+                    )
+                  ),
+                  
                   # Panels
                   create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
                   create_plot_panel(ns, "tree", "Tree", use_spinner = TRUE), 
-                  create_plot_panel(ns, "tsne", "t-SNE", use_spinner = TRUE), 
-                  
-                  # Plot options
-                  shiny::conditionalPanel(
-                    condition = "input.results_tabs == 'Treemap'",
-                    ns = ns, 
-                    create_picker_input(inputId = ns("variable_to_display"), label = "Variable")
-                  ),
-                  shiny::conditionalPanel(
-                    condition = "input.results_tabs == 'Tree'",
-                    ns = ns, 
-                    create_picker_input(inputId = ns("set_tree_layout"), label = "Layout")
-                  ),
-                  shiny::conditionalPanel(
-                    condition = "input.results_tabs == 'Tree' | input.results_tabs == `t-SNE`",
-                    ns = ns, 
-                    div(
-                      "Matching organisms are those that are fully colored. Only organisms with genome sequences are shown."
-                    )
-                  )
+                  create_plot_panel(ns, "tsne", "t-SNE", use_spinner = TRUE)
                 ),
-    
+                  
                 # Detailed results
                 bslib::card(
                   bslib::card_header("Detailed results"),  
@@ -110,6 +118,10 @@
     
     # --- Define triggers for reactive expressions ---
     tab_selected_trigger <- make_tab_trigger(selected_tab, "databaseSearch")
+
+    tab_loaded_trigger <- make_tab_trigger(
+      selected_tab, "databaseSearch", input, "query_builder_valid"
+    )
     
     make_predictions_trigger <- make_action_button_trigger("make_predictions")
 
@@ -331,15 +343,15 @@
     
     # --- Update user interface (UI) elements ---
     # Update query builder
-    shiny::observeEvent({tab_selected_trigger()},
-    {
+    shiny::observeEvent({tab_selected_trigger()}, {
       update_query_builder(inputId = "query_builder", choices = choices_traits_search)
-      
-      # Hide loading screen
+    }, label = "update_query_builder")
+    
+    # Hide loading screen
+    shiny::observeEvent({tab_loaded_trigger()}, {
       shinyjs::runjs("shinyjs.hide('search-loading-screen'); shinyjs.show('search-wrapper');")
-    },
-    label="update_query_builder")
-
+    }, once = TRUE, label = "hide_loading_screen")
+    
     # Update variable to display
     shiny::observeEvent({tab_selected_trigger()},
     {

@@ -1974,31 +1974,49 @@
   
   #' Expand and Merge Taxonomy into Dataframe
   #'
-  #' Expands taxonomic strings in a specified column of a given dataframe and 
-  #' merges the extracted taxonomic levels into that dataframe. If the required 
-  #' taxonomy columns ("Domain", "Phylum", "Class", "Order", "Family") already 
-  #' exist, the function skips processing.  It also skips over any rows that are 
-  #' NA.  
+  #' Expands taxonomic strings in a specified column of a given dataframe and
+  #' merges the extracted taxonomic levels into that dataframe. If the required
+  #' taxonomy columns (\"Domain\", \"Phylum\", \"Class\", \"Order\", \"Family\") already
+  #' exist, the function skips processing. It also skips over any rows that are
+  #' NA.
   #'
-  #' @param data A dataframe containing a column with taxonomic strings 
-  #'   formatted as Greengenes-style taxonomy (i.e., levels separated by semicolons and prefixed with rank indicators).
-  #' @param col_name A string specifying the name of the column containing the taxonomic strings.
-  #' @return A dataframe with additional columns for expanded taxonomy, specifically "Domain", "Phylum", 
-  #'   "Class", "Order", and "Family". The "Genus" and "Species" columns are removed before merging.
+  #' @param data A dataframe containing a column with taxonomic strings
+  #'   formatted as Greengenes-style taxonomy (i.e., levels separated by
+  #'   semicolons and prefixed with rank indicators).
+  #' @param col_name A string specifying the name of the column containing
+  #'   the taxonomic strings.
+  #' @param drop_species Logical; if TRUE (default), the \"Genus\" and \"Species\"
+  #'   columns are dropped from the result after expansion, preserving the
+  #'   original behaviour. Set to FALSE to retain the \"Species\" column (and
+  #'   \"Genus\") in the returned dataframe, e.g. when species-level choices are
+  #'   needed for a dropdown.
+  #' @return A dataframe with additional columns for expanded taxonomy,
+  #'   specifically \"Domain\", \"Phylum\", \"Class\", \"Order\", and \"Family\".
+  #'   When \code{drop_species = TRUE} (default), \"Genus\" and \"Species\" are
+  #'   also removed. When \code{drop_species = FALSE}, all seven rank columns
+  #'   are retained.
   #' @export
-  expand_and_merge_taxonomy <- function(data, col_name) {
+  expand_and_merge_taxonomy <- function(data, col_name, drop_species = TRUE) {
     required_cols <- c("Domain", "Phylum", "Class", "Order", "Family")
-
+    
     if (!all(required_cols %in% colnames(data))) {
       tax <- data[[col_name]] %>%
         purrr::discard(is.na) %>%
         purrr::map(expand_taxonomy) %>%
-        purrr::map_dfr(~purrr::set_names(as.list(.), 
+        purrr::map_dfr(~purrr::set_names(as.list(.),
                                          c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")))
-
-      tax <- dplyr::select(tax, -Genus, -Species)
-      data <- cbind(tax, data[!is.na(data[[col_name]]), , drop = FALSE])
-    }    
+      
+      if (drop_species) {
+        tax <- dplyr::select(tax, -Genus, -Species)
+      }
+      
+      cols_to_drop <- intersect(colnames(data), colnames(tax))
+      data_trimmed <- data[!is.na(data[[col_name]]), 
+                           !colnames(data) %in% cols_to_drop, 
+                           drop = FALSE]
+      
+      data <- cbind(tax, data_trimmed)
+    }
     
     return(data)
   }
@@ -2335,12 +2353,17 @@
     # Get column names as taxonomic ranks
     ranks <- c("Phylum", "Class", "Order", "Family", "Genus")
     
-    data <- data %>% dplyr::select(dplyr::all_of(ranks))
-    
-    # Convert the dataframe into a vector with the required format
-    choices <- unlist(mapply(function(col, rank) {
+    # Format names of phylum through genus
+    higher_ranks <- c("Phylum", "Class", "Order", "Family", "Genus")
+    higher_choices <- unlist(mapply(function(col, rank) {
       paste(data[[col]], sprintf("(%s)", rank))
-    }, colnames(data), ranks, SIMPLIFY = FALSE))
+    }, higher_ranks, higher_ranks, SIMPLIFY = FALSE))
+    
+    # Format names of species 
+    species_choices <- data %>%
+      dplyr::filter(!is.na(Species) & Species != "") %>%
+      dplyr::mutate(label = paste(Genus, Species, "(Species)")) %>%
+      dplyr::pull(label)
     
     # Ensure unique values and remove names
     choices <- unique(unname(choices))
@@ -2454,6 +2477,82 @@
     return(string)
   }
   
+  #' Get Unpredicted Choices
+  #'
+  #' Identifies values in a category column that have no predicted values at or
+  #' above a specified threshold. Can be used for traits, substrates, or any
+  #' other categorical variable in a prediction dataframe.
+  #'
+  #' @param df A dataframe containing prediction data.
+  #' @param choices_col A string specifying the column name that contains the
+  #'   categories to evaluate (e.g., `"Trait category"`, `"Substrate"`).
+  #' @param value_col A string specifying the column name that contains predicted
+  #'   values (e.g., `"Probability"`, `"Flux"`).
+  #' @param threshold A numeric value specifying the minimum value required for
+  #'   a choice to be considered predicted.
+  #'
+  #' @return A character vector of category values for which no predictions meet
+  #'   or exceed the threshold.
+  #'
+  #' @examples
+  #' get_unpredicted_choices(df, choices_col = "Trait category",
+  #'                         value_col = "Probability", threshold = 0.5)
+  #' get_unpredicted_choices(df, choices_col = "Substrate",
+  #'                         value_col = "Flux", threshold = 1)
+  #'
+  #' @importFrom dplyr filter pull
+  #' @importFrom rlang sym
+  #' @export
+  get_unpredicted_choices <- function(df, choices_col, value_col, threshold) {
+    predicted <- df %>%
+      dplyr::filter(!!rlang::sym(value_col) >= threshold) %>%
+      dplyr::pull(choices_col) %>%
+      unique()
+    
+    all_choices <- df %>% dplyr::pull(choices_col) %>% unique()
+    
+    setdiff(all_choices, predicted)
+  }
+  
+  #' Format Trait Choices for Picker Input
+  #'
+  #' Builds a named choices vector and choicesOpt list for use with
+  #' shinyWidgets::pickerInput or update_picker_input. Traits that are not
+  #' predicted are labeled in grey italic with "(trait not predicted)" appended.
+  #'
+  #' @param all_traits Character vector of all trait names.
+  #' @param unpredicted Character vector of trait names that are not predicted.
+  #'
+  #' @return A list with two elements:
+  #'   \item{choices}{Named character vector where names are display labels and values are original trait names.}
+  #'   \item{choicesOpt}{A list with a `content` element containing HTML strings for styling.}
+  #'
+  #' @examples
+  #' fmt <- format_trait_choices(all_traits, unpredicted)
+  #' update_picker_input(inputId = "trait_to_display",
+  #'                     choices = fmt$choices,
+  #'                     choicesOpt = fmt$choicesOpt)
+  format_picker_choices <- function(all_choices, unpredicted, label = "not predicted") {
+    is_unpredicted <- all_choices %in% unpredicted
+    
+    choices <- setNames(
+      all_choices,
+      ifelse(is_unpredicted,
+             paste0(all_choices, " (", label, ")"),
+             all_choices)
+    )
+    
+    choicesOpt <- list(
+      content = ifelse(
+        is_unpredicted,
+        paste0('<span class="trait-not-predicted">', all_choices, ' [', label, ']</span>'),
+        all_choices
+      )
+    )
+    
+    list(choices = choices, choicesOpt = choicesOpt)
+  }
+  
   #' Extract file from a ZIP
   #'
   #' Looks inside a .zip and returns the path to the first file that matches a
@@ -2539,3 +2638,15 @@
     if (file.exists(zip_fp) && remove_original) unlink(zip_folder, recursive = TRUE)
   }
   
+  # Debug
+  get_unpredicted_traits <- function(df, trait_col = "Trait category", 
+                                     value_col = "Probability", threshold = 0.5) {
+    predicted <- df %>%
+      dplyr::filter(!!rlang::sym(value_col) >= threshold) %>%
+      dplyr::pull(trait_col) %>%
+      unique()
+    
+    all_traits <- df %>% dplyr::pull(trait_col) %>% unique()
+    
+    setdiff(all_traits, predicted)
+  }

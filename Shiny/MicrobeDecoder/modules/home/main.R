@@ -124,7 +124,7 @@ homeUI <- function(id) {
               icon_background_color = "#26b784",
               image_name           = "about",
               title                = "About",
-              subtitle             = "How this resource was developed"
+              subtitle             = "Acknowledgements and notices"
             ),
             align = "left"
           )

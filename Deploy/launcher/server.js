@@ -116,8 +116,8 @@ const CLEANUP_POLICY = {
   // Baseline: How long a perfect user (Score 0) can stay idle.
   // We use a range that slides based on server capacity (Load).
   LIFESPAN_BASE_MS: {
-	AT_FULL_CAPACITY: 120 * 1000,   // 120s (server is 100% full)
-    AT_ZERO_CAPACITY: 1800 * 1000   // 30m  (server is empty)
+	AT_FULL_CAPACITY: 300 * 1000,   // 5m (server is 100% full)
+    AT_ZERO_CAPACITY: 3600 * 1000   // 60m  (server is empty)
   },
 
   // Behavior Multipliers:

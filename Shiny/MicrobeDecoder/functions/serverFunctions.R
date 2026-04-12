@@ -102,24 +102,50 @@
   #'
   #' This function creates a reactive trigger that activates only when the currently
   #' selected tab matches a specified tab name. It is useful for delaying computations
-  #' or outputs until a particular tab is in view.
+  #' or outputs until a particular tab is in view.  An option is available to make
+  #' the trigger also depend on a specified input (e.g., input$query_builder_valid).
   #'
   #' @param tab_fn A reactive expression that returns the name of the currently selected tab.
   #' @param tab_name A character string specifying the name of the tab to trigger on.
+  #' @param input The Shiny input object. Required if `input_id` is specified.
+  #' @param input_id A character string specifying the input to depend on (e.g.,
+  #'   `"query_builder_valid"`, `"gene_functions_database"`). When provided, the
+  #'   trigger will not fire until both the tab is active and this input fires a
+  #'   new event. The current value of the input at startup is ignored, so the
+  #'   trigger is safe to use with `once = TRUE` in `observeEvent`.
   #'
-  #' @return A reactive expression that returns TRUE when the selected tab matches `tab_name`.
+  #' @return A reactive expression that returns TRUE when the tab matches `tab_name`,
+  #'   optionally gated on a new event from `input[[input_id]]`. Returns NULL when
+  #'   the selected tab does not match `tab_name`, which prevents downstream
+  #'   `observeEvent` calls from firing.
   #'
   #' @examples
-  #' # Trigger only when 'resultsTab' is selected
-  #' tab_trigger <- make_tab_trigger(selected_tab, "resultsTab")
+  #' # Trigger only when 'history' is selected
+  #' tab_trigger <- make_tab_trigger(selected_tab, "history")
+  #'
+  #' # Trigger when 'databaseSearch' is selected and query builder has finished rendering
+  #' tab_loaded_trigger <- make_tab_trigger(
+  #'   selected_tab, "databaseSearch", input, "query_builder_valid"
+  #' )
+  #'
+  #' # Trigger when 'predictionsMachineLearning' is selected and organism selectize has populated
+  #' tab_loaded_trigger <- make_tab_trigger(
+  #'   selected_tab, "predictionsMachineLearning", input, "gene_functions_database"
+  #' )
   #'
   #' @export
-  make_tab_trigger <- function(tab_fn = selected_tab, tab_name) {
-    reactive({
-      if (tab_fn() == tab_name) {
-        return(TRUE)
-      }
-    })
+  make_tab_trigger <- function(tab_fn = selected_tab, tab_name, input = NULL, input_id = NULL) {
+    if (!is.null(input) && !is.null(input_id)) {
+      reactive({
+        if (tab_fn() != tab_name) return(NULL)
+        TRUE
+      }) |> bindEvent(input[[input_id]])
+    } else {
+      reactive({
+        if (tab_fn() != tab_name) return(NULL)
+        TRUE
+      })
+    }
   }
   
   #' Create a reactive trigger based on a query parameter and active tab in the URL
@@ -253,7 +279,7 @@
   update_query_builder <- function(inputId, choices, setRules =  NULL, delay_time = 250) {
     filters <- load_query_filters()
     filters <- purrr::keep(filters, ~ .x$id %in% choices)
-
+    
     shinyjs::delay(delay_time, {
       jqbr::updateQueryBuilder(
         inputId = inputId,
@@ -295,17 +321,20 @@
   #' @param inputId A character string specifying the ID of the Picker input to update.
   #' @param choices A character vector of choices to populate the Picker input.
   #' @param selected A character vector specifying the default selected choice(s). 
+  #' @param choicesOpt An optional list of options for the choices (e.g., icons, subtext).
   #'
   #' @return Updates the specified Picker input dynamically.
   #'
   #' @examples
   #' update_picker_input(session, "variable_to_display", choices = c("Phylum", "Genus"))
   update_picker_input <- function(session = getDefaultReactiveDomain(), 
-                                  inputId, choices = NULL, selected = NULL) {
+                                  inputId, choices = NULL, selected = NULL,
+                                  choicesOpt = NULL) {
     if (is.null(choices)) choices <- character(0)
     if (is.null(selected)) selected <- head(choices, 1)
     
-    shinyWidgets::updatePickerInput(session, inputId = inputId, choices = choices, selected = selected)
+    shinyWidgets::updatePickerInput(session, inputId = inputId, choices = choices, 
+                                    selected = selected, choicesOpt = choicesOpt)
   }
   
   #' Update Text Input

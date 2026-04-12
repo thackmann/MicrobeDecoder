@@ -168,11 +168,12 @@ historyServer <- function(input, output, session, x, selected_tab, show_all_user
   
   # --- Update user interface (UI) elements ---
   # Hide loading screen
-  observeEvent({tab_selected_trigger},
+  observeEvent({tab_selected_trigger()},
   {
     # Hide loading screen
     shinyjs::runjs("shinyjs.hide('history-loading-screen'); shinyjs.show('history-wrapper');")
-  })
+  },
+  ignoreInit = TRUE, label="hide_loading_Screen")
   
   # Handle select/deselect all
   observeEvent(input$select_all_toggle, {

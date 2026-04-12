@@ -240,42 +240,6 @@ create_query_builder <- function(ns,
   )
 }
 
-#' #' Create a Query Builder Input
-#' #' 
-#' #' This function generates a standardized `jqbr::queryBuilderInput` element with customizable 
-#' #' input ID, dynamically loaded filters, and rules.
-#' #' 
-#' #' @param ns The namespace function for the module.
-#' #' @param input_id A character string specifying the ID of the query builder input.
-#' #' @param rules The default rules for the query builder.
-#' #' @param label (Optional) A label or title to be displayed above the query builder.
-#' #' 
-#' #' @return A `div` containing the query builder input.
-#' #' 
-#' #' @examples
-#' #' create_query_builder(ns, "query_builder", query_rules_search, load_query_filters, "Build query")
-#' #' create_query_builder(ns, "query_builder", query_rules_taxonomy, load_query_filters)
-#' #' create_query_builder(ns, "query_builder", query_rules_ML, load_query_filters, "Machine Learning Query")
-#' create_query_builder <- function(ns, input_id, label = NULL) {
-#'   filters <- load_placeholder_filters()
-#'   
-#'   rules <- list(
-#'     condition = "AND",
-#'     rules = list(list(id = "Type of metabolism (FAPROTAX)", operator = "contains"))
-#'   )
-#'   
-#'   div(
-#'     if (!is.null(label)) div(label),
-#'     jqbr::queryBuilderInput(
-#'       inputId = ns(input_id),
-#'       filters = filters,
-#'       return_value = "r_rules",
-#'       display_errors = TRUE,
-#'       rules = rules,
-#'       add_na_filter = FALSE
-#'     )
-#'   )
-#' }
 
 #' Create Loading Spinner with Default Color
 #'

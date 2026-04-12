@@ -512,6 +512,13 @@ ol.circled-letter-list li::before {
   justify-content: flex-start !important;
 }
 
+/* Left-side title label inside a navset_card_underline tab bar */
+.nav-title {
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 1rem;
+}
+
 /* Other styles */
 .tight-heading {
   margin-bottom: -16px !important;
@@ -635,6 +642,18 @@ ol.circled-letter-list li::before {
   max-height: 75px !important;  /* Adjust for two rows */
   overflow-y: auto !important;
   white-space: normal !important; /* Allow wrapping */
+}
+
+
+/* Texte for unpredicted traits in dropdowns */
+.trait-not-predicted {
+  color: var(--text-color-gray);
+  font-style: italic;
+}
+
+/* Dropdowns for plot options */
+.plot-options-container {
+  padding: 0 1rem;
 }
 
 /* Ensure selectizeInput and pickerInput have the same font style */
