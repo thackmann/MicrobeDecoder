@@ -46,6 +46,54 @@
       return(paste0("^", x, "$"))
   }
   
+  #' Print Matching Organism Names to Console
+  #'
+  #' This helper function prints the query taxon and matching organisms (Phylum
+  #' through Species) to the R console as formatted tables. It is called within
+  #' \code{filter_table_by_taxon} when \code{print_matches = TRUE}.
+  #'
+  #' @param match A dataframe of matched rows from the reference table, containing
+  #'   some or all of the columns Phylum, Class, Order, Family, Genus, Species.
+  #' @param query_taxon A dataframe containing the taxon query used to find the
+  #'   matches. Values are regex patterns (e.g. \code{"^Escherichia$"}) and are
+  #'   stripped of anchors for display.
+  #' @param query_number An optional integer indicating the query index, printed
+  #'   as a header when multiple queries are present. Default is NULL (no header).
+  #'
+  #' @return NULL (invisibly). Called for its side effect of printing to the console.
+  #' @export
+  print_match_names <- function(match, query_taxon, query_number = NULL) {
+    rank_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+    
+    # Print query number header if provided
+    if (!is.null(query_number)) {
+      cat(sprintf("--- Query %d ---\n", query_number))
+    }
+    
+    # Print query as a table, stripping regex anchors and dropping NA columns
+    query_display <- as.data.frame(
+      lapply(query_taxon, function(x) gsub("\\^|\\$", "", x)),
+      stringsAsFactors = FALSE
+    )
+    query_display <- query_display[, !sapply(query_display, function(x) is.na(x) | x == "NA"),
+                                   drop = FALSE]
+    cat("Query:\n")
+    print(query_display, row.names = FALSE)
+    
+    # Print matches as a table
+    tax_cols <- intersect(rank_cols, colnames(match))
+    if (nrow(match) > 0 && length(tax_cols) > 0) {
+      cat("Matches:\n")
+      tax_df <- match[, tax_cols, drop = FALSE]
+      rownames(tax_df) <- seq_len(nrow(tax_df))
+      print(tax_df)
+    } else {
+      cat("Matches: none\n")
+    }
+    
+    invisible(NULL)
+  }
+  
   #' Get Reference Table of Organisms
   #'
   #' This function takes the database and formats into a reference table of organisms
@@ -93,18 +141,25 @@
   #' Filter a Table by Taxon
   #'
   #' This function filters a table to return rows matching a specified query taxon.
-  #' It starts at the most specific level (Genus + Species) and progressively moves up 
-  #' the taxonomic ranks until a match is found. There is an option to require 
+  #' It starts at the most specific level (Genus + Species) and progressively moves up
+  #' the taxonomic ranks until a match is found. There is an option to require
   #' all ranks to match (strict mode). Ranks that are NA (^NA$) are ignored.
   #'
   #' @param table A dataframe to be filtered.
-  #' @param query_taxon A dataframe containing the taxon query to match
-  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
-  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
+  #' @param query_taxon A dataframe containing the taxon query to match.
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
+  #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
+  #'   Species) to the R console via \code{\link{print_match_names}}. Default is TRUE.
+  #' @param query_number An optional integer indicating the query index, passed to
+  #'   \code{\link{print_match_names}} for display when multiple queries are present.
+  #'   Default is NULL (no header printed).
   #'
   #' @return A filtered dataframe containing only rows that match the query taxon.
   #' @export
-  filter_table_by_taxon <- function(table, query_taxon, ignore_species = TRUE, match_all_ranks = FALSE) {
+  filter_table_by_taxon <- function(table, query_taxon, ignore_species = TRUE,
+                                    match_all_ranks = FALSE, print_matches = TRUE,
+                                    query_number = NULL) {
     # Set levels of taxonomic ranks to match
     rank_levels <- list(
       c("Genus", "Species"),
@@ -114,11 +169,11 @@
       "Class",
       "Phylum"
     )
-
+    
     if (ignore_species) {
       rank_levels <- lapply(rank_levels, setdiff, "Species")
     }
-
+    
     valid_levels <- names(query_taxon)[
       names(query_taxon) %in% unlist(rank_levels) & !sapply(query_taxon, identical, "^NA$")
     ]
@@ -138,12 +193,12 @@
       
       for (rank in all_ranks_to_match) {
         pattern <- query_taxon[[rank]]
-
         if (!identical(pattern, "^.*$")) {
           match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
         }
       }
       
+      if (print_matches) print_match_names(match, query_taxon, query_number)
       return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
     }
     
@@ -152,17 +207,18 @@
       match <- table
       for (rank in ranks) {
         pattern <- query_taxon[[rank]]
-
         if (!identical(pattern, "^.*$")) {
           match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
         }
       }
       if (nrow(match) > 0) {
+        if (print_matches) print_match_names(match, query_taxon, query_number)
         return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
       }
     }
     
     # No match found at any level
+    if (print_matches) print_match_names(table[0, ], query_taxon, query_number)
     return(dplyr::select(as.data.frame(table[0, ]), -all_of(colnames(query_taxon))))
   }
   
@@ -335,21 +391,28 @@
   #' @param query_unique A dataframe containing unique queries.
   #' @param table A dataframe containing reference data.
   #' @param query_patterns A list of formatted query patterns.
-  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
-  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
+  #' @param print_matches Logical; if TRUE, prints matching organisms for each query
+  #'   to the R console. Default is TRUE.
   #'
   #' @return A list of dataframes, where each element corresponds to matching organisms 
   #'   for a unique query.
   #'
   #' @export
-  compute_matching_organisms <- function(query_unique, table, query_patterns, ignore_species = TRUE, match_all_ranks = FALSE) {
+  compute_matching_organisms <- function(query_unique, table, query_patterns, 
+                                         ignore_species = TRUE, match_all_ranks = FALSE,
+                                         print_matches = TRUE) {
     matching_organisms <- vector("list", length = nrow(query_unique))
     for (i in seq_len(nrow(query_unique))) {
-      matching_organisms[[i]] <- filter_table_by_taxon(table = table, 
-                                                       query_taxon = query_patterns[[i]], 
-                                                       ignore_species = ignore_species, 
-                                                       match_all_ranks = match_all_ranks)
-      
+      matching_organisms[[i]] <- filter_table_by_taxon(
+        table           = table,
+        query_taxon     = query_patterns[[i]],
+        ignore_species  = ignore_species,
+        match_all_ranks = match_all_ranks,
+        print_matches   = print_matches,
+        query_number    = i
+      )
     }
     
     return(matching_organisms)
@@ -445,37 +508,43 @@
   #' @param table A cleaned reference table.
   #' @param traits_to_predict A character vector of trait names to predict.
   #' @param ignore_NA Logical; whether to ignore NAs when computing probabilities.
-  #' @param ignore_species Logical; whether to ignore the rank of species in taxa
-  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
+  #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
+  #'   Species) to the R console. Default is TRUE.
   #' @param ns A namespace function for Shiny progress bar updates.
   #' @param session The current Shiny session object.
   #'
   #' @return A dataframe of predicted trait probabilities.
   #' @export
   predict_traits_taxonomy <- function(query, table, traits_to_predict, ignore_NA = TRUE,
-                            ignore_species = TRUE, match_all_ranks = FALSE,
-                             ns = NULL, session = shiny::getDefaultReactiveDomain()) {
+                                      ignore_species = TRUE, match_all_ranks = FALSE,
+                                      print_matches = TRUE,
+                                      ns = NULL, session = shiny::getDefaultReactiveDomain()) {
     unique_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
     
     query_data <- precompute_unique_queries(query, unique_cols)
     
     patterns <- precompute_patterns(query_data$query_unique, traits_to_predict, table)
     
-    matching_organisms <- compute_matching_organisms(query_unique = query_data$query_unique, 
-                                                     table = table, 
-                                                     query_patterns = patterns$query_patterns, 
-                                                     ignore_species = ignore_species,
-                                                     match_all_ranks = match_all_ranks)
+    matching_organisms <- compute_matching_organisms(
+      query_unique    = query_data$query_unique,
+      table           = table,
+      query_patterns  = patterns$query_patterns,
+      ignore_species  = ignore_species,
+      match_all_ranks = match_all_ranks,
+      print_matches   = print_matches
+    )
     
     results_unique <- compute_probabilities(
-      query_unique = query_data$query_unique,
-      traits_to_predict = traits_to_predict,
-      unique_traits = patterns$unique_traits,
-      trait_patterns = patterns$trait_patterns,
+      query_unique       = query_data$query_unique,
+      traits_to_predict  = traits_to_predict,
+      unique_traits      = patterns$unique_traits,
+      trait_patterns     = patterns$trait_patterns,
       matching_organisms = matching_organisms,
-      ignore_NA = ignore_NA,
-      ns = ns,
-      session = session
+      ignore_NA          = ignore_NA,
+      ns                 = ns,
+      session            = session
     )
     
     restore_duplicates(results_unique, query_data$query_map)
@@ -493,11 +562,15 @@
   #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
   #' @param ignore_species Logical, whether to ignore species rank in taxa
   #' @param system_taxonomy Character, taxonomy system to use (e.g., "LPSN")
+  #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
+  #'   Species) to the R console. Default is TRUE.
   #' @param ns The namespace function for the Shiny module.
   #'
   #' @return A named list with trait probabilities.
   #' @export
-  compute_taxonomy_predictions <- function(data, query_taxa, query_string, traits_to_predict, ignore_NA, match_all_ranks, ignore_species, system_taxonomy, ns = NULL) {
+  compute_taxonomy_predictions <- function(data, query_taxa, query_string, traits_to_predict,
+                                           ignore_NA, match_all_ranks, ignore_species,
+                                           system_taxonomy, print_matches = TRUE, ns = NULL) {
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Getting data", value = 0)  
     
@@ -897,8 +970,7 @@
       runValidationModal(need(!is.null(traits_to_predict) && length(traits_to_predict) > 0, "Please choose a trait"))
       return(list(traits_to_predict = traits_to_predict, query_string = NULL))
     } else if (traits_from_other) {
-      query_string <- process_query_string(query_string)
-      runValidationModal(need(query_string != "", "Please build a valid query."))
+      query_string <- get_query_string(query_string)
       return(list(traits_to_predict = "Custom trait", query_string = query_string))
     } else {
       stop("No valid trait source specified.")
@@ -1119,11 +1191,12 @@
   #' Get Query Taxa from the Database
   #' 
   #' This function takes query organisms and retrieves their taxonomy from the 
-  #' database.  Query organisms are formatted as "Taxon_Name (Rank)".  The 
-  #' function takes a dataframe with columns for taxonomic ranks and puts the 
-  #' query organisms in it.  It fills in names for other ranks using values from
-  #' the database.  Only names for higher ranks (e.g., Phylum) are filled in, and 
-  #' lower ranks (e.g., Species) are set to `NA`.
+  #' database.  Query organisms are formatted as "Taxon_Name (Rank)".  For 
+  #' query organisms that are species, the format is "Genus_Name species_epithet
+  #' (Species)".  Thefunction takes a dataframe with columns for taxonomic ranks 
+  #' and puts the query organisms in it.  It fills in names for other ranks using 
+  #' values from the database.  Only names for higher ranks (e.g., Phylum) are 
+  #' filled in, and lower ranks (e.g., Species) are set to `NA`.
   #'
   #' @param selected_organisms A character vector of taxon strings, where each entry 
   #'   follows the format "Taxon_Name (Rank)"
@@ -1141,7 +1214,7 @@
     # Load database
     database <- load_database()
     col_name <- paste0(system_taxonomy, " Taxonomy")
-    database <- expand_and_merge_taxonomy(data = database, col_name = col_name)
+    database <- expand_and_merge_taxonomy(data = database, col_name = col_name, drop_species = FALSE)
     
     
     # Initialize the dataframe to hold the query
@@ -1162,8 +1235,32 @@
                         rank, selected_organisms[i], paste(ranks, collapse = ", ")))
       }
       
+      # For species, split the full binomial (e.g., "Escherichia coli") into
+      # genus and epithet, since the database stores only the epithet in Species
+      if (rank == "Species") {
+        parts      <- strsplit(extracted, " ")[[1]]
+        genus_name <- parts[1]                         # e.g., "Escherichia"
+        epithet    <- paste(parts[-1], collapse = " ") # e.g., "coli"
+        
+        query[i, "Genus"]   <- genus_name
+        query[i, "Species"] <- epithet
+        
+        lookup_col   <- "Species"
+        lookup_value <- epithet
+      } else {
+        lookup_col   <- rank
+        lookup_value <- extracted
+      }
+      
       # Fill in higher ranks 
-      matches <- database[!is.na(database[[rank]]) & database[[rank]] == extracted, , drop = FALSE]
+      if (rank == "Species") {
+        matches <- database[!is.na(database[[lookup_col]]) & 
+                              database[[lookup_col]] == lookup_value &
+                              !is.na(database[["Genus"]]) &
+                              database[["Genus"]] == genus_name, , drop = FALSE]
+      } else {
+        matches <- database[!is.na(database[[lookup_col]]) & database[[lookup_col]] == lookup_value, , drop = FALSE]
+      }
       if (nrow(matches) > 0) {
         key_cols <- intersect(colnames(matches), ranks)
         
@@ -1266,15 +1363,20 @@
     # Get column names as taxonomic ranks
     ranks <- c("Phylum", "Class", "Order", "Family", "Genus")
     
-    data <- data %>% dplyr::select(dplyr::all_of(ranks))
-    
-    # Convert the dataframe into a vector with the required format
-    choices <- unlist(mapply(function(col, rank) {
+    # Format names of phylum through genus
+    higher_ranks <- c("Phylum", "Class", "Order", "Family", "Genus")
+    higher_choices <- unlist(mapply(function(col, rank) {
       paste(data[[col]], sprintf("(%s)", rank))
-    }, colnames(data), ranks, SIMPLIFY = FALSE))
+    }, higher_ranks, higher_ranks, SIMPLIFY = FALSE))
     
-    # Ensure unique values and remove names
-    choices <- unique(unname(choices))
+    # Format names of species 
+    species_choices <- data %>%
+      dplyr::filter(!is.na(Species) & Species != "") %>%
+      dplyr::mutate(label = paste(Genus, Species, "(Species)")) %>%
+      dplyr::pull(label)
+    
+    # Combine, ensure unique values, and remove names
+    choices <- unique(unname(c(higher_choices, species_choices)))
     
     return(choices)
   }

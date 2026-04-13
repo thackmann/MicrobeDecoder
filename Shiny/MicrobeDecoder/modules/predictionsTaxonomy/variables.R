@@ -27,7 +27,8 @@
       "Antibiotic resistance (BacDive)", 
       "Antibiotic sensitivity (BacDive)",
       "Cell shape (BacDive)", "Cell length in microns (BacDive)", "Cell width in microns (BacDive)",
-      # "Flagellum arrangement (BacDive)", "Gram stain (BacDive)", "Spore formation (BacDive)"
+      "Flagellum arrangement (BacDive)",
+      # "Gram stain (BacDive)", "Spore formation (BacDive)"
     growth_var,
     isolation_var
   )

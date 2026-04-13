@@ -718,8 +718,7 @@ compute_ml_predictions <- function(df, model_names, model_paths, response, predi
                            ignore_NA) {
     if (!models_from_other) return(NULL)
     
-    query_string <- process_query_string(query_string)
-    runValidationModal(need(query_string != "", "Please build a valid query."))
+    query_string <- get_query_string(query_string)
     
     data <- load_database()
     response <- format_response(data = data, query_string = query_string, ignore_NA = ignore_NA)

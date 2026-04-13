@@ -23,46 +23,46 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages required by the Shiny app
-RUN R -e "install.packages(c( \
-  'ape', \
-  'BiocManager', \
-  'bslib', \
-  'caret', \
-  'colorspace', \
-  'digest', \
-  'dplyr', \
-  'DT', \
-  'fbar', \
-  'fs', \
-  'htmltools', \
-  'igraph', \
-  'import', \
-  'jqbr', \
-  'jsonlite', \
-  'magrittr', \
-  'plotly', \
-  'purrr', \
-  'randomForest', \
-  'reactlog', \
-  'readr', \
-  'readxl', \
-  'remotes', \
-  'rlang', \
-  'rsconnect', \
-  'shiny', \
-  'shinycssloaders', \
-  'shinyjs', \
-  'shinyWidgets', \
-  'stringr', \
-  'tidyr', \
-  'tidyselect', \
-  'uuid' \
-))"
+RUN R -e 'options(warn=2); install.packages(c( \
+  "ape", \
+  "BiocManager", \
+  "bslib", \
+  "caret", \
+  "colorspace", \
+  "digest", \
+  "dplyr", \
+  "DT", \
+  "fs", \
+  "htmltools", \
+  "igraph", \
+  "import", \
+  "jqbr", \
+  "jsonlite", \
+  "magrittr", \
+  "plotly", \
+  "purrr", \
+  "randomForest", \
+  "reactlog", \
+  "readr", \
+  "readxl", \
+  "remotes", \
+  "rlang", \
+  "rsconnect", \
+  "shiny", \
+  "shinycssloaders", \
+  "shinyjs", \
+  "shinyWidgets", \
+  "stringr", \
+  "tidyr", \
+  "tidyselect", \
+  "uuid" \
+))'
 
 # Install Bioconductor packages
 RUN R -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager'); BiocManager::install('ggtree', ask=FALSE, update=FALSE)"
 
 # Install GitHub packages
+RUN R -e 'remotes::install_github("maxconway/fbar")'
 RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
 
 # Modify configuration file for Shiny Server

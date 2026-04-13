@@ -15,7 +15,9 @@
 
 # Names of variables in database
   taxonomy_var <- c("Phylum", "Class", "Order", "Family", "Genus", 
-                         "Species", "Subspecies", "Strain")
+                    "Species", "Subspecies"
+                    # , "Strain" # commenting this out speeds up execution by ~5 s
+                    )
   
   database_var <- c("LPSN Page", "Bergey Article", "GTDB ID",
                     "NCBI Taxonomy ID", "GOLD Organism ID", 

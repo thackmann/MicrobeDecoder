@@ -60,7 +60,7 @@
               create_switch_input(inputId = ns("poor_traits"), label = "Hide poorly predicted traits", value = TRUE),
               shiny::sliderInput(ns("threshold"), "Probability threshold", min = 0, max = 1, value = 0.5),
               create_switch_input(inputId = ns("match_all_ranks"), label = "All taxonomic ranks must match", value = FALSE),
-              create_switch_input(inputId = ns("ignore_species"), label = "Ignore species names for taxa"),
+              create_switch_input(inputId = ns("ignore_species"), label = "Ignore species names for taxa", value = FALSE),
               create_switch_input(inputId = ns("ignore_missing"), label = "Ignore missing values in database"),
               create_selectize_input(inputId = ns("system_taxonomy"), label = "Taxonomy", multiple = FALSE),
             ),
@@ -92,21 +92,27 @@
               # Tabs for plots
               bslib::navset_card_underline(
                 id = ns("results_tabs"),
-                title = "Prediction results",
                 
-                # Panels
-                create_plot_panel(ns, "summary", "Summary"),
-                create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-                create_plot_panel(ns, "heatmap", "Heatmap"),
+                # Title
+                bslib::nav_item(
+                  tags$span("Prediction results", class = "nav-title")
+                ),
+                bslib::nav_spacer(),
                 
                 # Plot options
-                div(
-                  shiny::conditionalPanel(
-                    condition = "output.flag_multiple_traits",
-                    ns = ns,
+                shiny::conditionalPanel(
+                  condition = "output.flag_multiple_traits",
+                  ns = ns,
+                  div(
+                    class = "plot-options-container",
                     create_picker_input(inputId = ns("trait_to_display"), label = "Trait")
                   )
-                )
+                ),
+                
+                # Panels
+                create_plot_panel(ns, "heatmap", "Heatmap"),
+                create_plot_panel(ns, "treemap", "Treemap", centered = TRUE)
+                # create_plot_panel(ns, "summary", "Summary")
               )
             )
             )
@@ -123,7 +129,13 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   
   # --- Define triggers for reactive expressions ---
   tab_selected_trigger <- make_tab_trigger(selected_tab, "predictionsTaxonomy")
+  
+  tab_loaded_trigger <- make_tab_trigger(
+    selected_tab, "predictionsTaxonomy", input, "taxonomy_database"
+  )
+  
   make_predictions_trigger <- make_action_button_trigger("make_predictions")
+  
   url_change_trigger <- make_url_trigger(param_name = "job", tab_name = "predictionsTaxonomy")
  
   # --- Create job for computation ---
@@ -270,23 +282,35 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
         
         # Get choices
         col_name <- paste0(system_taxonomy, " Taxonomy")
-        choices <- expand_and_merge_taxonomy(data = database, col_name = col_name)
+        choices <- expand_and_merge_taxonomy(data = database, col_name = col_name, drop_species = FALSE)
         choices <- get_taxon_choices(choices)
         
-        selected <- "Escherichia (Genus)"
+        selected <- c("Escherichia (Genus)")
         
         update_select_input(inputId = "taxonomy_database", 
                             choices = choices, selected = selected)
-        
-        # Hide loading screen
-        shinyjs::runjs("shinyjs.hide('taxonomy-loading-screen'); shinyjs.show('taxonomy-wrapper');")
   },
   ignoreInit = TRUE, label="update_choices_taxa")
 
+  # Hide loading screen
+  shiny::observeEvent({tab_loaded_trigger()},
+  {
+    shinyjs::runjs("shinyjs.hide('taxonomy-loading-screen'); shinyjs.show('taxonomy-wrapper');")
+  },
+  once = TRUE, label = "hide_loading_screen")
+  
   # Update choices for traits to display
-  shiny::observeEvent(url_change_trigger(), {
-    choices <- unique(get_results()$predict_traits$'Trait category')
-    update_picker_input(inputId = "trait_to_display", choices = choices) 
+  shiny::observeEvent({list(url_change_trigger(), input$threshold)}, {
+    df          <- get_results()$predict_traits
+    req(!is.null(df))
+    all_traits  <- unique(df$`Trait category`)
+    unpredicted <- get_unpredicted_choices(df, choices_col = "Trait category", 
+                                           value_col = "Probability", threshold = input$threshold)
+    fmt <- format_picker_choices(all_traits, unpredicted, label = "trait not predicted")
+    
+    update_picker_input(inputId = "trait_to_display",
+                        choices = fmt$choices,
+                        choicesOpt = fmt$choicesOpt)
   }, label = "update_traits_to_display")
   
   # Update query builder

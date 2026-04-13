@@ -102,62 +102,67 @@
                ns = ns,
   
                # Summary and download button
-               bslib::card(
-                 bslib::card_header(shiny::textOutput(ns("summary_text"))),
-                 create_download_button(ns('download_data'))
-               ),
-               
-                # Tabs for plots
-                bslib::navset_card_underline(
-                    id = ns("results_tabs"),
-                    title = "Prediction results",
-                    
-                  # Plot panels
-                    create_plot_panel(ns, "summary", "Summary"),
-                    create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-                    create_plot_panel(ns, "heatmap", "Heatmap"),
-                    create_plot_panel(ns, "network", "Metabolic network", use_spinner = TRUE),
-                  
-                  # Plot options
-                  div(
-                    class = "flex-container",
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network' && output.flag_multiple_organisms",
-                                                 create_picker_input(ns("organism_to_display"), "Organism")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "output.flag_multiple_substrates",
-                                                 create_picker_input(ns("substrate_to_display"), "Substrate")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network' && output.flag_multiple_products",
-                                                 create_picker_input(ns("product_to_display"), "End product")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network'",
-                                                 create_picker_input(ns("set_network_layout"), "Layout")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network'",
-                                                 create_picker_input(ns("set_network_dimensions"), "Dimensions", choices = c("2", "3"), selected = "2")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network'",
-                                                 create_switch_input(ns("hide_cofactors"), "Hide cofactors", label_position = "above")
-                    ),
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network'",
-                                                 create_switch_input(ns("hide_unbalanced_intermediates"), "Hide unbalanced", label_position = "above")
-                    )
-                  ),
-                  div(
-                    class = "flex-container",
-                    create_conditional_flex_item(ns, 
-                                                 "input.results_tabs == 'Metabolic network'",
-                                                 create_download_button(ns("download_network_model"), "Download network model")
-                    )
+                 bslib::card(
+                   bslib::card_header(shiny::textOutput(ns("summary_text"))),
+                   create_download_button(ns('download_data'))
+                 ),
+                 
+                  # Tabs for plots
+                  bslib::navset_card_underline(
+                      id = ns("results_tabs"),
+                      
+                      # Title
+                      bslib::nav_item(
+                        tags$span("Prediction results", class = "nav-title")
+                      ),
+                      bslib::nav_spacer(),
+                      
+                      # Plot options
+                      div(
+                        class = "flex-container plot-options-container",
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network' && output.flag_multiple_organisms",
+                                                     create_picker_input(ns("organism_to_display"), "Organism")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "output.flag_multiple_substrates",
+                                                     create_picker_input(ns("substrate_to_display"), "Substrate")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network' && output.flag_multiple_products",
+                                                     create_picker_input(ns("product_to_display"), "End product")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network'",
+                                                     create_picker_input(ns("set_network_layout"), "Layout")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network'",
+                                                     create_picker_input(ns("set_network_dimensions"), "Dimensions", choices = c("2", "3"), selected = "2")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network'",
+                                                     create_switch_input(ns("hide_cofactors"), "Hide cofactors", label_position = "above")
+                        ),
+                        create_conditional_flex_item(ns, 
+                                                     "input.results_tabs == 'Metabolic network'",
+                                                     create_switch_input(ns("hide_unbalanced_intermediates"), "Hide unbalanced", label_position = "above")
+                        )
+                      ),
+                      
+                      # Plot panels
+                      create_plot_panel(ns, "heatmap", "Heatmap"),
+                      create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
+                      create_plot_panel(ns, "network", "Metabolic network", use_spinner = TRUE),
+                      # create_plot_panel(ns, "summary", "Summary")
+                      
+                      # Network download button
+                      footer = shiny::conditionalPanel(
+                        condition = "input.results_tabs == 'Metabolic network'",
+                        ns = ns,
+                        create_download_button(ns("download_network_model"), "Download network model")
+                      )
                   )
-                )
               )
             )
          )
@@ -178,6 +183,10 @@
     
     # --- Define triggers for reactive expressions ---
     tab_selected_trigger <- make_tab_trigger(selected_tab, "predictionsNetwork")
+    
+    tab_loaded_trigger <- make_tab_trigger(
+      selected_tab, "predictionsNetwork", input, "gene_functions_database"
+    )
     
     make_predictions_trigger <- make_action_button_trigger("make_predictions")
     
@@ -365,12 +374,9 @@
       # Get choices
       choices <- get_organism_choices(database = database)
       selected <- get_default_organism_selections(input$reference_network_database)
-      selected <- assign_if_invalid(selected, "Escherichia coli")
+      selected <- assign_if_invalid(selected, c("Escherichia coli"))
       
       update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
-      
-      # Hide loading screen
-      shinyjs::runjs("shinyjs.hide('network-loading-screen'); shinyjs.show('network-wrapper');")
     }, 
     label = "update_gene_function_choices_init", ignoreInit = TRUE)
     
@@ -384,12 +390,19 @@
       database <- load_database()
       choices <- get_organism_choices(database = database)
       selected <- get_uploaded_organism_selections(input$upload_names$datapath, choices)
-      selected <- assign_if_invalid(selected, "Escherichia coli")
+      selected <- assign_if_invalid(selected, c("Escherichia coli"))
       
       # Update UI
       update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
     }, 
     label = "update_gene_function_choices_from_upload", ignoreInit = TRUE)
+    
+    # Hide loading screen
+    shiny::observeEvent({tab_loaded_trigger()},
+    {
+      shinyjs::runjs("shinyjs.hide('network-loading-screen'); shinyjs.show('network-wrapper');")
+    },
+    once = TRUE, label = "hide_loading_screen")
     
     # Update choices for reference network
     observeEvent(tab_selected_trigger(), {
@@ -431,12 +444,19 @@
     }, label = "update_metabolite_choices")
   
     # Update choices for substrates, products, and organisms to display
-    shiny::observeEvent(url_change_trigger(), {
+    shiny::observeEvent({list(url_change_trigger(), input$threshold)}, {
       results <- get_results()
+      df      <- results$predict_fluxes
       
-      update_picker_input(inputId = "substrate_to_display", choices = results$get_input_substrates)
-      update_picker_input(inputId = "product_to_display", choices = results$get_input_products)
-      update_picker_input(inputId = "organism_to_display", choices = results$get_organism_names)
+      all_substrates <- results$get_input_substrates
+      unpredicted    <- get_unpredicted_choices(df, choices_col = "Substrate", 
+                                                value_col = "Flux", threshold = input$threshold)
+      fmt <- format_picker_choices(all_substrates, unpredicted, label = "substrate not predicted")
+      
+      update_picker_input(inputId = "substrate_to_display", choices = fmt$choices, 
+                          choicesOpt = fmt$choicesOpt)
+      update_picker_input(inputId = "product_to_display",   choices = results$get_input_products)
+      update_picker_input(inputId = "organism_to_display",  choices = results$get_organism_names)
     }, label = "update_display_inputs")
     
     # Update choices for network layout

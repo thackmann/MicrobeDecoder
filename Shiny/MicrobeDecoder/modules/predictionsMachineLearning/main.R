@@ -112,12 +112,17 @@
     			  # Tabs for plots
     			  bslib::navset_card_underline(
     				id = ns("results_tabs"),
-    				title = "Prediction Results",
+    				
+    				# Title
+    				bslib::nav_item(
+    				  tags$span("Prediction Results", class = "nav-title")
+    				),
+    				bslib::nav_spacer(),
     				
     				# Panels
-    				create_plot_panel(ns, "summary", "Summary"),
-    				create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-    				create_plot_panel(ns, "heatmap", "Heatmap")
+    				create_plot_panel(ns, "heatmap", "Heatmap"),
+    				create_plot_panel(ns, "treemap", "Treemap", centered = TRUE)
+    				# create_plot_panel(ns, "summary", "Summary")
     			  ),
     			  
     			  # Model details
@@ -160,6 +165,10 @@
 
 	  # --- Define triggers for reactive expressions ---
 	  tab_selected_trigger <- make_tab_trigger(selected_tab, "predictionsMachineLearning")
+	  
+	  tab_loaded_trigger <- make_tab_trigger(
+	    selected_tab, "predictionsMachineLearning", input, "gene_functions_database"
+	  )
 	  
 	  make_predictions_trigger <- make_action_button_trigger("make_predictions")
 	  
@@ -288,16 +297,20 @@
 	  # --- Update user interface (UI) elements ---
 	  # Update choices for gene functions (organisms)
 	  shiny::observeEvent({tab_selected_trigger()},
-	  {
-		  database <- load_database()
-		  choices <- get_organism_choices(database)
-		  selected <- "Escherichia coli"
-		  update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
-
-      # Hide loading screen
-		  shinyjs::runjs("shinyjs.hide('ml-loading-screen'); shinyjs.show('ml-wrapper');")
-	  }, 
-	  label="update_gene_function_choices_init")
+    {
+      database <- load_database()
+      choices <- get_organism_choices(database)
+      selected <- c("Escherichia coli")
+      update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
+    },
+    label = "update_gene_function_choices_init")
+	  
+	  # Hide loading screen
+	  shiny::observeEvent({tab_loaded_trigger()},
+    {
+      shinyjs::runjs("shinyjs.hide('ml-loading-screen'); shinyjs.show('ml-wrapper');")
+    },
+    once = TRUE, label = "hide_loading_screen")
 
 	  shiny::observeEvent(input$upload_names, {
 	    req(input$upload_names)
@@ -309,7 +322,7 @@
 	    database <- load_database()
 	    choices <- get_organism_choices(database = database)
 	    selected <- get_uploaded_organism_selections(input$upload_names$datapath, choices)
-	    selected <- assign_if_invalid(selected, "Escherichia coli")
+	    selected <- assign_if_invalid(selected, c("Escherichia coli", "Bacillus subtilis"))
 	    
 	    # Update UI
 	    update_select_input(inputId = "gene_functions_database", choices = choices, selected = selected)
