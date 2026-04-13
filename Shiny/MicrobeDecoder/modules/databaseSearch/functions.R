@@ -158,19 +158,6 @@ compute_search_results <- function(query_string, data, col_name, ns = NULL) {
 }
 
 # === Get inputs ===
-  #' Get Query String
-  #'
-  #' Processes and validates the query string from the query builder input.
-  #'
-  #' @param query_string Raw query string.
-  #'
-  #' @return A cleaned and validated query string.
-  get_query_string <- function(query_string) {
-    query_string <- process_query_string(query_string)
-    runValidationModal(need(query_string != "", "Please build a valid query."))
-    return(query_string)
-  }
-  
   #' Get Inputs for Search Module
   #'
   #' This is the main function for getting all inputs for the module

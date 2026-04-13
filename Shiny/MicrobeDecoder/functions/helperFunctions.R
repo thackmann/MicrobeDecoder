@@ -1844,7 +1844,25 @@
     return(query_string)
   }
   
-  
+  #' Get Query String
+  #'
+  #' Processes and validates the query string from the query builder input.
+  #' Validation checks that the query is non-empty after processing and that the
+  #' query builder reports no rule errors (e.g. incomplete or invalid rules).
+  #'
+  #' @param query_string Raw query string from \code{input$query_builder}.
+  #'
+  #' @return A cleaned and validated query string.
+  get_query_string <- function(query_string) {
+    runValidationModal(need(!is.null(query_string), "Please build a valid query."))
+
+    query_string <- process_query_string(query_string)
+
+    runValidationModal(need(query_string != "", "Please build a valid query."))
+
+    return(query_string)
+  }
+
   #' Extract Variables from Query Builder Output
   #'
   #' This function extracts all variables enclosed in backticks from a query builder output string.

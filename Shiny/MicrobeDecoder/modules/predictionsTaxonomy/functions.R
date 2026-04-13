@@ -970,8 +970,7 @@
       runValidationModal(need(!is.null(traits_to_predict) && length(traits_to_predict) > 0, "Please choose a trait"))
       return(list(traits_to_predict = traits_to_predict, query_string = NULL))
     } else if (traits_from_other) {
-      query_string <- process_query_string(query_string)
-      runValidationModal(need(query_string != "", "Please build a valid query."))
+      query_string <- get_query_string(query_string)
       return(list(traits_to_predict = "Custom trait", query_string = query_string))
     } else {
       stop("No valid trait source specified.")

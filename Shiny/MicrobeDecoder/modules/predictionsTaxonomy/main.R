@@ -302,6 +302,7 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   # Update choices for traits to display
   shiny::observeEvent({list(url_change_trigger(), input$threshold)}, {
     df          <- get_results()$predict_traits
+    req(!is.null(df))
     all_traits  <- unique(df$`Trait category`)
     unpredicted <- get_unpredicted_choices(df, choices_col = "Trait category", 
                                            value_col = "Probability", threshold = input$threshold)

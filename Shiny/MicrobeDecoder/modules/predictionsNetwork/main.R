@@ -149,19 +149,19 @@
                                                      create_switch_input(ns("hide_unbalanced_intermediates"), "Hide unbalanced", label_position = "above")
                         )
                       ),
-                      div(
-                        class = "flex-container plot-options-container",
-                        create_conditional_flex_item(ns, 
-                                                     "input.results_tabs == 'Metabolic network'",
-                                                     create_download_button(ns("download_network_model"), "Download network model")
-                        )
-                      ),
                       
                       # Plot panels
                       create_plot_panel(ns, "heatmap", "Heatmap"),
                       create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-                      create_plot_panel(ns, "network", "Metabolic network", use_spinner = TRUE)
+                      create_plot_panel(ns, "network", "Metabolic network", use_spinner = TRUE),
                       # create_plot_panel(ns, "summary", "Summary")
+                      
+                      # Network download button
+                      footer = shiny::conditionalPanel(
+                        condition = "input.results_tabs == 'Metabolic network'",
+                        ns = ns,
+                        create_download_button(ns("download_network_model"), "Download network model")
+                      )
                   )
               )
             )
