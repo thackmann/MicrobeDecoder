@@ -656,12 +656,32 @@
         outsidetextfont = list(size = 0),  
         textposition = 'middle center',
         tiling = list(pad = 0)
-      )
+      ) 
+    
+    # Remove border for parent cell
+    plot <- plot %>%
+    htmlwidgets::onRender("
+      function(el) {
+        function isBlack(s) {
+          if (!s) return false;
+          return s.replace(/\\s/g,'') === 'rgb(0,0,0)';
+        }
+        var obs = new MutationObserver(function() {
+          el.querySelectorAll('svg path.surface').forEach(function(p) {
+            if (isBlack(p.style.fill)) {
+              p.style.stroke = 'none';
+              p.style.fill   = 'none';
+            }
+          });
+        });
+        obs.observe(el, {subtree: true, attributes: true,
+                         attributeFilter: ['style']});
+      }
+    ")
     
     # Apply layout
     axis_settings = generate_axis_settings() 
     
-    # Make plot
     plot <- plot %>% 
       plotly::layout(
         title = title,
@@ -673,6 +693,7 @@
     
     return(plot)
   }    
+  
 # --- Plot metabolic network ---
   #' Extract Graph Attributes
   #' 

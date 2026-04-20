@@ -43,7 +43,7 @@
   #' @return A formatted regular expression string.
   #' @export
   format_query_element <- function(x) {
-      return(paste0("^", x, "$"))
+    return(paste0("^", x, "$"))
   }
   
   #' Print Matching Organism Names to Console
@@ -54,15 +54,16 @@
   #'
   #' @param match A dataframe of matched rows from the reference table, containing
   #'   some or all of the columns Phylum, Class, Order, Family, Genus, Species.
-  #' @param query_taxon A dataframe containing the taxon query used to find the
-  #'   matches. Values are regex patterns (e.g. \code{"^Escherichia$"}) and are
-  #'   stripped of anchors for display.
+  #' @param query_taxa_regex A one-row dataframe of taxonomic rank columns (Phylum,
+  #'   Class, Order, Family, Genus, Species) with regex pattern values (e.g.
+  #'   \code{"^Escherichia$"}), representing a single formatted query from
+  #'   \code{get_query_taxa_regex}.
   #' @param query_number An optional integer indicating the query index, printed
   #'   as a header when multiple queries are present. Default is NULL (no header).
   #'
   #' @return NULL (invisibly). Called for its side effect of printing to the console.
   #' @export
-  print_match_names <- function(match, query_taxon, query_number = NULL) {
+  print_match_names <- function(match, query_taxa_regex, query_number = NULL) {
     rank_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
     
     # Print query number header if provided
@@ -72,7 +73,7 @@
     
     # Print query as a table, stripping regex anchors and dropping NA columns
     query_display <- as.data.frame(
-      lapply(query_taxon, function(x) gsub("\\^|\\$", "", x)),
+      lapply(query_taxa_regex, function(x) gsub("\\^|\\$", "", x)),
       stringsAsFactors = FALSE
     )
     query_display <- query_display[, !sapply(query_display, function(x) is.na(x) | x == "NA"),
@@ -97,21 +98,25 @@
   #' Get Reference Table of Organisms
   #'
   #' This function takes the database and formats into a reference table of organisms
-  #' and their traits.  It can optionally add a custom trait based on a query string.  
+  #' and their traits.  It can optionally add a custom trait based on a query string.
+  #'
+  #' Returns the full taxonomy universe (every organism) with the requested trait
+  #' columns attached.  NA filtering is intentionally not applied here: taxon
+  #' lookup is decoupled from trait availability so that taxa with no annotated
+  #' traits remain matchable.  Downstream code (\code{\link{compute_probabilities}})
+  #' handles per-trait NA semantics via its own \code{ignore_NA} argument.
   #'
   #' @param data A dataframe of the database
-  #' @param system_taxonomy A character value of the taxonomy system to use.  Default is 'LPSN'. 
-  #' @param traits_to_predict A character vector of trait column names.
+  #' @param system_taxonomy A character value of the taxonomy system to use.  Default is 'LPSN'.
+  #' @param traits_to_predict A character vector of trait categories to predict.
   #' @param query_string A string representing the query used to filter the organisms.
-  #' @param ignore_NA Logical; whether to remove rows with all NA in trait columns.
   #'
   #' @return A reference table of organisms and their traits
   #' @export
-  get_reference_table <- function(data, 
+  get_reference_table <- function(data,
                                   system_taxonomy = "LPSN",
-                                  traits_to_predict = NULL, 
-                                  query_string = NULL, 
-                                  ignore_NA = TRUE) {
+                                  traits_to_predict = NULL,
+                                  query_string = NULL) {
     # Get data
     table <- data
     
@@ -122,18 +127,13 @@
     # Add custom traits
     if(!is.null(query_string)) {
       trait_name <- "Custom trait"
-      table <- add_custom_traits(data = table, query_string = query_string, trait_name = trait_name, ignore_NA = ignore_NA)
+      table <- add_custom_traits(data = table, query_string = query_string, trait_name = trait_name)
       traits_to_predict <- trait_name
     }
     
     # Select relevant columns
     table <- table %>%
       dplyr::select(Phylum, Class, Order, Family, Genus, Species, dplyr::all_of(traits_to_predict))
-    
-    if (ignore_NA) {
-      table <- table %>%
-        dplyr::filter(!dplyr::if_all(dplyr::all_of(traits_to_predict), is.na))
-    }
     
     return(table)
   }
@@ -146,7 +146,10 @@
   #' all ranks to match (strict mode). Ranks that are NA (^NA$) are ignored.
   #'
   #' @param table A dataframe to be filtered.
-  #' @param query_taxon A dataframe containing the taxon query to match.
+  #' @param query_taxa_regex A one-row dataframe of taxonomic rank columns (Phylum,
+  #'   Class, Order, Family, Genus, Species) with regex pattern values (e.g.
+  #'   \code{"^Escherichia$"}), representing a single formatted query from
+  #'   \code{get_query_taxa_regex}.
   #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
   #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
   #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
@@ -157,8 +160,8 @@
   #'
   #' @return A filtered dataframe containing only rows that match the query taxon.
   #' @export
-  filter_table_by_taxon <- function(table, query_taxon, ignore_species = TRUE,
-                                    match_all_ranks = FALSE, print_matches = TRUE,
+  filter_table_by_taxon <- function(table, query_taxa_regex, ignore_species = TRUE,
+                                    match_all_ranks = FALSE, print_matches = FALSE,
                                     query_number = NULL) {
     # Set levels of taxonomic ranks to match
     rank_levels <- list(
@@ -174,8 +177,8 @@
       rank_levels <- lapply(rank_levels, setdiff, "Species")
     }
     
-    valid_levels <- names(query_taxon)[
-      names(query_taxon) %in% unlist(rank_levels) & !sapply(query_taxon, identical, "^NA$")
+    valid_levels <- names(query_taxa_regex)[
+      names(query_taxa_regex) %in% unlist(rank_levels) & !sapply(query_taxa_regex, identical, "^NA$")
     ]
     
     rank_levels <- lapply(rank_levels, function(ranks) {
@@ -192,34 +195,41 @@
       all_ranks_to_match <- unique(unlist(rank_levels))
       
       for (rank in all_ranks_to_match) {
-        pattern <- query_taxon[[rank]]
+        pattern <- query_taxa_regex[[rank]]
         if (!identical(pattern, "^.*$")) {
           match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
         }
       }
       
-      if (print_matches) print_match_names(match, query_taxon, query_number)
-      return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
+      if (print_matches) print_match_names(match, query_taxa_regex, query_number)
+      
+      match <- as.data.frame(match)
+      
+      return(match)
     }
     
     # Option 2 (permissive): start matching at low taxonomic levels, then move up if no match
     for (ranks in rank_levels) {
       match <- table
       for (rank in ranks) {
-        pattern <- query_taxon[[rank]]
+        pattern <- query_taxa_regex[[rank]]
         if (!identical(pattern, "^.*$")) {
           match <- dplyr::filter(match, grepl(pattern, .data[[rank]]))
         }
       }
       if (nrow(match) > 0) {
-        if (print_matches) print_match_names(match, query_taxon, query_number)
-        return(dplyr::select(as.data.frame(match), -all_of(colnames(query_taxon))))
+        if (print_matches) print_match_names(match, query_taxa_regex, query_number)
+        match <- as.data.frame(match)
+        
+        return(match)
       }
     }
     
     # No match found at any level
-    if (print_matches) print_match_names(table[0, ], query_taxon, query_number)
-    return(dplyr::select(as.data.frame(table[0, ]), -all_of(colnames(query_taxon))))
+    if (print_matches) print_match_names(table[0, ], query_taxa_regex, query_number)
+    match <- as.data.frame(table[0, ])
+    
+    return(match)
   }
   
   #' Convert a Trait into a Regular Expression for Matching
@@ -244,8 +254,8 @@
   #'
   #' @param x A character vector.
   #' @param pattern A regular expression pattern to match within elements of `x`.
-  #' @param ignore_NA A logical value indicating whether to ignore NA values (`TRUE`, default) 
-  #'        or replace them with `replace_value` (`FALSE`).
+  #' @param ignore_NA Logical; whether to ignore NA values (`TRUE`, default)
+  #'   or replace them with \code{replace_value} (\code{FALSE}).
   #' @param replace_value A numeric value used to replace NA values when `ignore_NA = FALSE`. 
   #'        Default is 0.
   #'
@@ -331,83 +341,111 @@
     return(df_map)
   }
   
-  #' Identify Unique Queries and Create Mapping
+  #' Get Unique Query Taxa
   #'
-  #' This function identifies unique queries based on specified taxonomic columns 
-  #' and creates a mapping to restore duplicate results later.
+  #' This function deduplicates query taxa based on specified taxonomic columns.
   #'
   #' @param query A dataframe containing query data.
   #' @param unique_cols A character vector specifying the taxonomic columns 
   #'   to identify unique queries.
   #'
-  #' @return A list containing:
-  #'   - `query_map`: A mapping dataframe to restore duplicate results.
-  #'   - `query_unique`: A dataframe with distinct queries.
-  #' 
+  #' @return A dataframe with distinct queries.
   #' @export
-  precompute_unique_queries <- function(query, unique_cols) {
-    query_map <- get_unique_mapping(df = query, unique_cols = unique_cols)
-    query_unique <- query %>% dplyr::distinct(across(all_of(unique_cols)), .keep_all = TRUE)
-    list(query_map = query_map, query_unique = query_unique)
+  get_query_taxa_unique <- function(query, unique_cols) {
+    query %>% dplyr::distinct(across(all_of(unique_cols)), .keep_all = TRUE)
   }
   
-  #' Precompute Patterns for Query and Traits
+  #' Get Mapping of Original Queries to Unique Queries
   #'
-  #' This function precomputes patterns for unique queries and trait categories
-  #' to speed up subsequent matching.
+  #' This function creates a mapping to restore duplicate results later.
+  #' The mapping links each original row to its corresponding unique query row.
   #'
-  #' @param query_unique A dataframe containing unique queries.
-  #' @param traits_to_predict A character vector of trait categories to predict.
-  #' @param table A dataframe containing reference data.
+  #' @param query A dataframe containing query data.
+  #' @param unique_cols A character vector specifying the taxonomic columns 
+  #'   to identify unique queries.
   #'
-  #' @return A list containing:
-  #'   - `unique_traits`: A list of unique values for each trait.
-  #'   - `num_unique_traits`: A numeric vector with counts of unique traits per category.
-  #'   - `query_patterns`: A list of formatted query patterns.
-  #'   - `trait_patterns`: A list of formatted trait patterns.
-  #'
+  #' @return A mapping dataframe to restore duplicate results.
   #' @export
-  precompute_patterns <- function(query_unique, traits_to_predict, table) {
-    unique_traits <- setNames(lapply(traits_to_predict, function(cat) extract_unique_values(table[[cat]])), 
-                              traits_to_predict)
-    num_unique_traits <- sapply(unique_traits, length)
-    
-    query_patterns <- lapply(seq_len(nrow(query_unique)), function(i) {
-      as.data.frame(apply(query_unique[i, ], c(1, 2), format_query_element))
+  get_query_taxa_map <- function(query, unique_cols) {
+    get_unique_mapping(df = query, unique_cols = unique_cols)
+  }
+  
+  #' Get Query Taxon Patterns
+  #'
+  #' This function converts unique query taxa into regular expression patterns
+  #' for exact matching.  Each row of the input dataframe is wrapped with
+  #' \code{\link{format_query_element}} to add \code{^...$} anchors.
+  #'
+  #' @param query_taxa_unique A dataframe of distinct rows from \code{query_taxa},
+  #'   deduplicated across taxonomic rank columns. Same structure as
+  #'   \code{query_taxa} but with duplicate queries removed.
+  #'
+  #' @return A list of one-row dataframes, each containing regex patterns for
+  #'   the corresponding query.
+  #' @export
+  get_query_taxa_regex <- function(query_taxa_unique) {
+    lapply(seq_len(nrow(query_taxa_unique)), function(i) {
+      as.data.frame(apply(query_taxa_unique[i, ], c(1, 2), format_query_element))
     })
-    
-    trait_patterns <- setNames(lapply(traits_to_predict, function(trait) {
-      sapply(unique_traits[[trait]], format_trait_element, USE.NAMES = FALSE)
-    }), traits_to_predict)
-    
-    list(unique_traits = unique_traits, num_unique_traits = num_unique_traits, 
-         query_patterns = query_patterns, trait_patterns = trait_patterns)
+  }
+  
+  #' Get Unique Trait Values
+  #'
+  #' This function extracts unique trait values from the reference table for
+  #' each trait category.
+  #'
+  #' @param traits_to_predict A character vector of trait categories to predict.
+  #' @param table A cleaned reference table.
+  #'
+  #' @return A named list of unique values for each trait category.
+  #' @export
+  get_traits_unique <- function(traits_to_predict, table) {
+    setNames(lapply(traits_to_predict, function(cat) extract_unique_values(table[[cat]])), 
+             traits_to_predict)
+  }
+  
+  #' Get Trait Regex Patterns
+  #'
+  #' This function converts unique trait values into regular expression patterns
+  #' for delimiter-aware matching via \code{\link{format_trait_element}}.
+  #'
+  #' @param traits_unique A named list of unique trait values per category, derived
+  #'   from \code{traits_to_predict}. Same keys as \code{traits_to_predict} but with
+  #'   duplicate values removed, as returned by \code{\link{get_traits_unique}}.
+  #'
+  #' @return A named list of regex patterns for each trait category.
+  #' @export
+  get_traits_regex <- function(traits_unique) {
+    setNames(lapply(names(traits_unique), function(trait) {
+      sapply(traits_unique[[trait]], format_trait_element, USE.NAMES = FALSE)
+    }), names(traits_unique))
   }
   
   #' Compute Matching Organisms for Each Query
   #'
-  #' This function finds matching organisms in the reference table for each unique query.
+  #' This function finds matching organisms in the reference table for each query.
   #'
-  #' @param query_unique A dataframe containing unique queries.
-  #' @param table A dataframe containing reference data.
-  #' @param query_patterns A list of formatted query patterns.
+  #' @param table A cleaned reference table.
+  #' @param query_taxa_regex_list A list of one-row dataframes, each corresponding
+  #'   to a row of \code{query_taxa_unique}, where values have been formatted as
+  #'   regex patterns with \code{^...$} anchors via \code{format_query_element}.
   #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
   #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
-  #' @param print_matches Logical; if TRUE, prints matching organisms for each query
-  #'   to the R console. Default is TRUE.
+  #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
+  #'   Species) to the R console for each query. Default is TRUE.
   #'
   #' @return A list of dataframes, where each element corresponds to matching organisms 
   #'   for a unique query.
   #'
   #' @export
-  compute_matching_organisms <- function(query_unique, table, query_patterns, 
+  compute_matching_organisms <- function(table, query_taxa_regex_list, 
                                          ignore_species = TRUE, match_all_ranks = FALSE,
-                                         print_matches = TRUE) {
-    matching_organisms <- vector("list", length = nrow(query_unique))
-    for (i in seq_len(nrow(query_unique))) {
+                                         print_matches = FALSE) { 
+    matching_organisms <- vector("list", length = length(query_taxa_regex_list))
+    for (i in seq_along(query_taxa_regex_list)) {
       matching_organisms[[i]] <- filter_table_by_taxon(
         table           = table,
-        query_taxon     = query_patterns[[i]],
+        query_taxa_regex = query_taxa_regex_list[[i]],
         ignore_species  = ignore_species,
         match_all_ranks = match_all_ranks,
         print_matches   = print_matches,
@@ -418,59 +456,87 @@
     return(matching_organisms)
   }
   
+  #' Compute Matching Traits for Each Query
+  #'
+  #' This function gets matching traits for for each unique query.  It takes the
+  #' output of \code{\link{compute_matching_organisms}} and removes the taxonomy
+  #'  columns, leaving only trait columns.  Each element of the input list is a 
+  #' dataframe that contains both taxonomy (Phylum through Species) and trait 
+  #' columns; this function strips the taxonomy so the result can be passed 
+  #' directly to \code{\link{compute_probabilities}}.
+  #'
+  #' @param matching_organisms A list of dataframes, where each element corresponds to matching organisms 
+  #'   for a unique query.
+  #' @param taxonomy_cols A character vector of taxonomy column names to remove.
+  #'
+  #' @return A list of dataframes with taxonomy columns removed, retaining only
+  #'   trait columns.
+  #' @export
+  compute_matching_traits <- function(matching_organisms, taxonomy_cols) {
+    lapply(matching_organisms, function(df) {
+      dplyr::select(df, -dplyr::all_of(taxonomy_cols))
+    })
+  }
+  
   #' Compute Probabilities of Traits for Unique Queries
   #'
   #' This function computes the probability of traits for each unique query,
   #' updating the progress bar in a Shiny session.
   #'
-  #' @param query_unique A dataframe of unique queries.
+  #' @param query_taxa_unique A dataframe of distinct rows from \code{query_taxa},
+  #'   deduplicated across taxonomic rank columns. Same structure as
+  #'   \code{query_taxa} but with duplicate queries removed.
   #' @param traits_to_predict A character vector of trait categories to predict.
-  #' @param unique_traits A list of unique traits per category.
-  #' @param trait_patterns A list of formatted trait patterns.
-  #' @param matching_organisms A list of dataframes with matching organisms.
-  #' @param ignore_NA A logical indicating whether to ignore NA values (default = TRUE).
+  #' @param traits_unique A named list of unique trait values per category, derived
+  #'   from \code{traits_to_predict}. Same keys as \code{traits_to_predict} but with
+  #'   duplicate values removed, as returned by \code{\link{get_traits_unique}}.
+  #' @param traits_regex A named list of regex patterns for each trait category,
+  #'   derived from \code{traits_unique}, as returned by \code{\link{get_traits_regex}}.
+  #' @param matching_traits A list of dataframes with matching traits
+  #' @param ignore_NA Logical; whether to ignore NA values. Default is TRUE.
   #' @param session The Shiny session object (optional; required for progress bar updates).
   #' @param ns A namespace function for modular Shiny apps (optional; required for progress bar updates).
   #'
   #' @return A dataframe containing computed probabilities for each trait-category-query combination.
   #'
   #' @export
-  compute_probabilities <- function(query_unique, traits_to_predict, unique_traits, 
-                              trait_patterns, matching_organisms, ignore_NA = TRUE,
-                              session = NULL, 
-                              ns = NULL) {
+  compute_probabilities <- function(query_taxa_unique, traits_to_predict, traits_unique, 
+                                    traits_regex, matching_traits, ignore_NA = TRUE,
+                                    session = NULL, 
+                                    ns = NULL) {
     # Initialize values
-    results_list <- vector("list", sum(sapply(unique_traits, length)) * nrow(query_unique) * length(traits_to_predict))
+    results_list <- vector("list", sum(sapply(traits_unique, length)) * nrow(query_taxa_unique) * length(traits_to_predict))
     idx <- 1
     
     # Loop through each unique query and compute probabilities
-    for (i in seq_len(nrow(query_unique))) {
-      match <- matching_organisms[[i]]
-      query_taxon <- query_unique[i, ]
+    for (i in seq_len(nrow(query_taxa_unique))) {
+      match <- matching_traits[[i]]
+      query_taxa_row <- query_taxa_unique[i, ]
       
       for (trait_col in traits_to_predict) {
-        pattern <- trait_patterns[[trait_col]]
-        matching_traits <- match %>% dplyr::pull(trait_col)
+        pattern <- traits_regex[[trait_col]]
+        trait_values <- match %>% 
+          dplyr::pull(trait_col)
         
-        for (k in seq_along(unique_traits[[trait_col]])) {
+        for (k in seq_along(traits_unique[[trait_col]])) {
           results_list[[idx]] <- list(
             `y` = i,
-            `Phylum` = query_taxon["Phylum"],
-            `Class` = query_taxon["Class"],
-            `Order` = query_taxon["Order"],
-            `Family` = query_taxon["Family"],
-            `Genus` = query_taxon["Genus"],
-            `Species` = query_taxon["Species"],
+            `Phylum` = query_taxa_row["Phylum"],
+            `Class` = query_taxa_row["Class"],
+            `Order` = query_taxa_row["Order"],
+            `Family` = query_taxa_row["Family"],
+            `Genus` = query_taxa_row["Genus"],
+            `Species` = query_taxa_row["Species"],
             `Trait category` = trait_col,
-            `Trait name` = unique_traits[[trait_col]][k],
-            `Probability` = match_fraction(matching_traits, pattern[k], ignore_NA = ignore_NA)
+            `Trait name` = traits_unique[[trait_col]][k],
+            `Probability` = match_fraction(trait_values, pattern[k], ignore_NA = ignore_NA)
           )
           idx <- idx + 1
         }
       }
       
       # Update progress
-      if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = (i / nrow(query_unique)) * 100)
+      if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = (i / nrow(query_taxa_unique)) * 100)
     }
     
     # Bind results and flatten any nested dataframes
@@ -506,48 +572,55 @@
   #'
   #' @param query A formatted query dataframe.
   #' @param table A cleaned reference table.
-  #' @param traits_to_predict A character vector of trait names to predict.
-  #' @param ignore_NA Logical; whether to ignore NAs when computing probabilities.
+  #' @param traits_to_predict A character vector of trait categories to predict.
+  #' @param ignore_NA Logical; whether to ignore NA values. Default is TRUE.
   #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
   #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
   #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
   #'   Species) to the R console. Default is TRUE.
-  #' @param ns A namespace function for Shiny progress bar updates.
-  #' @param session The current Shiny session object.
+  #' @param ns A namespace function for modular Shiny apps (optional; required for progress bar updates).
+  #' @param session The Shiny session object (optional; required for progress bar updates).
   #'
   #' @return A dataframe of predicted trait probabilities.
   #' @export
   predict_traits_taxonomy <- function(query, table, traits_to_predict, ignore_NA = TRUE,
                                       ignore_species = TRUE, match_all_ranks = FALSE,
-                                      print_matches = TRUE,
+                                      print_matches = FALSE, 
                                       ns = NULL, session = shiny::getDefaultReactiveDomain()) {
     unique_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
     
-    query_data <- precompute_unique_queries(query, unique_cols)
+    query_taxa_unique <- get_query_taxa_unique(query, unique_cols)
+    query_map <- get_query_taxa_map(query, unique_cols)
+    query_taxa_regex_list <- get_query_taxa_regex(query_taxa_unique)
     
-    patterns <- precompute_patterns(query_data$query_unique, traits_to_predict, table)
+    traits_unique <- get_traits_unique(traits_to_predict, table)
+    traits_regex <- get_traits_regex(traits_unique)
     
     matching_organisms <- compute_matching_organisms(
-      query_unique    = query_data$query_unique,
-      table           = table,
-      query_patterns  = patterns$query_patterns,
-      ignore_species  = ignore_species,
-      match_all_ranks = match_all_ranks,
-      print_matches   = print_matches
+      table                = table,
+      query_taxa_regex_list = query_taxa_regex_list,
+      ignore_species       = ignore_species,
+      match_all_ranks      = match_all_ranks,
+      print_matches        = print_matches
+    )
+    
+    matching_traits <- compute_matching_traits(
+      matching_organisms = matching_organisms,
+      taxonomy_cols      = colnames(query_taxa_unique)
     )
     
     results_unique <- compute_probabilities(
-      query_unique       = query_data$query_unique,
+      query_taxa_unique       = query_taxa_unique,
       traits_to_predict  = traits_to_predict,
-      unique_traits      = patterns$unique_traits,
-      trait_patterns     = patterns$trait_patterns,
-      matching_organisms = matching_organisms,
+      traits_unique      = traits_unique,
+      traits_regex     = traits_regex,
+      matching_traits = matching_traits,
       ignore_NA          = ignore_NA,
       ns                 = ns,
       session            = session
     )
     
-    restore_duplicates(results_unique, query_data$query_map)
+    restore_duplicates(results_unique, query_map)
   }
   
   #' Compute Predictions from Taxonomy
@@ -555,16 +628,18 @@
   #' This is the main function for predicting traits in the module
   #'
   #' @param data Database loaded with organism metadata
-  #' @param query_taxa A list of taxonomic inputs
-  #' @param query_string A query string used to filter the database
-  #' @param traits_to_predict Character vector of trait names
-  #' @param ignore_NA Logical, whether to ignore NA values
-  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
-  #' @param ignore_species Logical, whether to ignore species rank in taxa
-  #' @param system_taxonomy Character, taxonomy system to use (e.g., "LPSN")
+  #' @param query_taxa A dataframe of taxonomic rank columns (Phylum, Class,
+  #'   Order, Family, Genus, Species) with plain text values representing the
+  #'   taxa to query. May contain \code{NA} for unspecified ranks.
+  #' @param query_string A string representing the query used to filter the organisms.
+  #' @param traits_to_predict A character vector of trait categories to predict.
+  #' @param ignore_NA Logical; whether to ignore NA values. Default is TRUE.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
+  #' @param system_taxonomy A character value of the taxonomy system to use. Default is 'LPSN'.
   #' @param print_matches Logical; if TRUE, prints matching organisms (Phylum through
   #'   Species) to the R console. Default is TRUE.
-  #' @param ns The namespace function for the Shiny module.
+  #' @param ns A namespace function for modular Shiny apps (optional; required for progress bar updates).
   #'
   #' @return A named list with trait probabilities.
   #' @export
@@ -574,15 +649,14 @@
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Getting data", value = 0)  
     
-    # Get reference table
-    table <- get_reference_table(data, system_taxonomy, traits_to_predict, query_string, ignore_NA)
+    # Get reference table (full taxonomy universe; NA semantics handled downstream)
+    table <- get_reference_table(data, system_taxonomy, traits_to_predict, query_string)
     
     # Get query taxa
     query_taxa <- format_query_taxa(query_taxa)
     
     # Update progress
     if (!is.null(ns)) display_modal(ns = ns, message = "Prediction in progress", value = 0)  
-    cat(file = stderr(), paste0("Started prediction at ", Sys.time(), "\n"))  
     
     # Get trait probabilities
     probabilities <- predict_traits_taxonomy(query_taxa, table, traits_to_predict, ignore_NA = ignore_NA, ignore_species = ignore_species, match_all_ranks = match_all_ranks, ns = ns)
@@ -592,7 +666,7 @@
     
     return(list(probabilities = probabilities))
   }
-  
+
 # === Processing taxonomy ===
   #' Check if String has Taxonomy in QIIME2 or MetaPhlAn Format
   #' 
@@ -894,19 +968,16 @@
     }
   }
   
-  #' Get Query Taxa from Uploaded File
+#' Process Uploaded Taxonomy File
   #'
-  #' This helper function reads and processes a taxonomy file uploaded by the user.
-  #' It first validates and reads the file based on its extension, and then processes it according
-  #' to the detected format (DAADA, QIIME2, MetaPhlAn, IMG)
+  #' This function processes an uploaded taxonomy file, detecting whether it follows
+  #' the DADA2, QIIME2, or IMG genome format, and reformats the data accordingly.
   #'
-  #' @param upload_path Character. Path to the uploaded file.
-  #' @param session Shiny session object. Used for triggering validation modals (default: current session).
+  #' @param query Dataframe. The uploaded taxonomy data.
   #'
   #' @return A processed dataframe with standard taxonomic ranks or NULL if format is unrecognized.
   #' @export
-  get_query_taxa_from_upload <- function(upload_path, session = shiny::getDefaultReactiveDomain()) {
-    query <- validate_and_read_file(file_path = upload_path)
+  process_uploaded_taxonomy  <- function(query) {
     if (!is.data.frame(query)) return(NULL)
     if (is_dada2_format(query)) {
       return(process_dada2_format(query))
@@ -921,6 +992,24 @@
     }
   }
   
+  #' Get Query Taxa from Uploaded File
+  #'
+  #' This helper function reads and processes a taxonomy file uploaded by the user.
+  #' It first validates and reads the file based on its extension, and then processes it according
+  #' to the detected format (DAADA, QIIME2, MetaPhlAn, IMG)
+  #'
+  #' @param upload_path Character. Path to the uploaded file.
+  #' @param session Shiny session object. Used for triggering validation modals (default: current session).
+  #'
+  #' @return A processed dataframe with standard taxonomic ranks or NULL if format is unrecognized.
+  #' @export
+  get_query_taxa_from_upload <- function(upload_path, session = shiny::getDefaultReactiveDomain()) {
+    query <- validate_and_read_file(file_path = upload_path)
+    query <- process_uploaded_taxonomy(query)
+    
+    return(query)
+  }
+  
 # === Get inputs ===
   #' Get Query Taxa
   #'
@@ -932,7 +1021,7 @@
   #' @param taxonomy_upload_path File path to uploaded taxonomy file.
   #' @param system_taxonomy A character value of the taxonomy system to use.  Default is 'LPSN'. 
   #'
-  #' @return A processed `query_taxa` dataframe.
+  #' @return A processed \code{query_taxa} dataframe.
   get_query_taxa <- function(taxonomy_from_database,
                              taxonomy_from_upload,
                              selected_organisms = NULL,
@@ -958,10 +1047,10 @@
   #'
   #' @param traits_from_standard Logical. Is this a standard trait?
   #' @param traits_from_other Logical. Is this a custom trait?
-  #' @param traits_to_predict Character vector of traits (if standard).
-  #' @param query_string Raw query string (if custom trait).
+  #' @param traits_to_predict A character vector of trait categories to predict.
+  #' @param query_string A string representing the query used to filter the organisms.
   #'
-  #' @return A named list with `traits_to_predict` and `query_string`.
+  #' @return A named list with \code{traits_to_predict} and \code{query_string}.
   get_traits_input <- function(traits_from_standard,
                                traits_from_other,
                                traits_to_predict = NULL,
@@ -987,13 +1076,13 @@
   #' @param traits_from_other Logical. Whether trait is defined by a custom query.
   #' @param selected_organisms Character vector of selected taxa (if from database).
   #' @param taxonomy_upload_path File path to uploaded taxonomy file.
-  #' @param traits_to_predict Character vector of traits to predict.
-  #' @param query_string Raw query string for custom trait.
-  #' @param ignore_NA Logical. Show poorly predicted traits?
-  #' @param ignore_NA Logical. Ignore NA in response variable?
-  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE
-  #' @param ignore_species Logical. Collapse species to genus?
-  #' @param system_taxonomy Logical. Use system taxonomy hierarchy?
+  #' @param traits_to_predict A character vector of trait categories to predict.
+  #' @param query_string A string representing the query used to filter the organisms.
+  #' @param poor_traits Logical; whether to hide poorly predicted traits.
+  #' @param ignore_NA Logical; whether to ignore NA values. Default is TRUE.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match. Default is FALSE.
+  #' @param ignore_species Logical; whether to ignore the rank of species in taxa.
+  #' @param system_taxonomy A character value of the taxonomy system to use. Default is 'LPSN'.
   #'
   #' @return A named list of inputs for downstream processing.
   get_taxonomy_inputs <- function(
@@ -1356,10 +1445,10 @@
   #'   Order = c("Abditibacteriales", "Lactobacillales", "Erysipelotrichales")
   #' )
   #' 
-  #' get_taxon_choices(taxon_df)
+  #' get_taxa_choices(taxon_df)
   #'
   #' @export
-  get_taxon_choices <- function(data) {
+  get_taxa_choices <- function(data) {
     # Get column names as taxonomic ranks
     ranks <- c("Phylum", "Class", "Order", "Family", "Genus")
     
@@ -1380,3 +1469,98 @@
     
     return(choices)
   }
+  
+# === Functions for display of matching organisms ===
+  #' Get Matching Organisms for a Single Query Taxon
+  #'
+  #' This function computes the reference-table organisms that match a single
+  #' query taxon row, returning them as a tidy dataframe suitable for display
+  #' in the Shiny UI.  It re-uses the same matching logic as the main prediction
+  #' pipeline but only runs for the one row the user has selected.  The
+  #' reference table is built with \code{\link{get_reference_table}} so the
+  #' columns (Phylum through Species plus \code{traits_to_predict}) are identical
+  #' to those produced by \code{\link{compute_matching_organisms}}.
+  #'
+  #' @param query_taxa_row A single-row dataframe with columns Phylum, Class,
+  #'   Order, Family, Genus, Species (as stored in \code{get_results()$query_taxa}).
+  #' @param data The full database loaded by \code{load_database()}.
+  #' @param traits_to_predict A character vector of trait categories, as saved
+  #'   in the job result.
+  #' @param query_string Optional custom trait query string (or \code{NULL}).
+  #'   As saved in the job result.
+  #' @param ignore_species Logical; whether to ignore species rank when matching.
+  #'   Should match the value used for the current job. Default \code{TRUE}.
+  #' @param match_all_ranks Logical; if TRUE, all ranks must match.
+  #'   Should match the value used for the current job. Default \code{FALSE}.
+  #' @param system_taxonomy A character value of the taxonomy system to use.
+  #'   Should match the value used for the current job. Default \code{"LPSN"}.
+  #'
+  #' @return A dataframe with the same columns as \code{compute_matching_organisms}:
+  #'   Phylum, Class, Order, Family, Genus, Species, plus the trait columns from
+  #'   \code{traits_to_predict}.  Returns an empty dataframe (zero rows) if no
+  #'   organisms matched.
+  #' @export
+  get_matching_organisms_for_query <- function(query_taxa_row,
+                                               data,
+                                               traits_to_predict,
+                                               query_string    = NULL,
+                                               ignore_species  = TRUE,
+                                               match_all_ranks = FALSE,
+                                               system_taxonomy = "LPSN") {
+    # Format the row (clean NAs, placeholders, etc.)
+    query_taxa_row <- format_query_taxa(query_taxa_row)
+
+    # Build the reference table via the same path as the main pipeline,
+    # so columns are Phylum:Species + traits_to_predict only.  The table is the
+    # full taxonomy universe; NA filtering is not applied here so that taxa
+    # with no annotated traits still match.
+    table <- get_reference_table(
+      data              = data,
+      system_taxonomy   = system_taxonomy,
+      traits_to_predict = traits_to_predict,
+      query_string      = query_string
+    )
+
+    # Convert to regex and run matching
+    query_taxa_regex_list <- get_query_taxa_regex(query_taxa_row)
+
+    filter_table_by_taxon(
+      table            = table,
+      query_taxa_regex = query_taxa_regex_list[[1]],
+      ignore_species   = ignore_species,
+      match_all_ranks  = match_all_ranks,
+      print_matches    = FALSE
+    )
+  }
+  
+  #' Format Query Taxa Rows as Picker Choices
+  #'
+  #' Converts a \code{query_taxa} dataframe (as saved in a job result) into a
+  #' named character vector suitable for a \code{pickerInput}.  Each element is
+  #' labelled \code{"Query N: Rank1 / Rank2 / ..."} using only the non-NA rank
+  #' values for that row, and the value is the row index \code{N} so the server
+  #' can look up the correct row without any label-parsing.
+  #'
+  #' @param query_taxa A dataframe with columns Phylum, Class, Order, Family,
+  #'   Genus, Species, one row per query organism.
+  #'
+  #' @return A named character vector where names are the display labels and
+  #'   values are character row indices (\code{"1"}, \code{"2"}, ...).
+  #' @export
+  format_query_taxa_choices <- function(query_taxa) {
+    rank_cols <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+    
+    labels <- vapply(seq_len(nrow(query_taxa)), function(i) {
+      row  <- as.list(query_taxa[i, ])
+      vals <- vapply(rank_cols, function(r) {
+        v <- row[[r]]
+        if (!is.null(v) && !is.na(v) && v != "" && v != "NA") v else NA_character_
+      }, character(1))
+      vals <- vals[!is.na(vals)]
+      paste0("Query ", i, ": ", paste(vals, collapse = " / "))
+    }, character(1))
+    
+    # values are row indices as strings
+    stats::setNames(as.character(seq_len(nrow(query_taxa))), labels)
+  }
+  
