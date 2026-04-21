@@ -130,14 +130,16 @@ helpServer <- function(input, output, session, x, selected_tab) {
                tags$h5("Download results"),
                p("Click here to download a .csv of the results (probabilities of predicted traits)."),
                
-               tags$h5("Treemap|Heatmap"),
+               tags$h5("Treemap|Heatmap|Database matches"),
                p("Click these tabs to explore results in interactive plots.  Only traits with values above the probability threshold (Advanced settings) are shown."),
                # tags$i("Summary"),
                # p("This plot shows the percentage of organisms positive for each trait."),
                tags$i("Treemap"),
                p("This plot shows the relative abundance of each trait (percentage of organisms positive for a given trait relative to all traits)."),
                tags$i("Heatmap"),
-               p("This plot shows the probability of each trait for each organism.")
+               p("This plot shows the probability of each trait for each organism."),
+               tags$i("Database matches"),
+               p("This tab shows organisms in the database that match each query organism.")
              ),
              
              h4("Interactive example"),
