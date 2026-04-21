@@ -48,14 +48,14 @@
     
     # Compute result
     result <- compute_taxonomy_predictions(
-      data = load_database(),
+      data             = load_database(),
       query_taxa = query_taxa,
-      query_string = input$query_string %||% NULL,
-      traits_to_predict = input$traits_to_predict,
-      ignore_NA = input$ignore_NA %||% TRUE,
-      match_all_ranks = input$match_all_ranks %||% FALSE,
-      ignore_species = input$ignore_species %||% TRUE,
-      system_taxonomy = input$system_taxonomy %||% "LPSN"
+      query_string     = input$query_string %||% NULL,
+      traits_to_predict     = input$traits_to_predict,
+      ignore_NA        = input$ignore_NA %||% TRUE,
+      match_all_ranks  = input$match_all_ranks %||% FALSE,
+      ignore_species   = input$ignore_species %||% TRUE,
+      system_taxonomy  = input$system_taxonomy %||% "LPSN"
     )
     
     # Print result
@@ -213,7 +213,7 @@
   #* List parameters for predicting traits with networks
   #* @param selected_network:object The selected reference reaction
   #* @get /parameters/networks
-  parameters_networks <- function(selected_network) {
+  parameters_networks <- function(selected_network = NULL) {
     # Get parameters
     if (is.null(selected_network)) {
       selected_network <- "Fermentation of glucose"

@@ -271,9 +271,14 @@
       "evals": [
 
       ],
-      "jsHooks": [
-
-      ],
+      "jsHooks": {
+        "render": [
+          {
+            "code": "\n      function(el) {\n        function isBlack(s) {\n          if (!s) return false;\n          return s.replace(/\\s/g,'') === 'rgb(0,0,0)';\n        }\n        var obs = new MutationObserver(function() {\n          el.querySelectorAll('svg path.surface').forEach(function(p) {\n            if (isBlack(p.style.fill)) {\n              p.style.stroke = 'none';\n              p.style.fill   = 'none';\n            }\n          });\n        });\n        obs.observe(el, {subtree: true, attributes: true,\n                         attributeFilter: ['style']});\n      }\n    ",
+            "data": null
+          }
+        ]
+      },
       "deps": [
         {
           "name": "setprototypeof",

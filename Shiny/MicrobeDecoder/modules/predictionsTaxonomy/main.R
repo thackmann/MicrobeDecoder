@@ -101,18 +101,28 @@
                 
                 # Plot options
                 shiny::conditionalPanel(
-                  condition = "output.flag_multiple_traits",
+                  condition = "output.flag_multiple_traits && 
+               (input.results_tabs === 'Heatmap' || input.results_tabs === 'Treemap')",
                   ns = ns,
                   div(
                     class = "plot-options-container",
                     create_picker_input(inputId = ns("trait_to_display"), label = "Trait")
                   )
                 ),
+                shiny::conditionalPanel(
+                  condition = "input.results_tabs === 'Database matches'",
+                  ns = ns,
+                  div(
+                    class = "plot-options-container",
+                    create_picker_input(inputId = ns("organisms_to_display"), label = "Query taxon")
+                  )
+                ),
                 
                 # Panels
                 create_plot_panel(ns, "heatmap", "Heatmap"),
-                create_plot_panel(ns, "treemap", "Treemap", centered = TRUE)
+                create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
                 # create_plot_panel(ns, "summary", "Summary")
+                create_table_panel(ns, "matching_organisms", "Database matches")
               )
             )
             )
@@ -190,15 +200,15 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   compute_job <- shiny::eventReactive({make_predictions_trigger()},
   {
     results <- compute_taxonomy_predictions(
-      data = load_database(),
-      query_taxa = get_inputs()$query_taxa,
-      query_string = get_inputs()$query_string,
+      data              = load_database(),
+      query_taxa  = get_inputs()$query_taxa,
+      query_string      = get_inputs()$query_string,
       traits_to_predict = get_inputs()$traits_to_predict,
-      ignore_NA = get_inputs()$ignore_NA,
-      match_all_ranks = get_inputs()$match_all_ranks,
-      ignore_species = get_inputs()$ignore_species,
-      system_taxonomy = get_inputs()$system_taxonomy,
-      ns = ns
+      ignore_NA         = get_inputs()$ignore_NA,
+      match_all_ranks   = get_inputs()$match_all_ranks,
+      ignore_species    = get_inputs()$ignore_species,
+      system_taxonomy   = get_inputs()$system_taxonomy,
+      ns                = ns
     )
     
     return(results)
@@ -211,12 +221,20 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
   {
     job_id <- create_job()
     job_dir <- get_job_dir(tab = "predictionsTaxonomy")
-
+    
     results <-
       list(
+        query_taxa = get_inputs()$query_taxa,
+        query_string = get_inputs()$query_string,
+        traits_to_predict = get_inputs()$traits_to_predict,
+        ignore_NA = get_inputs()$ignore_NA,
+        match_all_ranks = get_inputs()$match_all_ranks,
+        ignore_species = get_inputs()$ignore_species,
+        system_taxonomy = get_inputs()$system_taxonomy,
         predict_traits = compute_job()$probabilities
       )
 
+    
     # Update progress
     display_modal(ns = ns, message = "Saving results", value = 100)
     
@@ -283,7 +301,7 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
         # Get choices
         col_name <- paste0(system_taxonomy, " Taxonomy")
         choices <- expand_and_merge_taxonomy(data = database, col_name = col_name, drop_species = FALSE)
-        choices <- get_taxon_choices(choices)
+        choices <- get_taxa_choices(choices)
         
         selected <- c("Escherichia (Genus)")
         
@@ -333,6 +351,20 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
       session$userData$loaded_job_on_init <- FALSE
     }
   })
+  
+  # Update choices for organisms to display
+  shiny::observeEvent({url_change_trigger()}, {
+    query_taxa <- get_results()$query_taxa
+    req(!is.null(query_taxa) && nrow(query_taxa) > 0)
+    
+    # Build named choices: label = "Query N: Rank1 / Rank2 / ...", value = row index
+    choices <- format_query_taxa_choices(query_taxa)
+    
+    update_picker_input(inputId  = "organisms_to_display",
+                        choices  = choices,
+                        selected = choices[1])
+  }, label = "update_organisms_to_display")
+  
   
   # --- Generate outputs ---
   # Output modal with example data
@@ -474,6 +506,48 @@ predictionsTaxonomyServer <- function(input, output, session, x, selected_tab) {
                           horizontal_border = borders$horizontal_border,
                           vertical_border = borders$vertical_border
                           )
+    })
+  })
+  
+  # Output database matches
+  shiny::observeEvent({list(url_change_trigger(), input$organisms_to_display)},
+  {
+         
+    # Get inputs
+    data <- load_database()
+    organisms_to_display <- input$organisms_to_display
+    req(!is.null(organisms_to_display) && nchar(organisms_to_display) > 0)
+    results <- get_results()
+    req(!is.null(results))
+    query_taxa <- get_results()$query_taxa
+    
+    # Output table
+    output$matching_organisms_table <- DT::renderDataTable({
+      # req(!is.null(organisms_to_display) && nchar(organisms_to_display) > 0)
+      # req(!is.null(results))
+      
+      # Look up the query_taxa row by index (picker value is the row number)
+      req(!is.null(query_taxa))
+      idx <- as.integer(organisms_to_display)
+      req(!is.na(idx) && idx >= 1L && idx <= nrow(query_taxa))
+      query_taxa_row <- query_taxa[idx, , drop = FALSE]
+      
+      df <- get_matching_organisms_for_query(
+        query_taxa_row    = query_taxa_row,
+        data              = data,
+        traits_to_predict = results$traits_to_predict,
+        query_string      = results$query_string,
+        ignore_species    = isTRUE(results$ignore_species),
+        match_all_ranks   = isTRUE(results$match_all_ranks),
+        system_taxonomy   = results$system_taxonomy %||% "LPSN"
+      )
+      
+      DT::datatable(
+        df,
+        rownames = FALSE,
+        escape   = FALSE,
+        options  = list(scrollX = TRUE)
+      )
     })
   })
 }

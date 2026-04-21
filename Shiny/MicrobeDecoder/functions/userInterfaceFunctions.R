@@ -253,8 +253,8 @@ create_query_builder <- function(ns,
 #' @return The UI element wrapped with a loading spinner.
 #'
 #' @examples
-#' with_default_spinner(plotly::plotlyOutput("plot"))
-#' with_default_spinner(DT::dataTableOutput("table"))
+#' add_spinner(plotly::plotlyOutput("plot"))
+#' add_spinner(DT::dataTableOutput("table"))
 add_spinner <- function(ui_element, color = "#3C8DBC", proxy.height = 400, use_fill_carrier = TRUE, ...) {
   spinner <- shinycssloaders::withSpinner(ui_element, color = color, proxy.height = proxy.height, ...)
   
@@ -285,6 +285,31 @@ create_plot_div <- function(ns, plot_type, width = "100%", height = "40vh") {
     class = paste0(plot_type, "-container-style"),
     plotly::plotlyOutput(ns(paste0(plot_type, "_plot")), width = width, height = height)
   )
+}
+
+#' Create a Plot Output with Optional Spinner
+#'
+#' This function wraps `plotly::plotlyOutput()` and optionally applies a spinner using `add_spinner()`.
+#'
+#' @param ns The namespace function for the module.
+#' @param inputId The input ID for the plot.
+#' @param width The width of the plot (default: "100%").
+#' @param height The height of the plot (default: "100%").
+#' @param use_spinner Logical, whether to wrap the output in a loading spinner (default: TRUE).
+#' @return A `plotlyOutput`, optionally wrapped with a loading spinner.
+#'
+#' @examples
+#' create_plot_output(ns, ns("plot"))
+#' create_plot_output(ns, ns("plot"), use_spinner = FALSE)
+#' create_plot_output(ns, ns("plot"), width = "80%", height = "400px")
+create_plot_output <- function(ns, inputId, width = "100%", height = "100%", use_spinner = TRUE) {
+  plot_output <- plotly::plotlyOutput(inputId, width = width, height = height)
+  
+  if (use_spinner) {
+    plot_output <- add_spinner(plot_output, use_fill_carrier = TRUE)
+  }
+  
+  plot_output
 }
 
 #' Create a Plot Panel
@@ -322,12 +347,9 @@ create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "10
   }
   
   # Create the plot output
-  plot_output <- plotly::plotlyOutput(ns(paste0(plot_type, "_plot")), width = width, height = height)
-  
-  # Optionally wrap with spinner
-  if (use_spinner) {
-    plot_output <- add_spinner(plot_output)
-  }
+  plot_output <- create_plot_output(ns, ns(paste0(plot_type, "_plot")),
+                                    width = width, height = height,
+                                    use_spinner = use_spinner)
   
   # Wrap plot in a resizable div container
   plot_container <- div(
@@ -346,6 +368,82 @@ create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "10
   )
 }
 
+#' Create a DataTable with Optional Spinner
+#'
+#' This function wraps `DT::dataTableOutput()` and optionally applies a spinner using `add_spinner()`.
+#'
+#' @param ns The namespace function for the module.
+#' @param inputId The input ID for the data table.
+#' @param width The width of the table (default: "100%").
+#' @param height The height of the table (default: "auto").
+#' @param use_spinner Logical, whether to wrap the output in a loading spinner (default: TRUE).
+#' @return A `dataTableOutput`, optionally wrapped with a loading spinner.
+#'
+#' @examples
+#' create_data_table(ns, ns("table"))
+#' create_data_table(ns, ns("table"), use_spinner = FALSE)
+#' create_data_table(ns, ns("table"), width = "80%", height = "400px")
+create_data_table <- function(ns, inputId, width = "100%", height = "auto", use_spinner = TRUE) {
+  table_output <- DT::dataTableOutput(inputId, width = width, height = height)
+  
+  if (use_spinner) {
+    table_output <- add_spinner(table_output, use_fill_carrier = FALSE)
+  }
+  
+  table_output
+}
+
+#' Create a Table Panel
+#' 
+#' This function generates a standardized nav panel with a data table inside a styled card.
+#' Its structure mirrors create_plot_panel().
+#' 
+#' @param ns The namespace function for the module.
+#' @param table_type A character string specifying the type of table (e.g., "matching_organisms").
+#'   Used as the prefix for the container ID and the table output ID (`{table_type}_table`).
+#' @param title The title of the navigation panel.
+#' @param width The width of the table (default: "100%").
+#' @param height The height of the table (default: "auto").
+#' @param max_height The maximum height of the card (default: "50vh").
+#' @param use_spinner Logical, whether to wrap the table in a loading spinner (default: TRUE).
+#' @param full_screen Logical, whether to allow the card to be expanded full-screen (default: TRUE).
+#' 
+#' @return A `nav_panel` containing a `bslib::card` with a `dataTableOutput`.
+#' 
+#' @examples
+#' create_table_panel(ns, "matching_organisms", "Database matches")
+#' create_table_panel(ns, "matching_organisms", "Database matches", use_spinner = FALSE)
+create_table_panel <- function(ns, table_type, title, width = "100%", height = "auto",
+                               max_height = "50vh",
+                               use_spinner = TRUE, full_screen = TRUE) {
+  # Define the container ID
+  container_id <- ns(paste0(table_type, "-container"))
+  
+  # Define the base style
+  base_style <- paste0("max-height: ", max_height,
+                       "; overflow-y: auto; border: none; box-shadow: none;")
+  
+  # Create the table output
+  table_output <- create_data_table(ns, ns(paste0(table_type, "_table")),
+                                    width = width, height = height,
+                                    use_spinner = use_spinner)
+  
+  # Wrap table in a container div
+  table_container <- div(
+    id = container_id,
+    class = paste0(table_type, "-container-style"),
+    table_output
+  )
+  
+  bslib::nav_panel(
+    title = title,
+    bslib::card(
+      full_screen = full_screen,
+      style = base_style,
+      table_container
+    )
+  )
+}
 
 #' Create a Module Title
 #' 
@@ -653,20 +751,6 @@ create_picker_input <- function(inputId, label = NULL, choices = NULL,
     width = width,
     options = options
   )
-}
-
-#' Create a DataTable with Spinner
-#'
-#' This function wraps `DT::dataTableOutput()` and applies a spinner using `add_spinner()`.
-#'
-#' @param inputId The input ID for the data table.
-#' @return A `dataTableOutput` wrapped with a loading spinner.
-#'
-#' @examples
-#' create_data_table("table")
-create_data_table <- function(ns, inputId) {
-  DT::dataTableOutput(inputId) %>% 
-    add_spinner(use_fill_carrier = FALSE)
 }
 
 #' Create a Switch Input with Configurable Label Position
