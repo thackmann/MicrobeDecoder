@@ -62,6 +62,7 @@
   url_FAPROTAX <- shiny::a("FAPROTAX", href="https://pages.uoregon.edu/slouca/LoucaLab/archive/FAPROTAX/lib/php/index.php", target="_blank")
   url_FAPROTAX_license <- shiny::a("this license", href="https://pages.uoregon.edu/slouca/LoucaLab/archive/FAPROTAX/lib/php/index.php?section=License", target="_blank")
   url_FermentationExplorer <- shiny::a("Fermentation Explorer", href="https://www.science.org/doi/10.1126/sciadv.adg8687", target="_blank")
+  url_GitHub <- shiny::a("GitHub", href="https://github.com/thackmann/microbedecoder", target="_blank")
   url_fairuse <- shiny::a("fair use", href="https://www.copyright.gov/fair-use/", target="_blank")
   url_fbar <- shiny::a("fbar", href="https://cran.r-project.org/web/packages/fbar/index.html", target="_blank")
   url_GOLD <- shiny::a("GOLD", href="https://gold.jgi.doe.gov/", target="_blank")

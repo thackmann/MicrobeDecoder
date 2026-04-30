@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Self-elevate if not root. When invoked from deploy.sh / restart.sh we are
+# already root, so this is a no-op (no extra pam_aad/IMDS call). When invoked
+# directly, this triggers a single sudo prompt and re-execs.
+if [[ "${EUID}" -ne 0 ]]; then
+  exec sudo -E env "DEPLOY_USER=${SUDO_USER:-$USER}" bash "$0" "$@"
+fi
+
 # Stop launcher
-sudo systemctl stop microbe-launcher || true
+systemctl stop microbe-launcher || true
 
 # Kill existing containers
-sudo sh -c "docker ps --format '{{.Names}}' | grep '^md-' | xargs -r docker rm -f" || true
+docker ps --format '{{.Names}}' | grep '^md-' | xargs -r docker rm -f || true
 
 # Restart nginx
-sudo systemctl restart nginx
+systemctl restart nginx
 
 # Start launcher
-sudo systemctl daemon-reload
-sudo systemctl start microbe-launcher
-sudo systemctl status microbe-launcher --no-pager -l || true
+systemctl daemon-reload
+systemctl start microbe-launcher
+systemctl status microbe-launcher --no-pager -l || true

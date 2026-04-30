@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     pandoc \
     libglpk-dev \
     libnss-wrapper \
+	libuv1-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -59,11 +60,32 @@ RUN R -e 'options(warn=2); install.packages(c( \
 ))'
 
 # Install Bioconductor packages
-RUN R -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager'); BiocManager::install('ggtree', ask=FALSE, update=FALSE)"
+RUN R -e "options(warn=2); if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager'); BiocManager::install('ggtree', ask=FALSE, update=FALSE)"
 
 # Install GitHub packages
 RUN R -e 'remotes::install_github("maxconway/fbar")'
 RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
+
+# Verify packages load
+RUN R -e " \
+  pkgs <- c( \
+    'ape','BiocManager','bslib','caret','colorspace','digest','dplyr', \
+    'DT','fs','htmltools','igraph','import','jqbr','jsonlite', \
+    'magrittr','plotly','purrr','randomForest','reactlog','readr', \
+    'readxl','remotes','rlang','rsconnect','shiny','shinycssloaders', \
+    'shinyjs','shinyWidgets','stringr','tidyr','tidyselect','uuid', \
+    'fbar','FileLocator', \
+    'ggtree' \
+  ); \
+  results <- sapply(pkgs, function(p) { \
+    ok <- requireNamespace(p, quietly = TRUE); \
+    cat(sprintf('%-25s %s\n', p, if (ok) 'OK' else 'FAIL')); \
+    ok \
+  }); \
+  if (!all(results)) { \
+    stop('Missing packages: ', paste(names(results)[!results], collapse=', ')) \
+  } \
+"
 
 # Modify configuration file for Shiny Server
 ## Set infinite idle timeout

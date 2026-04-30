@@ -21,6 +21,11 @@ aboutUI <- function(id) {
         ),
         id = ns("subtabs"),
         bslib::nav_panel(
+          title = "Source Code",
+          value = "Source Code",
+          id = "Source Code"
+        ),
+        bslib::nav_panel(
           title = "License",
           value = "License",
           id = "License"
@@ -82,6 +87,15 @@ aboutServer <- function(input, output, session) {
                url_fairuse, "."
              )),
              p("This work was supported by an Agriculture and Food Research Initiative Competitive Grant [grant no. 2018-67015-27495] and Hatch Project [accession no. 1019985] from the United States Department of Agriculture National Institute of Food and Agriculture."),
+           ),
+           
+           "Source Code" = div(
+             h3("Source Code"),
+             p(shiny::tagList(
+               "Source code for Microbe Decoder is available on ",
+               url_GitHub,
+               ".  This repository is also used to track development and report issues."
+             ))
            ),
            
            "License" = div(
