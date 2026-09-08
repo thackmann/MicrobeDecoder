@@ -8,7 +8,7 @@ This directory contains scripts and files to
 
 To deploy the app on the server, see `MicrobeDecoder/Deploy/README.md`.
 
-## 1. Run the Shiny App (RStudio)
+## Run the Shiny App (RStudio)
 ### Requirements
 -   RStudio
 
@@ -19,27 +19,20 @@ In RStudio, open
 
 Click **Run App** (or run `shiny::runApp()`).
 
-## 2. Update App Data
+## Update App Data
 ### Requirements
 -   RStudio
 
-### Step 1: Move Required Database Files
-
-Move `MicrobeDecoder/Database/database.zip` to `MicrobeDecoder/Shiny/MicrobeDecoder/data/database/database.zip`.  
-
-Similarly, move `MicrobeDecoder/Database/gene_functions/gene_functions_database.zip` to `MicrobeDecoder/Shiny/MicrobeDecoder/data/gene_functions/gene_functions_database.zip`
-
-### Step 2: Run Preprocessing Script
+### Run Preprocessing Script
 
 In RStudio, open and run:
     MicrobeDecoder/Shiny/MicrobeDecoder/preprocessing/dataPreprocessing.R
 
-
-## 4. Build Docker Container
+## Build Docker Container
 ### Requirements
 -   Docker
 
-### Step 1: Build Image
+### Build Image
 Start Docker. Then in Powershell, run
 
 ```
@@ -58,17 +51,16 @@ then run
 docker build -f Docker/Dockerfile -t tjhackmann/microbedecoder:latest .
 ```
 
-### Step 2: Test Container
+### Test Container
 In Powershell or Ubuntu, run
 ``` bash
 docker run --rm -p 3838:3838 tjhackmann/microbedecoder:latest
 ```
 
 In browser (e.g., Chrome), open
-
     http://localhost:3838/
 
-### Step 3: Push Image to Docker Hub
+### Push Image to Docker Hub
 In Ubuntu, run
 ``` bash
 docker login

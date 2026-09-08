@@ -11,7 +11,7 @@
 # Date:  25 April 2025
 
 # === Set directory ===
-  network_directory <- FileLocator::getCurrentFileLocation()
+  network_directory <- this.path::this.dir()
 
 # === Load external R files ===
   setwd(network_directory)
@@ -59,7 +59,7 @@
       
     if (!is.null(md) && length(md) > 0 && !all(is.na(md))) {
       # Get metadata for each module
-      module_metadata <- purrr::set_names(md) %>%
+      module_metadata <- purrr::set_names(md) |>
         purrr::map(get_module_metadata)
       
       # Convert module definitions to tables
@@ -139,7 +139,7 @@
   # === Combine module enzymes and non-module enzymes ===  
     if(length(kegg_metadata_cleaned>0))
     {
-      enzyme_combined <- dplyr::bind_rows(module_enzymes, other_enzymes) %>%
+      enzyme_combined <- dplyr::bind_rows(module_enzymes, other_enzymes) |>
         dplyr::arrange(is.na(md), md, rn)
     }else{
       enzyme_combined <- module_enzymes

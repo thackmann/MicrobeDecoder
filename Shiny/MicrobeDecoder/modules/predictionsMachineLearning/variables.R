@@ -21,10 +21,12 @@ model_path_config <- list(
   `Sulfur compound respiration (type of metabolism)` = "data/random_forest_models/sulfur_compound_respiration.rds",
   `Sulfate respiration (type of metabolism)` = "data/random_forest_models/sulfate_respiration.rds",
   `Sulfur respiration (type of metabolism)` = "data/random_forest_models/sulfur_respiration.rds",
-  `Phototrophy (type of metabolism)` = "data/random_forest_models/phototrophy.rds",
   `Methanogenesis (type of metabolism)` = "data/random_forest_models/methanogenesis.rds",
   `Iron respiration (type of metabolism)` = "data/random_forest_models/iron_respiration.rds",
+  `Phototrophy (type of metabolism)` = "data/random_forest_models/phototrophy.rds",
   `Oxygenic photoautotrophy (type of metabolism)` = "data/random_forest_models/oxygenic_photoautotrophy.rds",
+  `Anoxygenic photoautotrophy (type of metabolism)` = "data/random_forest_models/anoxygenic_photoautotrophy.rds", 
+  `Anoxygenic photoautotrophy, S oxidizing (type of metabolism)` = "data/random_forest_models/anoxygenic_photoautotrophy_S_oxidizing.rds", 
   
   # Metabolites produced
   `Acetate (end product)` = "data/random_forest_models/acetate.rds",

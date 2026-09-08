@@ -16,7 +16,7 @@
 # === Define functions ===
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/Bergey"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -90,10 +90,10 @@
     data = remove_extra_species(data)
 
     # Remove organisms with no species name
-    data = data %>% dplyr::filter(!is.na(Species))
+    data = data |> dplyr::filter(!is.na(Species))
 
     # Remove duplicate values
-    data = data %>% dplyr::distinct(Genus, Species, Subspecies, .keep_all = TRUE)
+    data = data |> dplyr::distinct(Genus, Species, Subspecies, .keep_all = TRUE)
 
     # Convert to factor
     data <- data.frame(lapply(data, factor))

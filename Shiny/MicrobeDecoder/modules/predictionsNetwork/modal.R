@@ -23,16 +23,23 @@ modalUI <- function(id) {
       )
     ),
     
-    # Advanced inputs
-    shiny::checkboxInput(ns("show_advanced"), "Show advanced settings", value = FALSE),
-    shiny::conditionalPanel(
-      condition = "input.show_advanced",
-      ns = ns,
-      create_switch_input(ns("hide_cofactors"), "Hide cofactors", label_position = "above")
+    # Advanced
+    bslib::accordion(
+      id = ns("advanced_accordion"),
+      open = FALSE,
+      multiple = TRUE,
+      class = "advanced-accordion",
+      
+      bslib::accordion_panel(
+        title = "Advanced settings",
+        value = "settings",
+        
+        create_switch_input(ns("hide_cofactors"), "Hide cofactors", label_position = "above")
+      )
     ),
     
     # Main content area
-    create_plot_panel(ns, "network", "Network", use_spinner = TRUE, full_screen = FALSE),
+    create_plot_panel(ns, "network", "Network", full_screen = FALSE),
     
     div(
       style = "display: flex; gap: 0.5em; margin-top: 0em;",
@@ -48,7 +55,7 @@ modalServer <- function(input, output, session) {
   # --- Update user interface (UI) elements ---
   # Update choices and selected variable for modules
   shiny::observe({
-    main_network <- load_main_reference_network()
+    main_network <- load_data("main_reference_network")
     
     vars_to_label <- c("nt" = "network", "md" = "module", "rn" = "reaction", "ko" = "KO", "eq" = "equation")
     choices <- create_labeled_choices(main_network, vars_to_label)
@@ -63,12 +70,12 @@ modalServer <- function(input, output, session) {
   
   # --- Process results ---
   configure_network <- shiny::eventReactive(input$network_configuration, {
-    main_network <- load_main_reference_network()
+    main_network <- load_data("main_reference_network")
     
-    configured_network <- main_network %>% 
+    configured_network <- main_network |> 
       filter_network(input$network_configuration)
   }, 
-  label = "configure_network") %>% debounce(500)
+  label = "configure_network") |> debounce(500)
   
   # --- Generate outputs ---
   # Output plot for network

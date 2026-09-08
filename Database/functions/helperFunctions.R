@@ -5,101 +5,6 @@
 # Date: 14 February 2025
 
 # === Define functions ===
-  #' Pipe Operator
-  #'
-  #' This operator is imported from the magrittr package and is used to chain operations together.
-  #'
-  import::from(magrittr, "%>%")
-
-  #' Install Missing CRAN Packages
-  #'
-  #' This function checks for missing CRAN packages and installs them if they are not already installed.
-  #'
-  #' @param packages A character vector of CRAN package names to check and install if missing.
-  #' @return None. The function installs missing packages and provides a message if installation occurs.
-  #' @examples
-  #' cran_packages <- c("dplyr", "ggplot2")
-  #' install_missing_cran_packages(cran_packages)
-  install_missing_cran_packages <- function(packages) {
-    # Identify missing packages
-    missing_cran <- packages[!(packages %in% installed.packages()[, "Package"])]
-    
-    # Check if there are any missing packages
-    if (length(missing_cran) > 0) {
-      message("Installing missing CRAN packages: ", paste(missing_cran, collapse = ", "))
-      install.packages(missing_cran)
-    } else {
-      message("All packages are already installed.")
-    }
-  }
-  
-  #' Install Missing Bioconductor Packages
-  #'
-  #' This function checks for missing Bioconductor packages and installs them using BiocManager if they are not already installed.
-  #'
-  #' @param packages A character vector of Bioconductor package names to check and install if missing.
-  #' @return None. The function installs missing packages and provides a message if installation occurs.
-  #' @examples
-  #' bioc_packages <- c("Biostrings", "GenomicRanges")
-  #' install_missing_bioc_packages(bioc_packages)
-  install_missing_bioc_packages <- function(packages) {
-    # Ensure BiocManager is installed
-    if (!requireNamespace("BiocManager", quietly = TRUE)) {
-      install.packages("BiocManager")
-    }
-    
-    # Identify missing packages
-    missing_bioc <- packages[!(packages %in% installed.packages()[, "Package"])]
-    
-    # Check if there are any missing packages
-    if (length(missing_bioc) > 0) {
-      message("Installing missing Bioconductor packages: ", paste(missing_bioc, collapse = ", "))
-      BiocManager::install(missing_bioc)
-    } else {
-      message("All Bioconductor packages are already installed.")
-    }
-  }
-  
-  #' Install Missing GitHub Packages
-  #'
-  #' This function checks for missing GitHub packages and installs them if they are not already installed.
-  #'
-  #' @param packages A named character vector of GitHub repository names in the format "username/repository".
-  #'        If a package requires installation from a subdirectory, specify it as a named element where
-  #'        the name is the repo and the value is the subdirectory.
-  #' @return None. The function installs missing GitHub packages and provides a message if installation occurs.
-  #' @examples
-  #' github_packages <- c("r-lib/remotes", "thackmann/FileLocator" = "FileLocator")
-  #' install_missing_github_packages(github_packages)
-  install_missing_github_packages <- function(packages) {
-    # Ensure remotes package is installed
-    if (!requireNamespace("remotes", quietly = TRUE)) {
-      install.packages("remotes")
-    }
-    
-    # Extract package names from repo paths
-    repo_names <- ifelse(names(packages) != "", names(packages), sub(".*/", "", packages))
-    
-    # Identify missing packages
-    missing_github <- packages[!(repo_names %in% installed.packages()[, "Package"])]
-    
-    # Check if there are any missing packages
-    if (length(missing_github) > 0) {
-      message("Installing missing GitHub packages: ", paste(names(missing_github), collapse = ", "))
-      
-      for (repo in names(missing_github)) {
-        subdir <- missing_github[repo]
-        if (subdir == "") {
-          remotes::install_github(repo)
-        } else {
-          remotes::install_github(repo, subdir = subdir)
-        }
-      }
-    } else {
-      message("All GitHub packages are already installed.")
-    }
-  }
-
   #' Add columns to a target dataframe based on indices from vectors.
   #'
   #' This function adds columns from a source dataframe to a target dataframe
@@ -471,7 +376,7 @@
     )
     
     # Step 7: Assign rank based on matching criteria
-    match_dataframe <- match_dataframe %>%
+    match_dataframe <- match_dataframe |>
       dplyr::mutate(
         Rank = dplyr::case_when(
           Genus_Match & Species_Match & Subspecies_Match & Strain_Match ~ 1,
@@ -484,16 +389,16 @@
           Genus_Match & Species_Match                                   ~ 8,
           TRUE                                                          ~ NA_real_
         )
-      ) %>%
+      ) |>
       dplyr::filter(!is.na(Rank))
     
     # Step 8: Return best matches if specified
     if (nrow(match_dataframe) > 0) {
-      match_dataframe <- match_dataframe %>%
+      match_dataframe <- match_dataframe |>
         dplyr::arrange(Rank)
       
       if (best_matches) {
-        match_dataframe <- match_dataframe %>% dplyr::filter(Rank == min(Rank))
+        match_dataframe <- match_dataframe |> dplyr::filter(Rank == min(Rank))
       }
       return(match_dataframe)
     } else {
@@ -679,8 +584,8 @@
     source_df$ID <- as.character(source_df$ID)
     
     # Ensure that missing fields are filled for each ID and concatenate unique values
-    source_df <- source_df %>%
-      dplyr::group_by(ID) %>%
+    source_df <- source_df |>
+      dplyr::group_by(ID) |>
       dplyr::summarise(dplyr::across(dplyr::everything(), ~ paste(unique(stats::na.omit(.)), collapse = ";")), .groups = "drop")
     
     # Get names of columns to add
@@ -690,14 +595,14 @@
     
     # Remove existing columns in target_df if they match target_col_names
     if (!is.null(target_col_names)) {
-      target_df <- target_df %>%
+      target_df <- target_df |>
         dplyr::select(-dplyr::any_of(target_col_names), everything()) # Removes columns before re-adding
     }
     
     # Join the columns to the target data
     for (col_name in source_col_names) {
-      target_df <- target_df %>%
-        dplyr::left_join(source_df %>% dplyr::select(ID, dplyr::all_of(col_name)), by = c("BacDive_ID" = "ID"))
+      target_df <- target_df |>
+        dplyr::left_join(source_df |> dplyr::select(ID, dplyr::all_of(col_name)), by = c("BacDive_ID" = "ID"))
     }
     
     # Rename columns if new names are provided
@@ -739,8 +644,8 @@
     names_df$tax_id <- as.integer(names_df$tax_id)
 
     # Filter for scientific names
-    scientific_names <- names_df %>%
-      dplyr::filter(name_class == "scientific name") %>%
+    scientific_names <- names_df |>
+      dplyr::filter(name_class == "scientific name") |>
       dplyr::select(tax_id, name_txt)
 
     return(scientific_names)
@@ -888,53 +793,59 @@
   #'
   #' This function applies `get_lineage` over a vector of `tax_id`s, returning a data frame
   #' containing taxonomic names for `phylum`, `class`, `order`, `family`, `genus`, and `species` ranks.
-  #' It includes a progress indicator in the console for each processed tax_id.
+  #' It builds lookup tables from the nodes and names files once, then walks up the
+  #' taxonomy for each unique ID in turn.
   #'
-  #' @param tax_ids A vector of integers representing taxonomy IDs for the species.
+  #' @param tax_ids A vector of taxonomy IDs.
   #' @param nodes_df A data frame from `load_nodes_dmp` containing taxonomic hierarchy information.
   #' @param names_df A data frame from `load_names_dmp` containing scientific names.
   #' @return A data frame with columns `tax_id`, `phylum`, `class`, `order`, `family`, `genus`, and `species`.
   #' @importFrom svMisc progress
-  #' @examples
-  #' \dontrun{
-  #' tax_ids <- c(515635, 513050, 13)
-  #' lineage_df <- get_multiple_lineages(tax_ids, nodes_df, scientific_names)
-  #' print(lineage_df)
-  #' }
   get_multiple_lineages <- function(tax_ids, nodes_df, names_df) {
-    # Initialize an empty data frame with the necessary columns
-    n <- length(tax_ids)
-    lineage_df <- data.frame(
-      tax_id = tax_ids,
-      phylum = rep(NA_character_, n),
-      class = rep(NA_character_, n),
-      order = rep(NA_character_, n),
-      family = rep(NA_character_, n),
-      genus = rep(NA_character_, n),
-      species = rep(NA_character_, n),
-      stringsAsFactors = FALSE
-    )
-
-    # Loop through each tax_id and populate the data frame
-    for (i in seq_along(tax_ids)) {
-      # Retrieve the current tax_id
-      tax_id <- tax_ids[i]
-
-      # Get lineage information for the current tax_id
-      lineage <- get_lineage(tax_id, nodes_df, names_df)
-
-      # Extract the relevant taxonomic levels
-      ranks <- c("phylum", "class", "order", "family", "genus", "species")
-      for (rank in ranks) {
-        if (rank %in% lineage$rank) {
-          lineage_df[i, rank] <- lineage$name[lineage$rank == rank]
-        }
+    ranks <- c("phylum", "class", "order", "family", "genus", "species")
+    tax_ids <- as.integer(tax_ids)
+    
+    # Build lookup tables indexed by taxonomy ID
+    max_id <- max(c(nodes_df$tax_id, names_df$tax_id), na.rm = TRUE)
+    parent_of <- rep(NA_integer_, max_id)
+    rank_of <- rep(NA_character_, max_id)
+    name_of <- rep(NA_character_, max_id)
+    parent_of[nodes_df$tax_id] <- nodes_df$parent_tax_id
+    rank_of[nodes_df$tax_id] <- nodes_df$rank
+    name_of[names_df$tax_id] <- names_df$name_txt
+    
+    # Walk up the taxonomy once for each unique ID
+    unique_ids <- unique(tax_ids)
+    n <- length(unique_ids)
+    lineages <- matrix(NA_character_, nrow = n, ncol = length(ranks),
+                       dimnames = list(NULL, ranks))
+    
+    for (i in seq_len(n)) {
+      current_tax_id <- unique_ids[i]
+      
+      while (!is.na(current_tax_id) && current_tax_id >= 1 && current_tax_id <= max_id) {
+        rank <- rank_of[current_tax_id]
+        if (is.na(rank)) break
+        
+        # Record the name if this is a rank being tracked
+        if (rank %in% ranks) lineages[i, rank] <- name_of[current_tax_id]
+        
+        # Stop at phylum or at the root
+        parent_tax_id <- parent_of[current_tax_id]
+        if (rank == "phylum" || is.na(parent_tax_id) || parent_tax_id == current_tax_id) break
+        
+        current_tax_id <- parent_tax_id
       }
-
-      # Show progress
+      
       svMisc::progress(value = i, max = n)
     }
-
+    
+    # Expand back to the original IDs
+    lineages <- lineages[match(tax_ids, unique_ids), , drop = FALSE]
+    
+    lineage_df <- data.frame(tax_id = tax_ids, lineages, stringsAsFactors = FALSE)
+    rownames(lineage_df) <- NULL
+    
     return(lineage_df)
   }
 
@@ -1069,8 +980,8 @@
     ))
 
     # Convert to tibble and apply unite with pair_sep between each column's name-value combination
-    combined <- columns %>%
-      tidyr::as_tibble() %>%
+    combined <- columns |>
+      tidyr::as_tibble() |>
       tidyr::unite({{ col_name }}, dplyr::everything(), sep = pair_sep, na.rm = TRUE)
 
     # Return data with combined column
@@ -1137,7 +1048,7 @@
   #'
   #' @export
   coalesce_and_drop <- function(df, columns, new_col = columns[1]) {
-    df %>%
-      dplyr::mutate(!!new_col := dplyr::coalesce(!!!rlang::syms(columns))) %>%
+    df |>
+      dplyr::mutate(!!new_col := dplyr::coalesce(!!!rlang::syms(columns))) |>
       dplyr::select(-dplyr::all_of(columns))
   } 

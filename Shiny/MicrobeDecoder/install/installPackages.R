@@ -4,6 +4,7 @@
 # Author: Timothy Hackmann
 # Date: 18 February 2025
 
+
 # === Define functions ===
   #' Install Missing CRAN Packages
   #'
@@ -92,19 +93,18 @@
 
 # === Install packages ===
   # Define required packages
-  cran_packages <- cran_packages <- c(
+  cran_packages <- c(
     "ape", "BiocManager", "bslib", "caret", "colorspace", "digest", "dplyr", 
-    "DT", "fs", "htmltools", "igraph", "import", "jqbr", "jsonlite", 
-    "magrittr", "plotly", "purrr", "randomForest", "reactlog", "readr", 
-    "readxl", "remotes", "rlang", "rsconnect", "shiny", "shinycssloaders", 
-    "shinyjs", "shinyWidgets", "stringr", "tidyr", "tidyselect", "uuid"
+    "DT", "fs", "htmltools", "igraph", "jqbr", "jsonlite", 
+    "mirai", "plotly", "purrr", "randomForest", "reactlog", "readr", 
+    "readxl", "remotes", "rlang", "ROI", "ROI.plugin.glpk",
+    "rsconnect", "shiny", 
+    "shinycssloaders", "shinyjs", "shinyWidgets", "shiny.destroy", "stringr", 
+    "tidyr", "tidyselect", "this.path", "uuid", "zip"
   )
-  
-  github_packages <- c("maxconway/fbar" = "", "thackmann/FileLocator" = "FileLocator")
   bioc_packages <- c("ggtree")
 
   # Install missing packages
   install_missing_cran_packages(cran_packages)
-  install_missing_github_packages(github_packages)
   install_missing_bioc_packages(bioc_packages)
   

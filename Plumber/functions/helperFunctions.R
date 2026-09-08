@@ -12,8 +12,7 @@
 #'
 #' @param result The object to send (e.g., a list of probabilities).
 #' @param callback_url Character. The URL to which the result should be posted.
-#' @param label Character. The name to wrap around the result in the JSON body (default: "probabilities").
-#'
+#' @param label A character string. The name to wrap around the result in the JSON body. Default is `"probabilities"`.
 #' @return A list indicating status and callback URL if posted, or NULL if no callback is used.
 #' @export
 handle_callback <- function(result, callback_url, label = "probabilities") {
@@ -32,19 +31,4 @@ handle_callback <- function(result, callback_url, label = "probabilities") {
   }
 
   return(NULL)  # continue regular return
-}
-
-#' Replace NULL with NA in Lists
-#'
-#' This recursive helper function replaces any `NULL` values in a list with `NA`.
-#' Useful for cleaning API input or output data structures where `NULL` is not allowed.
-#'
-#' @param x A list or value to process.
-#'
-#' @return The input with all NULL values replaced by NA.
-#' @export
-replace_null_with_na <- function(x) {
-  if (is.list(x)) lapply(x, replace_null_with_na)
-  else if (is.null(x)) NA
-  else x
 }

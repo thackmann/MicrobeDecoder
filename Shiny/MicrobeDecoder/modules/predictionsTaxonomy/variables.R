@@ -15,7 +15,9 @@
   choices_system_taxonomy <- c("LPSN", "GTDB", "NCBI", "Bergey")
   
   poor_traits_taxonomy <- c(
-      # "Type of metabolism (FAPROTAX)", "Type of metabolism (Fermentation Explorer)", 
+      # "Type of metabolism (FAPROTAX)", 
+      # "Type of metabolism (FAPROTAX2)", 
+      #"Type of metabolism (Fermentation Explorer)", 
       "Metabolites produced (BacDive)", "Metabolites utilized (BacDive)",
       # "Metabolites produced (Fermentation Explorer)", 
       "Major metabolites produced (Fermentation Explorer)", 

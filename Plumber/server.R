@@ -16,13 +16,9 @@
   # Load files from app
    setwd(app_directory)  
 
-    source("functions/sourceFunctions.R")
-    source_r_files(
-      subdirs = c("install", "variables", "functions", "modules"),
-      exclude = c("old"),
-      verbose = TRUE,
-      local = FALSE
-    )
+  # Initialize session
+   source("functions/sessionFunctions.R")   
+   initialize_session(app_dir = getwd(), verbose = TRUE)
 
   # Load additional files for server
     setwd(plumber_directory)  
@@ -71,7 +67,8 @@
     pr$handle("GET", "/parameters/ml", parameters_ml)
 
 # === Enable Swagger Docs ===
-  pr <- pr %>% plumber::pr_set_docs("swagger")    
+  pr <- pr |> 
+    plumber::pr_set_docs("swagger")    
     
 # === Run Server ===
   if (!interactive()) {

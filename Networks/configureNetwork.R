@@ -9,8 +9,10 @@
 # Author: Timothy Hackmann
 # Date:  25 April 2025
 
-# === Set directory ===
-  network_directory <- FileLocator::getCurrentFileLocation()
+# === Get directories ===
+  network_directory <- this.path::this.dir()
+  root_directory <- dirname(network_directory)
+  output_directory <- file.path(root_directory, "Shiny/MicrobeDecoder/data/reference_networks/")
 
 # === Load external R files ===
   setwd(network_directory)
@@ -370,6 +372,11 @@
      "Light reactions of archaea",
      "ATP formation"
    ),
+   "Phototrophy with sulfur compounds" = c(
+     "Light reactions of purple bacteria",
+     "Light reactions of green bacteria",
+     "ATP formation"
+   ),
    "Oxygenic photosynthesis" = c(
      "Light reactions of cyanobacteria",
      "ATP formation",
@@ -391,5 +398,5 @@
   main_network <- dplyr::bind_rows(all_networks, .id = "nt")
 
 # === Save networks ===
-  fp <- paste0(network_directory, "/data/mainNetwork/main.csv")
-  write.csv(main_network, fp, row.names = FALSE)
+  setwd(output_directory)
+  save_as_zip(main_network, "main.csv")

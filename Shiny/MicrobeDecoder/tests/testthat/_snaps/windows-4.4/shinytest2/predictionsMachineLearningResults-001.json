@@ -24,9 +24,21 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": [
-              "Fermentation (t...",
-              "Methanogenesis ..."
+              "Fermentation (type of metabolism)",
+              "Methanogenesis (type of metabolism)"
             ],
+            "tickmode": "array",
+            "tickvals": [
+              0,
+              1
+            ],
+            "ticktext": [
+              "Fermentation (type of metabolism)",
+              "Methanogenesis (type of metabolism)"
+            ],
+            "tickfont": {
+              "size": 12
+            },
             "scaleanchor": "y",
             "scaleratio": 1,
             "constrain": "domain"
@@ -46,6 +58,9 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": "Escherichia coli",
+            "tickfont": {
+              "size": 12
+            },
             "scaleanchor": "x",
             "scaleratio": 1,
             "constrain": "domain"
@@ -250,8 +265,8 @@
               ]
             ],
             "x": [
-              "Fermentation (t...",
-              "Methanogenesis ..."
+              "Fermentation (type of metabolism)",
+              "Methanogenesis (type of metabolism)"
             ],
             "y": "Escherichia coli",
             "zmin": 0,
@@ -285,19 +300,27 @@
               ]
             ],
             "x": [
-              "Fermentation (t...",
-              "Methanogenesis ..."
+              "Fermentation (type of metabolism)",
+              "Methanogenesis (type of metabolism)"
             ],
             "y": "Escherichia coli",
             "zmin": 0,
             "zmax": 100,
             "xgap": 2,
             "ygap": 2,
-            "text": [
-              "structure(function (x, ...) ",
-              "UseMethod(\"text\"), apiSrc = TRUE)"
+            "customdata": [
+              [
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ]
+              ]
             ],
-            "hovertemplate": "<b>Trait: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>% probability: %{z:.2f}<\/b><br><extra><\/extra>",
+            "hovertemplate": "<b>Organism: %{customdata[0]}%{customdata[1]}<\/b><br><b>Trait: %{x}<\/b><br><b>% probability: %{z:.2f}<\/b><extra><\/extra>",
             "xaxis": "x",
             "yaxis": "y",
             "frame": null
@@ -332,9 +355,14 @@
       "evals": [
 
       ],
-      "jsHooks": [
-
-      ],
+      "jsHooks": {
+        "render": [
+          {
+            "code": "function(el) { truncateAxisTickLabels(el, {axes: [\"x\"], full: {\"x\":[\"Fermentation (type of metabolism)\",\"Methanogenesis (type of metabolism)\"]}}); }",
+            "data": null
+          }
+        ]
+      },
       "deps": [
         {
           "name": "setprototypeof",

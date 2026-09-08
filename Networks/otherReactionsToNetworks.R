@@ -7,7 +7,7 @@
 # Date:  25 April 2025
 
 # === Get database directory ===
-  network_directory <- FileLocator::getCurrentFileLocation()
+  network_directory <- this.path::this.dir()
 
 # === Load external R files ===
   setwd(network_directory)
@@ -205,15 +205,15 @@
   
 # === Add reactions with missing KO IDs ===
   # Identify rows in kegg_metadata where ko is NA
-  kegg_missing_ko <- kegg_metadata %>%
+  kegg_missing_ko <- kegg_metadata |>
     dplyr::filter(is.na(ko))
   
   # Format columns to match enzyme_combined
-  kegg_missing_ko <- kegg_missing_ko %>%
+  kegg_missing_ko <- kegg_missing_ko |>
     dplyr::mutate(
       ko_set = NA_character_,  # explicitly NA to match type
       md = "NA"   
-    ) %>%
+    ) |>
     dplyr::select(colnames(enzyme_combined))  # ensure same column order
   
   # Add to enzyme_combined

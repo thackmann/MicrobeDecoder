@@ -19,9 +19,11 @@
 # Author: Timothy Hackmann
 # Date: 23 Mar 2025
 
-# === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
-
+# === Get directories ===
+  database_directory <- this.path::this.dir()
+  root_directory <- dirname(database_directory)
+  output_directory <- file.path(root_directory, "Shiny/MicrobeDecoder/data/database")
+  
 # === Load external R files ===
   setwd(database_directory)
   source("functions\\helperFunctions.R", local = TRUE) 
@@ -38,7 +40,7 @@
     # From LPSN/getLpsnPhylogeny.R script
     lpsn_phylogeny =  readr::read_csv("LPSN\\data\\lpsn_phylogeny.csv")
     # From getLpsnRibosomalSequences.R script
-    lpsn_ribosomal_sequences =  readr::read_csv("LPSN\\data\\lpsn_ribosomal_sequences.csv")
+    # lpsn_ribosomal_sequences =  readr::read_csv("LPSN\\data\\lpsn_ribosomal_sequences.csv")
 
   # Read in data from GTDB
     # From https://data.gtdb.ecogenomic.org/releases/latest/
@@ -164,6 +166,11 @@
     # From FAPROTAX/getFAPROTAXpredictions.R script
     FAPROTAX_data <- readr::read_csv("FAPROTAX\\data\\FAPROTAX_data.csv")
     
+  # Read in data from FAPROTAX2
+    # From FAPROTAX/getFAPROTAXpredictions.R script
+    FAPROTAX2_data <- readr::read_csv("FAPROTAX2\\data\\FAPROTAX2_data.csv")
+    FAPROTAX2_manual_data <- readr::read_csv("FAPROTAX2\\data\\faprotax2_manual_data.csv")
+    
 # === Start database using data from LPSN ===
   database = lpsn_organisms
 
@@ -200,28 +207,28 @@
     )
   )
 
-  # Add 16S ribosomal sequence
-  matches_LPSN = match(x = lpsn_ribosomal_sequences$LPSN_ID, table = database$LPSN_ID)
-
-  # Use indices to add sequences to database
-  database <- add_columns_based_on_indices(
-    target_df =  database,
-    source_df = lpsn_ribosomal_sequences,
-    target_index = matches_LPSN,
-    source_index = seq_along(matches_LPSN),
-    source_col_names = c(
-      "16S_ribosomal_sequence"
-    ),
-    target_col_names = c(
-      "LPSN_16S_Ribosomal_sequence"
-    )
-  )
+  # # Add 16S ribosomal sequence
+  # matches_LPSN = match(x = lpsn_ribosomal_sequences$LPSN_ID, table = database$LPSN_ID)
+  # 
+  # # Use indices to add sequences to database
+  # database <- add_columns_based_on_indices(
+  #   target_df =  database,
+  #   source_df = lpsn_ribosomal_sequences,
+  #   target_index = matches_LPSN,
+  #   source_index = seq_along(matches_LPSN),
+  #   source_col_names = c(
+  #     "16S_ribosomal_sequence"
+  #   ),
+  #   target_col_names = c(
+  #     "LPSN_16S_Ribosomal_sequence"
+  #   )
+  # )
 
   # Rename columns
-  database <- database %>% dplyr::rename(LPSN_Page_link = address)
-  database <- database %>% dplyr::select(-LPSN_Page_link,LPSN_Page_link)
-  database <- database %>% dplyr::rename(LPSN_status = Status)
-  database <- database %>% dplyr::select(-LPSN_status,LPSN_status)
+  database <- database |> dplyr::rename(LPSN_Page_link = address)
+  database <- database |> dplyr::select(-LPSN_Page_link,LPSN_Page_link)
+  database <- database |> dplyr::rename(LPSN_status = Status)
+  database <- database |> dplyr::select(-LPSN_status,LPSN_status)
 
 # === Get names of culture collections ====
   # Names are used in matching strains in database to other sources of data
@@ -233,15 +240,15 @@
   gtdb_data <- rbind(gtdb_bacteria_data, gtdb_archaea_data)
   
   # Keep only records for type strains, and select only essential columns
-  gtdb_data <- gtdb_data %>%
-    dplyr::filter((gtdb_type_designation_ncbi_taxa_sources == "LPSN")) %>%
+  gtdb_data <- gtdb_data |>
+    dplyr::filter((gtdb_type_designation_ncbi_taxa_sources == "LPSN")) |>
     dplyr::select(accession, gtdb_taxonomy, ncbi_strain_identifiers)
   
   # Split taxonomy into ranks
-  gtdb_data <- gtdb_data %>%
+  gtdb_data <- gtdb_data |>
     dplyr::mutate(
       taxonomy_split = lapply(gtdb_taxonomy, split_taxonomy_string)
-    ) %>%
+    ) |>
     tidyr::unnest_wider(taxonomy_split)
   
   # Find matches between database and GTDB
@@ -263,12 +270,12 @@
   )
   
   # Filter indices to keep only the best matches
-  matches_filtered <- matches_GTDB %>% dplyr::group_by(x_index) %>%
+  matches_filtered <- matches_GTDB |> dplyr::group_by(x_index) |>
     dplyr::slice_min(`Rank`, with_ties = FALSE)
   # Remove rank 7 and 8 matches (likely to contain non-type strains)
-  matches_filtered <- matches_filtered %>% dplyr::filter(!Rank %in% c(7, 8))
+  matches_filtered <- matches_filtered |> dplyr::filter(!Rank %in% c(7, 8))
   # Remove multiple matches
-  matches_filtered <- matches_filtered %>% dplyr::group_by(table_index) %>%
+  matches_filtered <- matches_filtered |> dplyr::group_by(table_index) |>
     dplyr::slice_min(`Rank`, with_ties = FALSE)
   
   # Use indices to add GTDB data to database
@@ -302,13 +309,13 @@
 # === Add data from GOLD database ===
   # Format GOLD organism data
     # Select only bacteria and archaea
-    GOLD_organism_data <- GOLD_organism_data %>%
+    GOLD_organism_data <- GOLD_organism_data |>
       dplyr::filter(`ORGANISM NCBI SUPERKINGDOM` == "Bacteria" | `ORGANISM NCBI SUPERKINGDOM` == "Archaea")
     # Format genus names
     GOLD_organism_data$`ORGANISM SPECIES` <- stringr::str_remove(GOLD_organism_data$`ORGANISM SPECIES`, "^\\S+\\s+")
 
     # Add sequencing project
-    GOLD_sequencing_data <- GOLD_sequencing_data %>% dplyr::select(`ORGANISM GOLD ID`, `PROJECT GOLD ID`) %>% dplyr::group_by(`ORGANISM GOLD ID`) %>%
+    GOLD_sequencing_data <- GOLD_sequencing_data |> dplyr::select(`ORGANISM GOLD ID`, `PROJECT GOLD ID`) |> dplyr::group_by(`ORGANISM GOLD ID`) |>
       dplyr::summarize(`PROJECT GOLD ID` = paste(`PROJECT GOLD ID`, collapse = ", "))
     GOLD_organism_data <- dplyr::left_join(x = GOLD_organism_data, y = GOLD_sequencing_data, by = "ORGANISM GOLD ID")
 
@@ -334,15 +341,15 @@
     matches_filtered =  matches_GOLD
     matches_filtered$Project = GOLD_organism_data$'PROJECT GOLD ID'[matches_GOLD$table_index]
     # Remove rank 7 and 8 matches (likely to contain non-type strains)
-    matches_filtered <- matches_filtered %>% dplyr::filter(!Rank %in% c(7, 8))
+    matches_filtered <- matches_filtered |> dplyr::filter(!Rank %in% c(7, 8))
     
     # Pick the highest rank with a sequencing project
-    matches_filtered <- matches_filtered %>%
-      dplyr::group_by(x_index) %>%
-      dplyr::arrange(Rank) %>%
-      dplyr::mutate(Project_NA = all(is.na(Project))) %>%
-      dplyr::filter(ifelse(Project_NA, Rank == min(Rank), Rank == min(Rank[!is.na(Project)], na.rm = TRUE))) %>%
-      dplyr::ungroup() %>%
+    matches_filtered <- matches_filtered |>
+      dplyr::group_by(x_index) |>
+      dplyr::arrange(Rank) |>
+      dplyr::mutate(Project_NA = all(is.na(Project))) |>
+      dplyr::filter(ifelse(Project_NA, Rank == min(Rank), Rank == min(Rank[!is.na(Project)], na.rm = TRUE))) |>
+      dplyr::ungroup() |>
       dplyr::select(-Project_NA)  # Remove the helper column
 
   # Use indices to add GOLD data to database
@@ -365,9 +372,16 @@
 
     # Add data that were found by manually searching https://gold.jgi.doe.gov/
     # These belong to organisms where automatic matching failed 
-    matches_manual_data = match(x = GOLD_manual_data$LPSN_ID, table = database$LPSN_ID)
-    database$GOLD_Organism_ID[matches_manual_data] <- GOLD_manual_data$GOLD_Organism_ID
-    database$GOLD_Project_ID[matches_manual_data]  <- GOLD_manual_data$GOLD_Project_ID
+    matches_GOLD_manual_data <- match(
+      x = GOLD_manual_data$LPSN_ID,
+      table = database$LPSN_ID,
+      incomparables = NA
+    )
+    found_GOLD_manual_data <- !is.na(matches_GOLD_manual_data)
+    database$GOLD_Organism_ID[matches_GOLD_manual_data[found_GOLD_manual_data]] <-
+      GOLD_manual_data$GOLD_Organism_ID[found_GOLD_manual_data]
+    database$GOLD_Project_ID[matches_GOLD_manual_data[found_GOLD_manual_data]]  <-
+      GOLD_manual_data$GOLD_Project_ID[found_GOLD_manual_data]
     
 # === Add data from IMG ===
   # Instructions for downloading data (IMG.xlsx) from IMG
@@ -400,8 +414,8 @@
     # Get IMG genome ID for genome with max quality score
     IMG_data$CheckM2.Contamination <- as.numeric(IMG_data$CheckM2.Contamination)
     IMG_data$Quality_score <- IMG_data$`CheckM2.Completeness` - 5*IMG_data$`CheckM2.Contamination`
-    IMG_data_filtered <- IMG_data %>%
-      dplyr::group_by(match_indices) %>%
+    IMG_data_filtered <- IMG_data |>
+      dplyr::group_by(match_indices) |>
       dplyr::slice_max(`Quality_score`, with_ties = FALSE)
 
     # Add genome IDs with max quality to database
@@ -415,10 +429,10 @@
 # === Add data from NCBI ===
     # Format data
     tax_ids <- extract_first_value(vec = database$`NCBI_Taxonomy_ID`)
-    NCBI_data = get_multiple_lineages(tax_ids = tax_ids, nodes_df = NCBI_nodes, names_df = NCBI_names)
+    NCBI_data <- get_multiple_lineages(tax_ids = tax_ids, nodes_df = NCBI_nodes, names_df = NCBI_names)
 
     # Find matches between database and NCBI
-    matches_NCBI = match(x =  NCBI_data$tax_id, table = database$`NCBI_Taxonomy_ID`)
+    matches_NCBI <- match(x =  NCBI_data$tax_id, table = database$`NCBI_Taxonomy_ID`)
 
     # Add NCBI data to database
     database <- add_columns_based_on_indices(
@@ -446,7 +460,7 @@
 
 # === Add data from BacDive ===
     # Format BacDive data
-      BacDive_data <- BacDive_data %>%
+      BacDive_data <- BacDive_data |>
         tidyr::separate(col = species, into = c("genus", "species"), sep = " ", extra = "merge")
 
     # Find matches between database and BacDive
@@ -468,7 +482,7 @@
       )
 
     # Filter indices to keep only the best matches
-      matches_filtered = matches_BacDive %>% dplyr::group_by(x_index) %>%
+      matches_filtered = matches_BacDive |> dplyr::group_by(x_index) |>
         dplyr::slice_min(`Rank`, with_ties = FALSE)
 
     # Use indices to add BacDive data to database
@@ -554,13 +568,13 @@
   )
 
   # Filter indices to keep only the best matches
-  matches_filtered = matches_Bergey %>% dplyr::group_by(x_index) %>%
+  matches_filtered = matches_Bergey |> dplyr::group_by(x_index) |>
     dplyr::slice_min(`Rank`, with_ties = FALSE)
 
   # Remove any multiple matches still remaining
   # (caused by organisms appearing in multiple articles in Bergey's Manual or 
   # or organisms have subspecies names with incorrect name)
-  matches_filtered <- matches_filtered %>% dplyr::group_by(table_index) %>%
+  matches_filtered <- matches_filtered |> dplyr::group_by(table_index) |>
     dplyr::slice_min(`Rank`, with_ties = FALSE)
   
   # Use indices to add data from Bergey's Manual to database
@@ -626,12 +640,12 @@
     )
 
     # Filter indices to keep only the best matches
-    matches_filtered <- matches_VPI %>% dplyr::group_by(x_index) %>%
+    matches_filtered <- matches_VPI |> dplyr::group_by(x_index) |>
       dplyr::slice_min(`Rank`, with_ties = FALSE)
     # Remove rank 7 and 8 matches (likely to contain non-type strains)
-    matches_filtered <- matches_filtered %>% dplyr::filter(!Rank %in% c(7, 8))
+    matches_filtered <- matches_filtered |> dplyr::filter(!Rank %in% c(7, 8))
     # Remove multiple matches (caused by strains appearing multiple times in VPI Anaerobe Manual)
-    matches_filtered <- matches_filtered %>% dplyr::group_by(table_index) %>%
+    matches_filtered <- matches_filtered |> dplyr::group_by(table_index) |>
       dplyr::slice_min(`Rank`, with_ties = FALSE)
     
     # Use indices to add VPI data to database
@@ -668,7 +682,7 @@
   )
 
   primary_literature_data =
-    primary_literature_data %>% unite_with_names(
+    primary_literature_data |> unite_with_names(
       col_name = "Text_for_end_products",
       selected_col = selected_columns,
       name_first = FALSE
@@ -694,10 +708,10 @@
   )
 
   # Filter indices to keep only the best matches
-  matches_filtered <- matches_literature %>% dplyr::group_by(x_index) %>%
+  matches_filtered <- matches_literature |> dplyr::group_by(x_index) |>
     dplyr::slice_min(`Rank`, with_ties = FALSE)
   # Remove rank 7 and 8 matches (likely to contain non-type strains)
-  matches_filtered <- matches_filtered %>% dplyr::filter(!Rank %in% c(7, 8))
+  matches_filtered <- matches_filtered |> dplyr::filter(!Rank %in% c(7, 8))
   
   # Use indices to add primary literature data to database
   database <- add_columns_based_on_indices(
@@ -752,10 +766,40 @@
     target_col_names = "FAPROTAX_Type_of_metabolism",
   )
 
+# === Add data from FAPROTAX2 ===
+  # Find matches between database and FAPROTAX2
+  matches_FAPROTAX2 <- match(
+    database$LPSN_ID,
+    FAPROTAX2_data$LPSN_ID
+  )
+  
+  # Use indices to add FAPROTAX2 data to database
+  database <- add_columns_based_on_indices(
+    target_df       = database,
+    source_df       = FAPROTAX2_data,
+    target_index    = seq_len(nrow(database)),    
+    source_index    = matches_FAPROTAX2,        
+    source_col_names = "FAPROTAX2_Type_of_metabolism",
+    target_col_names = "FAPROTAX2_Type_of_metabolism",
+  )  
+  
+  # Add data for organisms manually assigned a type of metabolism 
+  # These belong to organisms missing an LPSN or missing entirely from FAPROTAX2 database 
+  matches_FAPROTAX2_manual_data <- match(
+    x = FAPROTAX2_manual_data$LPSN_ID,
+    table = database$LPSN_ID,
+    incomparables = NA
+  )
+  
+  found_FAPROTAX2_manual_data <- !is.na(matches_FAPROTAX2_manual_data)
+  database$FAPROTAX2_Type_of_metabolism[matches_FAPROTAX2_manual_data[found_FAPROTAX2_manual_data]] <-
+    FAPROTAX2_manual_data$FAPROTAX2_Type_of_metabolism[found_FAPROTAX2_manual_data]
+  
 # === Format data in database ===
   # Format all missing values consistently
       database[database == ""] <- NA
       database[database == "NA"] <- NA
 
 # === Export database ===
+    setwd(output_directory)
     save_as_zip(database, "database.csv")

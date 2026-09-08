@@ -6,7 +6,7 @@
 # Date: 3 December 2025
 
 # === Get database directory ===
-database_directory <- FileLocator::getCurrentFileLocation()
+database_directory <- this.path::this.dir()
 subdirectory <- "/LPSN"
 database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -26,26 +26,26 @@ lpsn_data <- get_information_on_child_taxa(
 
 # === Format data ===
   # Select organisms with correct name
-  df <- lpsn_data %>%
+  df <- lpsn_data |>
     dplyr::filter(
       grepl("correct name", status, ignore.case = TRUE) &
         !grepl("not correct name", status, ignore.case = TRUE)
-    ) %>%
+    ) |>
     dplyr::filter(sp_epithet != "")
   
   # Rename columns
-  # df = df %>% dplyr::select(Phylum, Class, Order, Family, Genus, Species, subsp_epithet, nomenclatural_type, status, record_no, address) # debug
-  df = df %>% dplyr::select(Genus, Species, subsp_epithet, nomenclatural_type, status, record_no, address)
-  df = df %>% dplyr::rename(Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
+  # df = df |> dplyr::select(Phylum, Class, Order, Family, Genus, Species, subsp_epithet, nomenclatural_type, status, record_no, address) # debug
+  df = df |> dplyr::select(Genus, Species, subsp_epithet, nomenclatural_type, status, record_no, address)
+  df = df |> dplyr::rename(Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
   
   # Replace blank values with NA
-  df = df %>% dplyr::mutate_all(~ifelse(. == "", NA, .))
+  df = df |> dplyr::mutate_all(~ifelse(. == "", NA, .))
   
   # Keep only entries with both genus and species specified
-  df <- df %>% dplyr::filter(!is.na(Genus)) %>% dplyr::filter(!is.na(Species))
+  df <- df |> dplyr::filter(!is.na(Genus)) |> dplyr::filter(!is.na(Species))
   
   # For subspecies, keep only entries that have subspecies specified (e.g., keep Selenomonas ruminantium lactilytica but not Selenomonas ruminantium)
-  df <- df %>% dplyr::group_by(Genus, Species) %>% dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) %>% dplyr::ungroup()
+  df <- df |> dplyr::group_by(Genus, Species) |> dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) |> dplyr::ungroup()
 
 # === Export ===
 write.csv(df, paste0(database_directory, "\\LPSN\\data\\lpsn_cyanobacteria.csv"), row.names = FALSE)

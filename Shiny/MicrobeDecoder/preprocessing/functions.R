@@ -207,21 +207,8 @@ convert_salt_concentration <- function(concentration, unit, molecular_weight = 5
 #'
 #' @return A character vector of cleaned column names.
 #' @export
-#' Move Prefix to End of Column Names
-#'
-#' This function takes a vector of column names and, for known prefixes,
-#' moves the prefix to the end in parentheses, e.g., "GTDB_ID" ??? "ID (GTDB)".
-#' It can also exclude specified column names from renaming.
-#'
-#' @param colnames Character vector of column names.
-#' @param prefixes Character vector of prefixes to match. Default includes known database prefixes.
-#' @param exclude Character vector of column names to leave unchanged.
-#'                Default excludes BacDive ID and link columns.
-#'
-#' @return A character vector of cleaned column names.
-#' @export
 move_prefix_to_end <- function(colnames,
-                               prefixes = c("Fermentation_Explorer", "BacDive", "FAPROTAX"),
+                               prefixes = c("Fermentation_Explorer", "BacDive", "FAPROTAX2", "FAPROTAX"),
                                exclude = c("BacDive_ID", "BacDive_ID_link")) {
   purrr::map_chr(colnames, function(name) {
     if (name %in% exclude) return(name)
@@ -230,7 +217,7 @@ move_prefix_to_end <- function(colnames,
     prefix <- stringr::str_extract(name, prefix_pattern)
     
     if (!is.na(prefix)) {
-      clean_name <- name %>%
+      clean_name <- name |>
         stringr::str_remove(paste0("^", prefix, "_"))
       # keep underscores, don't replace them with spaces
       paste0(clean_name, " (", prefix, ")")
@@ -375,12 +362,11 @@ create_slider_plugin_config <- function(vec, remove_na = TRUE) {
 #' Create a Query Filter Entry
 #'
 #' @param id Column name used as both id and label by default.
-#' @param data The data frame with the input data.
+#' @param data A data frame with the input data.
 #' @param type Filter type: either "string" (select) or "double" (slider). Default is "string".
 #' @param delimited Logical, whether values are delimited. Default is FALSE.
 #' @param delimiter Delimiter used when `delimited = TRUE`. Default is ";".
-#' @param label Optional display label (defaults to `id`).
-#'
+#' @param label Optional display label. Defaults to `id`.
 #' @return A list entry for a filter in `query_filters`.
 #' @export
 create_query_filter <- function(id, data, type = "string", delimited = FALSE, delimiter = ";", label = NULL) {
@@ -429,22 +415,25 @@ create_query_filter <- function(id, data, type = "string", delimited = FALSE, de
 #' evaluates the model, and saves results.
 #' 
 #' @param data The dataset to use. Default is `load_database()`.
-#' @param gene_functions The gene functions dataset to use. Default is `load_gene_functions()`.
+#' @param gene_functions The gene functions dataset to use. Default is `load_data("gene_functions")`.
 #' @param predictors_to_keep Number of predictors to retain. Default is 0.1.
 #' @param responses_to_keep Number of response variables to retain. Default is 1.
-#' @param seed Random seed for reproducibility. Default is 123.
-#' @param ignore_NA Boolean indicating whether to ignore NA values. Default is TRUE.
-#' @param ntree Number of trees in the random forest. Default is 50.
-#' @param maxnodes Maximum number of nodes in trees. Default is 30.
-#' @param training_split Proportion of data used for training. Default is 0.7.
+#' @param seed An optional seed value for reproducibility. Default is `123`.
+#' @param ignore_NA Logical; whether to ignore `NA` values. Default is `TRUE`.
+#' @param ntree Number of trees to grow in the random forest. Default is `500`.
+#' @param maxnodes The maximum number of terminal nodes trees in the forest can have. Default is `NULL`.
+#' @param training_split The proportion of data to use for training. Default is `0.7`.
+#' @param positive_class_weight The weight given to the positive class of responses. Default is `0.5` (equal weight for negative and positive classes).
+#' @param balance_classes Logical; if TRUE, each tree is grown on an equal number of positive and negative responses. Default is `FALSE`.
+#' @param mtry Number of predictors sampled at each split. Default is `NULL` (the randomForest default of sqrt(p)).
+#' @param threshold The predicted probability at or above which a response is called positive when evaluating. Default is `0.5`.
 #' @param var_name A string representing the name of the variable being processed.
-#' @param query_string A string representing the filtering condition for selecting response data.
-#' 
+#' @param query_string A character string representing the filtering condition for selecting response data.
 #' @return None. Saves model-related outputs to files.
 #' @export
 generate_rf <- function(
     data = load_database(force_reload = TRUE),
-    gene_functions = load_gene_functions(),
+    gene_functions = load_data("gene_functions"),
     predictors_to_keep = 0.1,
     responses_to_keep = 1,
     seed = 123,
@@ -452,6 +441,10 @@ generate_rf <- function(
     ntree = 50,
     maxnodes = 30,
     training_split = 0.7,
+    positive_class_weight = 0.5,
+    balance_classes = FALSE,
+    mtry = NULL,
+    threshold = 0.5,
     var_name, 
     query_string
 ) {
@@ -485,7 +478,11 @@ generate_rf <- function(
     seed = seed, 
     training_split = training_split, 
     ntree = ntree, 
-    maxnodes = maxnodes
+    maxnodes = maxnodes,
+    positive_class_weight = positive_class_weight,
+    balance_classes = balance_classes,
+    mtry = mtry,
+    threshold = threshold
   )
   
   cat(file = stderr(), paste0("Ended training at ", Sys.time(), "\n"))

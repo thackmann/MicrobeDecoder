@@ -4,13 +4,6 @@
 # Author: Timothy Hackmann
 # Date: 25 Apr 2025
 
-# === General ===
-  #' Pipe Operator
-  #'
-  #' This operator is imported from the magrittr package and is used to chain operations together.
-  #'
-  import::from(magrittr, "%>%")
-
 # === Retrieve information from KEGG ===
   #' Retrieve the Content of a Web Page
   #'
@@ -124,8 +117,8 @@
       definition  = parse_field("DEFINITION"),
       class       = parse_field("CLASS"),
       pathway     = parse_field("PATHWAY"),
-      ko         = grep("^  K\\d{5}", lines, value = TRUE) %>% 
-        stringr::str_extract_all("K\\d{5}") %>% 
+      ko         = grep("^  K\\d{5}", lines, value = TRUE) |> 
+        stringr::str_extract_all("K\\d{5}") |> 
         unlist()
     )
   }
@@ -181,20 +174,20 @@
         if (is.null(res) || length(res) == 0 || nrow(res) == 0) {
           return(tibble::tibble(rn = character()))
         }
-        res %>%
-          dplyr::mutate(rn = sub("rn:", "", To)) %>%
-          dplyr::select(rn) %>%
+        res |>
+          dplyr::mutate(rn = sub("rn:", "", To)) |>
+          dplyr::select(rn) |>
           dplyr::distinct()
-      }) %>%
-        dplyr::pull(rn) %>%
+      }) |>
+        dplyr::pull(rn) |>
         unique()
     } else {
-      fetch_kegg_link(paste0("https://rest.kegg.jp/link/rn/path:", map)) %>%
+      fetch_kegg_link(paste0("https://rest.kegg.jp/link/rn/path:", map)) |>
         dplyr::mutate(
           rn = sub("rn:", "", To),
           map = map
-        ) %>%
-        dplyr::pull(rn) %>%
+        ) |>
+        dplyr::pull(rn) |>
         unique()
     }
   }
@@ -216,20 +209,20 @@
         if (is.null(res) || length(res) == 0 || nrow(res) == 0) {
           return(tibble::tibble(rn = character()))
         }
-        res %>%
-          dplyr::mutate(rn = sub("rn:", "", To)) %>%
-          dplyr::select(rn) %>%
+        res |>
+          dplyr::mutate(rn = sub("rn:", "", To)) |>
+          dplyr::select(rn) |>
           dplyr::distinct()
-      }) %>%
-        dplyr::pull(rn) %>%
+      }) |>
+        dplyr::pull(rn) |>
         unique()
     } else {
-      fetch_kegg_link(paste0("https://rest.kegg.jp/link/rn/path:", map)) %>%
+      fetch_kegg_link(paste0("https://rest.kegg.jp/link/rn/path:", map)) |>
         dplyr::mutate(
           rn = sub("rn:", "", To),
           map = map
-        ) %>%
-        dplyr::pull(rn) %>%
+        ) |>
+        dplyr::pull(rn) |>
         unique()
     }
   }
@@ -245,21 +238,21 @@
   #' @return A character with KO IDs
   rn_to_ko <- function(rn, download_all = TRUE) {
     if (download_all == TRUE) {
-      ko <- fetch_kegg_link("https://rest.kegg.jp/link/ko/rn") %>%
+      ko <- fetch_kegg_link("https://rest.kegg.jp/link/ko/rn") |>
         dplyr::mutate(
           ko = sub("ko:", "", To),
           rn2 = sub("rn:", "", From)
-        ) %>%
-        dplyr::filter(rn2 == rn) %>%
-        dplyr::pull(ko) %>%
+        ) |>
+        dplyr::filter(rn2 == rn) |>
+        dplyr::pull(ko) |>
         unique()
     } else {
-      ko <- fetch_kegg_link(paste0("https://rest.kegg.jp/link/ko/rn:", rn)) %>%
+      ko <- fetch_kegg_link(paste0("https://rest.kegg.jp/link/ko/rn:", rn)) |>
         dplyr::mutate(
           ko = sub("ko:", "", To),
           rn = sub("rn:", "", From)
-        ) %>%
-        dplyr::pull(ko) %>%
+        ) |>
+        dplyr::pull(ko) |>
         unique()
     }
     
@@ -288,7 +281,7 @@
     
     if (return_names && !is.na(eq)) {
       # Extract KEGG compound IDs (C00001, C00002, etc.)
-      compound_ids <- stringr::str_extract_all(eq, "C\\d{5}")[[1]] %>% unique()
+      compound_ids <- stringr::str_extract_all(eq, "C\\d{5}")[[1]] |> unique()
       compound_names <- vapply(compound_ids, get_compound_name, character(1), USE.NAMES = FALSE)
       compound_df <- data.frame(Compound_ID = compound_ids, Compound_Name = compound_names, stringsAsFactors = FALSE)
       
@@ -590,11 +583,11 @@
     symbol <- vapply(ko, ko_to_symbol, character(1))
     
     # Get rn for each ko
-    rn_df <- fetch_kegg_link("https://rest.kegg.jp/link/rn/ko") %>%
+    rn_df <- fetch_kegg_link("https://rest.kegg.jp/link/rn/ko") |>
       dplyr::mutate(
         ko_ids = sub("ko:", "", From),
         rn = sub("rn:", "", To)
-      ) %>%
+      ) |>
       dplyr::filter(ko_ids %in% ko)
     
     rn_list <- split(rn_df$rn, rn_df$ko)
@@ -990,8 +983,8 @@
     resolved <- resolve_placeholders_in_md_list(md_list, replacements)
     df <- flatten_md_list(resolved)
     
-    df_summary <- df %>%
-      dplyr::group_by(Enzyme, Subunit, Option) %>%
+    df_summary <- df |>
+      dplyr::group_by(Enzyme, Subunit, Option) |>
       dplyr::summarise(ko = paste(ko, collapse = ", "), .groups = "drop")
     
     return(df_summary)
@@ -1034,26 +1027,26 @@
   #'
   #' @keywords internal
   summarize_enzyme_annotations <- function(df, kegg_metadata, remove_na = TRUE) {
-    result <- df %>%
-      tidyr::unnest_longer(ko) %>%
-      dplyr::left_join(kegg_metadata, by = "ko", relationship = "many-to-many") %>%
-      dplyr::distinct(ko, md, enzyme, ko_set, rn, eq, ec, symbol, name) %>%
-      dplyr::group_by(md, enzyme, ko_set, rn, eq) %>%
+    result <- df |>
+      tidyr::unnest_longer(ko) |>
+      dplyr::left_join(kegg_metadata, by = "ko", relationship = "many-to-many") |>
+      dplyr::distinct(ko, md, enzyme, ko_set, rn, eq, ec, symbol, name) |>
+      dplyr::group_by(md, enzyme, ko_set, rn, eq) |>
       dplyr::summarise(
         ko =  paste(unique(na.omit(ko)), collapse = ", "),
         ec     = paste(unique(na.omit(ec)), collapse = ", "),
         symbol = paste(unique(na.omit(symbol)), collapse = ", "),
         name   = paste(unique(na.omit(name)), collapse = ", "),
         .groups = "drop"
-      ) %>%
-      dplyr::filter(ko_set == ko) %>%
+      ) |>
+      dplyr::filter(ko_set == ko) |>
       dplyr::select(-ko)
     
     if (remove_na) {
       result <- dplyr::filter(result, !is.na(rn))
     }
     
-    result %>% dplyr::arrange(md, enzyme, rn)
+    result |> dplyr::arrange(md, enzyme, rn)
   }
   
   
@@ -1068,13 +1061,13 @@
   #'
   #' @keywords internal
   collapse_by_ko_set <- function(enzyme_summary) {
-    enzyme_summary %>%
-      dplyr::select(-enzyme) %>%
-      dplyr::group_by(ko_set, rn, eq, ec, symbol, name) %>%
+    enzyme_summary |>
+      dplyr::select(-enzyme) |>
+      dplyr::group_by(ko_set, rn, eq, ec, symbol, name) |>
       dplyr::summarise(
         md = paste(sort(unique(na.omit(md))), collapse = ", "),
         .groups   = "drop"
-      ) %>%
+      ) |>
       dplyr::arrange(md, rn)
   }
   
@@ -1090,13 +1083,11 @@
   #' @export
   get_optional_kos <- function(definition) {
     # Match individual ko entries like -K00531
-    single_kos <- stringr::str_extract_all(definition, "-K\\d{5}")[[1]] %>%
-      gsub("-", "", x = .)
+    single_kos <- gsub("-", "", x = stringr::str_extract_all(definition, "-K\\d{5}")[[1]])
     
     # Match grouped ko entries like -(K00242,K18859)
-    group_kos <- stringr::str_extract_all(definition, "-\\([^()]*?\\)")[[1]] %>%
-      gsub("[-()]", "", .) %>%                # Remove '-', '(', ')'
-      strsplit(split = ",") %>%              # Split into individual KO IDs
+    group_kos <- gsub("[-()]", "", stringr::str_extract_all(definition, "-\\([^()]*?\\)")[[1]]) |>  # Remove '-', '(', ')'
+      strsplit(split = ",") |>              # Split into individual KO IDs
       unlist()
     
     sort(unique(c(single_kos, group_kos)))
@@ -1122,18 +1113,17 @@
       enzyme_df <- enzyme_list[[enzyme]]
       
       # Split comma-separated KO IDs and create one row per KO ID
-      enzyme_df <- enzyme_df %>%
-        dplyr::mutate(ko = stringr::str_split(ko, ",\\s*")) %>%
+      enzyme_df <- enzyme_df |>
+        dplyr::mutate(ko = stringr::str_split(ko, ",\\s*")) |>
         tidyr::unnest(ko)
       
       # Group ko options per Subunit and Option
-      grouped <- enzyme_df %>%
-        dplyr::group_by(Subunit, Option) %>%
+      grouped <- enzyme_df |>
+        dplyr::group_by(Subunit, Option) |>
         dplyr::summarise(ko_set = list(ko), .groups = "drop")
       
       # Split into a list: one element per Subunit containing options (each a vector of KO IDs)
-      subunit_options <- grouped %>%
-        split(.$Subunit) %>%
+      subunit_options <- split(grouped, grouped$Subunit) |>
         purrr::map(~ .x$ko_set)
       
       # Generate all combinations: one option per Subunit
@@ -1244,18 +1234,18 @@
   #' @param module_metadata A named list of module metadata, including definitions.
   #' @return A dataframe filtered to exclude module and optional kos.
   filter_nonmodule_kos <- function(kegg_metadata, module_enzymes, module_metadata) {
-    md_kos <- module_enzymes %>%
-      dplyr::select(ko_set) %>%
-      tidyr::separate_rows(ko_set, sep = ", ") %>%
-      dplyr::distinct(ko_set) %>%
+    md_kos <- module_enzymes |>
+      dplyr::select(ko_set) |>
+      tidyr::separate_rows(ko_set, sep = ", ") |>
+      dplyr::distinct(ko_set) |>
       dplyr::pull(ko_set)
     
     optional_kos <- purrr::map(module_metadata, function(x) {
       if (!is.null(x$definition)) get_optional_kos(x$definition) else character(0)
-    }) %>% unlist() %>% unique()
+    }) |> unlist() |> unique()
     
     excluded_kos <- c(md_kos, optional_kos)
-    kegg_metadata %>% dplyr::filter(!ko %in% excluded_kos)
+    kegg_metadata |> dplyr::filter(!ko %in% excluded_kos)
   }
   
   #' Get Elements that Cover of All Characters in a Vector
@@ -1284,9 +1274,9 @@
   #' @export
   get_complete_set <- function(vec, shortest_only = FALSE, minimal_only = TRUE, sep = "/") {
     df <- tibble::tibble(index = seq_along(vec), char = vec)
-    df_expanded <- df %>%
-      dplyr::mutate(char = stringr::str_split(char, stringr::fixed(sep))) %>%
-      tidyr::unnest(char) %>%
+    df_expanded <- df |>
+      dplyr::mutate(char = stringr::str_split(char, stringr::fixed(sep))) |>
+      tidyr::unnest(char) |>
       dplyr::mutate(char = stringr::str_trim(char))
     all_char <- unique(df_expanded$char)
     all_indices <- unique(df_expanded$index)
@@ -1294,9 +1284,9 @@
     for (i in seq_along(all_indices)) {
       combos <- combn(all_indices, i, simplify = FALSE)
       for (combo in combos) {
-        chars_in_combo <- df_expanded %>%
-          dplyr::filter(index %in% combo) %>%
-          dplyr::pull(char) %>%
+        chars_in_combo <- df_expanded |>
+          dplyr::filter(index %in% combo) |>
+          dplyr::pull(char) |>
           unique()
         if (setequal(chars_in_combo, all_char)) {
           valid_combinations <- append(valid_combinations, list(sort(combo)))
@@ -1331,7 +1321,7 @@
   #' @param df A dataframe of KEGG metadata filtered to exclude module-associated KO IDs.
   #' @return A list with enzyme groupings, ready to pass to get_complete_enzyme_combinations().
   format_nonmodule_enzymes <- function(df) {
-    df <- df %>%
+    df <- df |>
       dplyr::mutate(
         row_index = dplyr::row_number(),
         subunit_id = extract_subunits(name),
@@ -1344,15 +1334,15 @@
         )
       )
     
-    df_subunits <- df %>% dplyr::filter(has_subunit)
-    df_non_subunits <- df %>% dplyr::filter(!has_subunit)
+    df_subunits <- df |> dplyr::filter(has_subunit)
+    df_non_subunits <- df |> dplyr::filter(!has_subunit)
     
     enzyme <- 1
     
     # Only build subunit table if there are rows
     subunit_table <- if (nrow(df_subunits) > 0) {
-      df_subunits_grouped <- df_subunits %>%
-        dplyr::group_by(eq, name_base, symbol_base) %>%
+      df_subunits_grouped <- df_subunits |>
+        dplyr::group_by(eq, name_base, symbol_base) |>
         dplyr::group_split()
       
       purrr::map_dfr(df_subunits_grouped, function(group) {
@@ -1377,9 +1367,9 @@
     
     # Only build non-subunit table if there are rows
     non_subunit_table <- if (nrow(df_non_subunits) > 0) {
-      df_non_subunits %>%
-        dplyr::arrange(row_index) %>%
-        dplyr::mutate(Enzyme = seq(enzyme, enzyme + dplyr::n() - 1)) %>%
+      df_non_subunits |>
+        dplyr::arrange(row_index) |>
+        dplyr::mutate(Enzyme = seq(enzyme, enzyme + dplyr::n() - 1)) |>
         dplyr::transmute(
           Enzyme,
           Subunit = "A",
@@ -1390,18 +1380,18 @@
       tibble::tibble(Enzyme = integer(), Subunit = character(), Option = character(), ko = character())
     }
     
-    other_enzyme_table <- dplyr::bind_rows(subunit_table, non_subunit_table) %>%
-      dplyr::mutate(Enzyme = as.integer(Enzyme)) %>%
+    other_enzyme_table <- dplyr::bind_rows(subunit_table, non_subunit_table) |>
+      dplyr::mutate(Enzyme = as.integer(Enzyme)) |>
       dplyr::arrange(Enzyme)
     
-    list("NA" = other_enzyme_table %>%
-           dplyr::select(Enzyme, Subunit, Option, ko) %>%
+    list("NA" = other_enzyme_table |>
+           dplyr::select(Enzyme, Subunit, Option, ko) |>
            dplyr::mutate(
              Enzyme = as.integer(Enzyme),
              Subunit = as.character(Subunit),
              Option = as.character(Option),
              ko = as.character(ko)
-           ) %>%
+           ) |>
            dplyr::arrange(Enzyme, Subunit))
   }
   
@@ -1425,14 +1415,14 @@
       stop("`ko_groups` must be a non-empty list of KO ID strings or vectors.")
     }
     
-    df <- df %>% dplyr::mutate(.row = dplyr::row_number())
+    df <- df |> dplyr::mutate(.row = dplyr::row_number())
     
     merged_rows <- list()
     matched_indices <- c()
     
     for (group in ko_groups) {
       # Do not split group: interpret literally
-      df_matched <- df %>%
+      df_matched <- df |>
         dplyr::filter(
           if (exact_match) {
             ko %in% group
@@ -1450,8 +1440,8 @@
       
       matched_indices <- c(matched_indices, df_matched$.row)
       
-      merged <- df_matched %>%
-        dplyr::group_by(eq) %>%
+      merged <- df_matched |>
+        dplyr::group_by(eq) |>
         dplyr::summarise(
           ko = if (keep_all_ko) {
             paste(sort(unique(unlist(strsplit(ko, ",\\s*")))), collapse = ", ")
@@ -1473,10 +1463,10 @@
     
     merged_df <- dplyr::bind_rows(merged_rows)
     
-    final_df <- df %>%
-      dplyr::filter(!.row %in% matched_indices) %>%
-      dplyr::select(-.row) %>%
-      dplyr::bind_rows(merged_df) %>%
+    final_df <- df |>
+      dplyr::filter(!.row %in% matched_indices) |>
+      dplyr::select(-.row) |>
+      dplyr::bind_rows(merged_df) |>
       dplyr::arrange(rn, ko)
     
     return(final_df)
@@ -1500,7 +1490,7 @@
     }
     
     # Find source row
-    source_row <- df %>%
+    source_row <- df |>
       dplyr::filter(ko == ko_to_add)
     
     if (nrow(source_row) == 0) stop("KO to add not found in any row.")
@@ -1516,10 +1506,10 @@
     # Apply filtering based on non-null ko_match and rn_match
     target_rows <- df
     if (!is.null(ko_match)) {
-      target_rows <- target_rows %>% dplyr::filter(grepl(ko_match, ko, fixed = TRUE))
+      target_rows <- target_rows |> dplyr::filter(grepl(ko_match, ko, fixed = TRUE))
     }
     if (!is.null(rn_match)) {
-      target_rows <- target_rows %>% dplyr::filter(grepl(rn_match, rn, fixed = TRUE))
+      target_rows <- target_rows |> dplyr::filter(grepl(rn_match, rn, fixed = TRUE))
     }
     
     if (nrow(target_rows) != 1) {
@@ -1599,8 +1589,8 @@
     
     if (nrow(df_to_split) == 0) return(df)
     
-    df_split <- df_to_split %>%
-      dplyr::mutate(row_id = dplyr::row_number()) %>%
+    df_split <- df_to_split |>
+      dplyr::mutate(row_id = dplyr::row_number()) |>
       purrr::pmap_dfr(function(row_id, ...) {
         row <- list(...)
         
@@ -1626,7 +1616,8 @@
   
   #' Remove a KO from a Specific ko Row
   #'
-  #' Removes a specific KO from the `ko` in a matched row. If the KO is found, it is removed.
+  #' Removes a specific KO from the `ko` in a matched row. If the KO is found, 
+  #' it is removed.  The corresponding symbol and name are also removed.    
   #' The row is updated in place, and no new row is added.
   #'
   #' @param df A dataframe with a `ko` column (comma-separated KO IDs).
@@ -1635,7 +1626,7 @@
   #'
   #' @return A dataframe with the KO removed from the `ko`.
   #' @export
-  remove_ko <- function(df, ko, ko_remove) {
+  remove_ko <- function(df, ko, ko_remove, split_cols = c("name", "symbol")) {
     row_index <- which(trimws(df$ko) == trimws(ko))
     
     if (length(row_index) != 1) {
@@ -1644,19 +1635,34 @@
     
     ko_list <- unlist(strsplit(df$ko[row_index], ",\\s*"))
     
-    if (!(ko_remove %in% ko_list)) {
+    # Locate every position holding the KO to remove
+    drop_pos <- which(ko_list == ko_remove)
+    
+    if (length(drop_pos) == 0) {
       warning("KO to remove not found in the specified ko.")
       return(df)
     }
     
-    # Remove KO and reconstruct ko
-    updated_ko_list <- setdiff(ko_list, ko_remove)
+    # Drop the whole row if no KOs would be left
+    if (length(drop_pos) == length(ko_list)) {
+      return(df[-row_index, , drop = FALSE])
+    }
     
-    # If removing would result in empty ko, remove the whole row
-    if (length(updated_ko_list) == 0) {
-      df <- df[-row_index, ]
-    } else {
-      df$ko[row_index] <- paste(updated_ko_list, collapse = ", ")
+    # Rebuild ko without the dropped positions
+    df$ko[row_index] <- paste(ko_list[-drop_pos], collapse = ", ")
+    
+    # Drop the same positions from each metadata column
+    for (col in intersect(split_cols, names(df))) {
+      col_list <- unlist(strsplit(df[[col]][row_index], ",\\s*"))
+      
+      # Leave the column alone if it does not line up with ko
+      if (length(col_list) != length(ko_list)) {
+        warning("Column '", col, "' has ", length(col_list), " values but ko has ",
+                length(ko_list), "; leaving '", col, "' unchanged.")
+        next
+      }
+      
+      df[[col]][row_index] <- paste(col_list[-drop_pos], collapse = ", ")
     }
     
     return(df)
@@ -1673,7 +1679,7 @@
   #' @return A filtered dataframe excluding rows with exact ko matches.
   #' @export
   delete_ko <- function(df, kos) {
-    df %>%
+    df |>
       dplyr::filter(!ko %in% kos)
   }
   
@@ -1921,18 +1927,18 @@
     for (i in seq_along(mds)) {
       md_i <- mds[i]
       
-      subset <- reaction_config %>%
-        dplyr::filter(md == md_i) %>%
-        dplyr::select(rn, md, way) %>%
-        dplyr::left_join(merged_network, by = "rn", suffix = c("", ".master")) %>%
-        dplyr::rename(mdk = md.master) %>%
-        dplyr::select(-way.master) %>%
-        dplyr::semi_join(merged_network, by = "rn") %>%
+      subset <- reaction_config |>
+        dplyr::filter(md == md_i) |>
+        dplyr::select(rn, md, way) |>
+        dplyr::left_join(merged_network, by = "rn", suffix = c("", ".master")) |>
+        dplyr::rename(mdk = md.master) |>
+        dplyr::select(-way.master) |>
+        dplyr::semi_join(merged_network, by = "rn") |>
         dplyr::distinct()
       
       # Move md (from config) to the front; preserve original col order otherwise
-      subset <- subset %>%
-        dplyr::relocate(md, .before = dplyr::everything()) %>%
+      subset <- subset |>
+        dplyr::relocate(md, .before = dplyr::everything()) |>
         dplyr::select(c("md", col_order))
       
       configured_list[[i]] <- subset
@@ -2059,3 +2065,59 @@
     unlist(cleaned)
   }
   
+# === Other ===
+  #' Save Data in Original Format and Zip It
+  #'
+  #' This function saves a dataframe in its original format (e.g., CSV, RDS), 
+  #' compresses it into a ZIP archive, and optionally removes the original file.
+  #'
+  #' @param data A dataframe to be saved.
+  #' @param fp A character string specifying the full file path, including the original extension (e.g., "data/file.csv").
+  #' @param remove_original A logical value indicating whether to delete the original file after zipping. Default is `TRUE`.
+  #' @param overwrite A logical value indicating whether to overwrite an existing ZIP file. Default is `TRUE`.
+  #' 
+  #' @return The function does not return anything. It writes the file to disk.
+  #' 
+  #' @export
+  save_as_zip <- function(data, fp, remove_original = TRUE, overwrite = TRUE) {
+    # Ensure the zip package is available
+    if (!requireNamespace("zip", quietly = TRUE)) stop("Package 'zip' is required. Install it with install.packages('zip')")
+    
+    # Normalize the file path
+    fp <- normalizePath(fp, winslash = "/", mustWork = FALSE)
+    
+    # Extract file name, extension, and directory
+    ext <- tools::file_ext(fp)
+    if (ext == "") stop("File path must include an extension (e.g., .csv, .rds).")
+    
+    file_name <- basename(fp)  # e.g., "database_clean.csv"
+    dir_name <- dirname(fp)    # e.g., "data"
+    
+    # Create a folder with the same name as the object
+    object_name <- tools::file_path_sans_ext(file_name)  # e.g., "database_clean"
+    zip_folder <- file.path(dir_name, object_name)
+    
+    # Ensure the folder is clean
+    if (dir.exists(zip_folder)) unlink(zip_folder, recursive = TRUE)
+    dir.create(zip_folder)
+    
+    # Define paths
+    save_fp <- file.path(zip_folder, file_name)  # Save inside the new folder
+    zip_fp <- file.path(dir_name, paste0(object_name, ".zip"))  # ZIP file in same directory
+    
+    # Save file based on extension
+    switch(ext,
+           "csv" = write.csv(data, save_fp, row.names = FALSE),
+           "rds" = saveRDS(data, save_fp),
+           stop("Unsupported file format: ", ext)
+    )
+    
+    # Overwrite existing ZIP file if specified
+    if (overwrite && file.exists(zip_fp)) file.remove(zip_fp)
+    
+    # Create ZIP file using zip::zipr()
+    zip::zipr(zip_fp, files = save_fp, recurse = FALSE, compression_level = 9)
+    
+    # Ensure the ZIP file was created before deleting the original
+    if (file.exists(zip_fp) && remove_original) unlink(zip_folder, recursive = TRUE)
+  }
