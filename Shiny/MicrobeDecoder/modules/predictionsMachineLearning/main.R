@@ -355,11 +355,13 @@
       # Update (reset) spinners for plots and tables 
         reset_spinners()
       
+      # Update choices for model to display
+      # Runs before the threshold check because the choices ignore the threshold,
+      # and the slider is not ready when the tab loads from History
+        update_model_to_display_ml(session = session, data = get_results()$get_model_metadata)
+      
       # Check for required conditions
         req(!is.null(input$probability_threshold))
-      
-      # Update choices for model to display
-        update_model_to_display_ml(session = session, data = get_results()$get_model_metadata)
         
       # Update choices for model shown on the tree
         update_tree_model_to_display_ml(session = session, data = get_results()$predict_traits,

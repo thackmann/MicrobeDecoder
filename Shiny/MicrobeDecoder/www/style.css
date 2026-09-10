@@ -503,8 +503,12 @@ body.modal-open {
   margin-left: auto;
 }
 
+.heatmap-container-style,
+.treemap-container-style,
+.tree-container-style,
+.tsne-container-style,
 .network-container-style {
-  height: 50vh;
+  height: 46vh;
 }
 
 /* Spinners */

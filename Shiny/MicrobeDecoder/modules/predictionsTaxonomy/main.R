@@ -257,15 +257,17 @@ predictionsTaxonomyServer <- function(id, selected_tab, on_ready) {
     # Update (reset) spinners for plots and tables 
       reset_spinners()
     
+    # Update choices for organisms to display
+    # Runs before the threshold check because the choices ignore the threshold,
+    # and the slider is not ready when the tab loads from History
+      update_organism_to_display_taxonomy(session = session, data = get_results()$query_taxa)
+
     # Check for required conditions
       req(!is.null(input$probability_threshold))
 
     # Update choices for traits to display
       update_trait_to_display_taxonomy(session = session, data = get_results()$predict_traits,
                                        threshold = input$probability_threshold)
-
-    # Update choices for organisms to display
-      update_organism_to_display_taxonomy(session = session, data = get_results()$query_taxa)
 
     # Update slider 
       shinyjs::runjs(sprintf("shinyjs.refreshSlider('%s');", ns("probability_threshold")))

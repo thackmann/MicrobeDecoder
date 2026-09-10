@@ -129,6 +129,7 @@ shinyjs.goToTab = function(tabName) {
     'history',
     'databaseSearch',
     'databaseDownload',
+    'examples',
     'help',
     'about'
   ]);

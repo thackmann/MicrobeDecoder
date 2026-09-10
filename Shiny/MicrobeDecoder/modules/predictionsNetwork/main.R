@@ -454,6 +454,20 @@
       # Update (reset) spinners for plots and tables
         reset_spinners()
       
+      # Update choices for product and organism to display
+      # Runs before the threshold check because the choices ignore the threshold,
+      # and the slider is not ready when the tab loads from History
+        update_product_to_display_network(session = session,
+                                          data = get_results()$get_input_products)
+        
+        update_product_to_display_network(session = session,
+                                          data = get_results()$get_input_products,
+                                          inputId = "tree_product_to_display",
+                                          allow_any = TRUE)
+        
+        update_organism_to_display_network(session = session,
+                                           data = get_results()$get_organism_names)
+      
       # Check for required conditions
         req(!is.null(input$flux_threshold))
       
@@ -477,19 +491,6 @@
                                             inputId = "tree_substrate_to_display",
                                             allow_any = TRUE)
         
-      # Update choices for product to display
-        update_product_to_display_network(session = session,
-                                          data = get_results()$get_input_products)
-        
-        update_product_to_display_network(session = session,
-                                          data = get_results()$get_input_products,
-                                          inputId = "tree_product_to_display",
-                                          allow_any = TRUE)
-        
-      # Update choices for organism to display
-        update_organism_to_display_network(session = session,
-                                           data = get_results()$get_organism_names)
-
       # Update sliders
         shinyjs::runjs(sprintf("shinyjs.refreshSlider('%s');", ns("flux_threshold")))
     },
@@ -569,19 +570,6 @@
                                             threshold = input$flux_threshold,
                                             inputId = "tree_substrate_to_display",
                                             allow_any = TRUE)
-        
-      # Update choices for product to display
-        update_product_to_display_network(session = session,
-                                          data = get_results()$get_input_products)
-        
-        update_product_to_display_network(session = session,
-                                          data = get_results()$get_input_products,
-                                          inputId = "tree_product_to_display",
-                                          allow_any = TRUE)
-        
-      # Update choices for organism to display
-        update_organism_to_display_network(session = session,
-                                           data = get_results()$get_organism_names)
     }, 
     label = "update_selected_organisms")
     
