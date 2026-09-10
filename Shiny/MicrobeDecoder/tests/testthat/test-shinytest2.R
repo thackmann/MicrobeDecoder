@@ -17,11 +17,12 @@ testthat::test_that("predictionsTaxonomyResults", {
 
   # Set inputs
   app$set_inputs(tabs = "predictionsTaxonomy")
-  app$set_inputs(`predictionsTaxonomy-set_traits` = c("Type of metabolism (FAPROTAX)",
-      "Type of metabolism (Fermentation Explorer)", "Metabolites utilized (BacDive)",
-      "Metabolites produced (BacDive)", "Metabolites utilized (Fermentation Explorer)",
-      "Metabolites produced (Fermentation Explorer)"))
-  app$set_inputs(`predictionsTaxonomy-taxonomy_database` = "Escherichia (Genus)")
+  app$set_inputs(`predictionsTaxonomy-traits_to_predict` = c("Type of metabolism (FAPROTAX2)",
+      "Type of metabolism (Fermentation Explorer)", 
+      "Metabolites utilized (Fermentation Explorer)",
+      "Metabolites produced (Fermentation Explorer)",
+      "Oxygen tolerance (BacDive)"))
+  app$set_inputs(`predictionsTaxonomy-query_taxa` = "Escherichia (Genus)")
 
   # Perform actions
   Sys.sleep(10)
@@ -45,9 +46,9 @@ testthat::test_that("predictionsNetworkResults", {
 
   # Set inputs
   app$set_inputs(tabs = "predictionsNetwork")
-  app$set_inputs(`predictionsNetwork-reference_network_database` = "Fermentation of glucose")
+  app$set_inputs(`predictionsNetwork-reference_network` = "Fermentation of glucose")
   Sys.sleep(10)
-  app$click("predictionsNetwork-update_gene_function_choices")
+  app$click("predictionsNetwork-load_gene_function_examples")
 
   # Perform actions
   Sys.sleep(10)
@@ -100,7 +101,7 @@ testthat::test_that("databaseSearchResults", {
 
   # Perform actions
   Sys.sleep(10)
-  app$click("databaseSearch-make_predictions")
+  app$click("databaseSearch-run_search")
   Sys.sleep(30)
 
   # Record output

@@ -8,7 +8,7 @@
 # Date: 3 December 2025
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/LPSN"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -29,7 +29,7 @@
   lpsn_organisms <- dplyr::bind_rows(
     lpsn_non_cyanobacteria,
     lpsn_cyanobacteria
-  ) %>%
+  ) |>
   dplyr::distinct(LPSN_ID, .keep_all = TRUE)
   
 # === Export ===

@@ -320,11 +320,8 @@ Phosphite oxidation,R05746,Forward,Phosphonic acid + NAD+ + H2O <=> Orthophospha
 Iron oxidation,R1.16.9.1,Forward,Fe2+ + Rusticyanin <=> Fe3+ + Reduced rusticyanin
 Iron oxidation,R1.16.9.A,Bidirectional,Rusticyanin + Ferrocytochrome c <=> Reduced rusticyanin + Ferricytochrome c
 Arsenic oxidation,R09787,Forward,Arsenite + H2O + 2 Ferricytochrome c <=> Arsenate ion + 2 Ferrocytochrome c + 2 H+
-,,,
 Sulfur disproportionation,R07365,Forward,4 Sulfur + 4 H2O + Oxygen <=> 2 Hydrogen sulfide + 2 Sulfite
 Sulfur disproportionation,R00864,Forward,Sulfite + Sulfur <=> Thiosulfate
-Sulfur disproportionation,,Forward,Sulfur + 3 H2O <=> Sulfite + 2 Hydrogen sulfide + 2 H+
-,,,
 Pyruvate synthesis,R01699,Reverse,Pyruvate + Enzyme N6-(lipoyl)lysine <=> [Dihydrolipoyllysine-residue acetyltransferase] S-acetyldihydrolipoyllysine + CO2
 Pyruvate synthesis,R00014,Reverse,Pyruvate + Thiamin diphosphate <=> 2-(alpha-Hydroxyethyl)thiamine diphosphate + CO2
 Pyruvate synthesis,R03270,Reverse,2-(alpha-Hydroxyethyl)thiamine diphosphate + Enzyme N6-(lipoyl)lysine <=> [Dihydrolipoyllysine-residue acetyltransferase] S-acetyldihydrolipoyllysine + Thiamin diphosphate

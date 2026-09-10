@@ -24,13 +24,45 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": [
-              "animal parasite...",
-              "chemoheterotrop...",
+              "aerobic chemoheterotrophy",
+              "anaerobic chemoheterotrophy",
+              "animal parasites or symbionts",
+              "chemoheterotrophy",
+              "facultative anaerobes",
               "fermentation",
-              "human associate...",
+              "human associated",
               "human gut",
+              "human pathogens all",
               "mammal gut"
             ],
+            "tickmode": "array",
+            "tickvals": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "ticktext": [
+              "aerobic chemoheterotrophy",
+              "anaerobic chemoheterotrophy",
+              "animal parasites or symbionts",
+              "chemoheterotrophy",
+              "facultative anaerobes",
+              "fermentation",
+              "human associated",
+              "human gut",
+              "human pathogens all",
+              "mammal gut"
+            ],
+            "tickfont": {
+              "size": 12
+            },
             "scaleanchor": "y",
             "scaleratio": 1,
             "constrain": "domain"
@@ -50,6 +82,9 @@
             "type": "category",
             "categoryorder": "array",
             "categoryarray": "Escherichia sp.",
+            "tickfont": {
+              "size": 12
+            },
             "scaleanchor": "x",
             "scaleratio": 1,
             "constrain": "domain"
@@ -249,20 +284,28 @@
             "type": "heatmap",
             "z": [
               [
+                83.333333333333343,
+                50,
+                66.666666666666657,
                 100,
+                83.333333333333343,
                 100,
-                100,
-                100,
-                100,
-                100
+                83.333333333333343,
+                66.666666666666657,
+                50,
+                66.666666666666657
               ]
             ],
             "x": [
-              "animal parasite...",
-              "chemoheterotrop...",
+              "aerobic chemoheterotrophy",
+              "anaerobic chemoheterotrophy",
+              "animal parasites or symbionts",
+              "chemoheterotrophy",
+              "facultative anaerobes",
               "fermentation",
-              "human associate...",
+              "human associated",
               "human gut",
+              "human pathogens all",
               "mammal gut"
             ],
             "y": "Escherichia sp.",
@@ -292,20 +335,28 @@
             "type": "heatmap",
             "z": [
               [
+                83.333333333333343,
+                50,
+                66.666666666666657,
                 100,
+                83.333333333333343,
                 100,
-                100,
-                100,
-                100,
-                100
+                83.333333333333343,
+                66.666666666666657,
+                50,
+                66.666666666666657
               ]
             ],
             "x": [
-              "animal parasite...",
-              "chemoheterotrop...",
+              "aerobic chemoheterotrophy",
+              "anaerobic chemoheterotrophy",
+              "animal parasites or symbionts",
+              "chemoheterotrophy",
+              "facultative anaerobes",
               "fermentation",
-              "human associate...",
+              "human associated",
               "human gut",
+              "human pathogens all",
               "mammal gut"
             ],
             "y": "Escherichia sp.",
@@ -313,17 +364,51 @@
             "zmax": 100,
             "xgap": 2,
             "ygap": 2,
-            "text": [
+            "customdata": [
               [
-                "(+)",
-                "(+)",
-                "(+)",
-                "(+)",
-                "(+)",
-                "(+)"
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ],
+                [
+                  "Escherichia sp.",
+                  "<br>Phylum: Pseudomonadota<br>Class: Gammaproteobacteria<br>Order: Enterobacterales<br>Family: Enterobacteriaceae<br>Genus: Escherichia"
+                ]
               ]
             ],
-            "hovertemplate": "<b>Trait: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>% probability: %{z:.2f}<\/b><br><extra><\/extra>",
+            "hovertemplate": "<b>Organism: %{customdata[0]}%{customdata[1]}<\/b><br><b>Trait: %{x}<\/b><br><b>% probability: %{z:.2f}<\/b><extra><\/extra>",
             "xaxis": "x",
             "yaxis": "y",
             "frame": null
@@ -358,9 +443,14 @@
       "evals": [
 
       ],
-      "jsHooks": [
-
-      ],
+      "jsHooks": {
+        "render": [
+          {
+            "code": "function(el) { truncateAxisTickLabels(el, {axes: [\"x\"], full: {\"x\":[\"aerobic chemoheterotrophy\",\"anaerobic chemoheterotrophy\",\"animal parasites or symbionts\",\"chemoheterotrophy\",\"facultative anaerobes\",\"fermentation\",\"human associated\",\"human gut\",\"human pathogens all\",\"mammal gut\"]}}); }",
+            "data": null
+          }
+        ]
+      },
       "deps": [
         {
           "name": "setprototypeof",

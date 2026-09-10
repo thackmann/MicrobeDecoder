@@ -1,30 +1,31 @@
 /*
   Custom Styles for Shiny App
-  This file contains custom CSS styles for the Shiny app, including button styles, layout adjustments, and custom component styles.
+  This file contains styles used across the Shiny app.
+  These styles control the app theme, navigation, buttons, query builders,
+  loading screens, home page layout, plots, forms, and footer.
   Author: Tim Hackmann
   Date: 6 September 2024
-
-  Notes:
-  - This file leverages Bootstrap's Litera theme for button colors.
-  - Variables are defined in the `:root` section for easy customization.
-  - Custom styles for the navbar, buttons, and Query Builder are included.
 */
 
+/* Theme variables */
 :root {
-  /* Font Awesome Variables */
+  /* Font Awesome */
   --fa-style-family-brands: "Font Awesome 6 Brands";
   --fa-font-brands: normal 400 1em/1 "Font Awesome 6 Brands";
   --fa-font-regular: normal 400 1em/1 "Font Awesome 6 Free";
   --fa-style-family-classic: "Font Awesome 6 Free";
   --fa-font-solid: normal 900 1em/1 "Font Awesome 6 Free";
 
-  /* Bootstrap Version and Theme */
+  /* Bootstrap theme */
   --bslib-bootstrap-version: 5;
   --bslib-preset-name: litera;
   --bslib-preset-type: bootswatch;
 
-  /* Color Variables */
-  --primary-color: #4582ec;
+  /* Colors */
+  --primary-color: #337ab7;
+  --primary-hover-color: #2e6da4;
+  --primary-border-color: #2e6da4;
+  --primary-text-color: white;
   --secondary-color: #adb5bd;
   --success-color: #02b875;
   --danger-color: #d9534f;
@@ -36,24 +37,24 @@
   --white-color: #fff;
   --black-color: #000;
 
-  /* Text Colors */
+  /* Text colors */
   --text-color-light: var(--white-color);
   --text-color-dark: var(--black-color);
   --text-color-gray: #6c757d;
 
-  /* Button Variables */
+  /* Buttons */
   --btn-padding: 0.5rem 1rem;
-  --btn-small-padding: 0.25rem 0.5rem;  /* Added for smaller buttons */
+  --btn-small-padding: 0.25rem 0.5rem;
   --btn-border-radius: .375rem;
   --btn-border-width: 1px;
   --btn-font-size: 1rem;
-  --btn-small-font-size: 0.85rem;  /* Added for smaller buttons */
+  --btn-small-font-size: 0.85rem;
   --btn-font-family: var(--bs-font-sans-serif);
-  --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);   
+  --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   --btn-hover-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-  --btn-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); 
+  --btn-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 
-  /* Background Colors */
+  /* Background colors */
   --bg-primary-subtle: #dae6fb;
   --bg-secondary-subtle: #eff0f2;
   --bg-success-subtle: #ccf1e3;
@@ -62,9 +63,9 @@
   --bg-info-subtle: #d1ecf1;
   --bg-light-subtle: #fcfcfd;
   --bg-dark-subtle: #ced4da;
-  --grey-95: #f2f2f2
+  --grey-95: #f2f2f2;
 
-  /* Border Colors */
+  /* Border colors */
   --border-primary-subtle: #b5cdf7;
   --border-secondary-subtle: #dee1e5;
   --border-success-subtle: #9ae3c8;
@@ -75,48 +76,47 @@
   --border-dark-subtle: #adb5bd;
   --grey90: #e5e5e5;
 
-  /* Body Text and Background */
+  /* Body text and background */
   --body-font-family: var(--bs-font-sans-serif);
   --body-font-size: 1.1rem;
-  --body-small-font-size: 1.0rem; 
+  --body-small-font-size: 1.0rem;
   --body-font-weight: 400;
   --body-line-height: 1.5;
   --body-color: #343a40;
   --body-bg: var(--white-color);
-  
-  /* Borders and Shadows */
+
+  /* Borders and shadows */
   --border-color: #ddd;
   --border-radius: .375rem;
   --border-radius-pill: 50rem;
-  --box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
-	
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+
   /* Icons */
-  --icon-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  --icon-hover-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  
-  /* Navbar */
+  --icon-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --icon-hover-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+  /* Navigation */
   --navbar-bg-color: var(--white-color);
   --navbar-text-color: var(--black-color);
   --navbar-active-bg: var(--grey90);
-  
-  /* Query Builder */
+
+  /* Query builder */
   --query-bg-color: var(--white-color);
   --query-border-color: var(--grey90);
-  --query-header-bg: var(--grey95);
-  --query-header-border: var(--border-primary-subtle);
+  --query-header-bg: var(--white-color); /* was var(--grey-95) #f2f2f2; restored to white (header bg was effectively white before, via an undefined --grey95 reference) */
+  --query-header-border: var(--border-color); /* was var(--border-primary-subtle) #b5cdf7 (blue); matched to grey #ddd used by the rule rows below */
   --query-header-text-color: var(--primary-color);
   --query-rule-bg: var(--white-color);
   --query-rule-border: var(--border-color);
   --query-select-bg: var(--bg-light-subtle);
   --query-select-border: var(--border-color);
 
-  /* List Styles */
+  /* Lists */
   --list-circle-fill-color: #ffffff;
   --list-circle-border-color: #9ca3af;
   --list-circle-text-color: #374151;
 
-  /* Button States */
-  /*--primary-hover-color: #3768bd; */
+  /* Button states */
   --secondary-hover-color: #929a9e;
   --success-hover-color: #029e65;
   --danger-hover-color: #c9302c;
@@ -124,17 +124,12 @@
   --info-hover-color: #138496;
   --light-hover-color: #e2e6ea;
   --dark-hover-color: #23272b;
-
-  /* Button Colors */
-  --primary-color: #337ab7;  
-  --primary-hover-color: #2e6da4;  
-  --primary-border-color: #2e6da4;  
-  --primary-text-color: white;  
 }
 
-/* Navigation bar */
+/* Navigation */
 .navbar {
   background-color: var(--navbar-bg-color);
+  min-height: 25px !important;
 }
 
 .navbar-default .navbar-nav > li > a {
@@ -148,6 +143,56 @@
   background-color: var(--navbar-active-bg);
 }
 
+.navbar-nav > li > a {
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+  height: 50px;
+}
+
+.dropdown-toggle::after {
+  display: none;
+}
+
+/* Card navigation */
+.card-header.bslib-navs-card-title {
+  display: block !important;
+}
+
+.card-header.bslib-navs-card-title > .nav {
+  justify-content: flex-start !important;
+}
+
+.nav-title {
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 1rem;
+}
+
+/* Sidebars */
+/* bslib sets the top padding of .sidebar-content to --_padding-icon (3rem by
+   default) to leave room for the collapse toggle, which pushes the first
+   sidebar element well below the first element in the main panel. Reducing the
+   variable tightens the top gap without touching the side padding. */
+.bslib-sidebar-layout {
+  --_padding-icon: 1.75rem;
+}
+
+/* Accordions */
+/* bslib pulls a sidebar accordion edge to edge with a negative margin equal to
+   the sidebar padding, which makes the item borders overhang the inputs above.
+   Cancelling the margin brings the borders in to the content width, and
+   zeroing the button padding keeps the header text aligned with it. */
+.advanced-accordion {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.advanced-accordion .accordion-button,
+.advanced-accordion .accordion-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 /* Buttons */
 .btn {
   padding: var(--btn-padding);
@@ -158,7 +203,6 @@
   box-shadow: var(--btn-shadow);
 }
 
-/* Primary Button */
 .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
@@ -173,7 +217,6 @@
   box-shadow: var(--btn-shadow);
 }
 
-/* Secondary Button */
 .btn-secondary {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
@@ -188,7 +231,6 @@
   box-shadow: var(--btn-shadow);
 }
 
-/* Success Button */
 .btn-success {
   background-color: var(--success-color);
   border-color: var(--success-color);
@@ -203,7 +245,6 @@
   box-shadow: var(--btn-shadow);
 }
 
-/* Danger Button */
 .btn-danger {
   background-color: var(--danger-color);
   border-color: var(--danger-color);
@@ -215,10 +256,9 @@
 .btn-danger:active {
   background-color: var(--danger-hover-color);
   border-color: var(--danger-hover-color);
-  box-shadow: var(--btn-shadow-active);
+  box-shadow: var(--btn-active-shadow);
 }
 
-/* Warning Button */
 .btn-warning {
   background-color: var(--warning-color);
   border-color: var(--warning-color);
@@ -230,10 +270,9 @@
 .btn-warning:active {
   background-color: var(--warning-hover-color);
   border-color: var(--warning-hover-color);
-  box-shadow: var(--btn-shadow-active);
+  box-shadow: var(--btn-active-shadow);
 }
 
-/* Info Button */
 .btn-info {
   background-color: var(--info-color);
   border-color: var(--info-color);
@@ -245,10 +284,9 @@
 .btn-info:active {
   background-color: var(--info-hover-color);
   border-color: var(--info-hover-color);
-  box-shadow: var(--btn-shadow-active);
+  box-shadow: var(--btn-active-shadow);
 }
 
-/* Light Button */
 .btn-light {
   background-color: var(--light-color);
   border-color: var(--light-color);
@@ -262,7 +300,6 @@
   border-color: var(--light-hover-color);
 }
 
-/* Dark Button */
 .btn-dark {
   background-color: var(--dark-color);
   border-color: var(--dark-color);
@@ -274,10 +311,9 @@
 .btn-dark:active {
   background-color: var(--dark-hover-color);
   border-color: var(--dark-hover-color);
-  box-shadow: var(--btn-shadow-active);
+  box-shadow: var(--btn-active-shadow);
 }
 
-/* Disabled Button */
 .btn.disabled,
 .btn:disabled {
   background-color: var(--secondary-color);
@@ -287,99 +323,98 @@
   cursor: not-allowed;
 }
 
-/* Query Builder */
-	#databaseSearch-query_builder_group_0,
-	#databaseSearch-query_builder_group_1,
-	#databaseSearch-query_builder_group_2,
-	#databaseSearch-query_builder_group_3 {
-	  background-color: var(--query-bg-color);
-	  border: 1px solid var(--query-border-color);
-	}
-	
-	#predictionsTaxonomy-query_builder_group_0,
-	#predictionsTaxonomy-query_builder_group_1,
-	#predictionsTaxonomy-query_builder_group_2,
-	#predictionsTaxonomy-query_builder_group_3 {
-	  background-color: var(--query-bg-color);
-	  border: 1px solid var(--query-border-color);
-	}
-	
-	#predictionsMachineLearning-query_builder_group_0,
-	#predictionsMachineLearning-query_builder_group_1,
-	#predictionsMachineLearning-query_builder_group_2,
-	#predictionsMachineLearning-query_builder_group_3 {
-	  background-color: var(--query-bg-color);
-	  border: 1px solid var(--query-border-color);
-	}
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-border-color) !important;
+  color: var(--primary-text-color) !important;
+}
 
-	/* Style the group header (e.g., the buttons for "Add rule" and "Add group") */
-	.rules-group-header {
-	  background-color: var(--query-header-bg);
-	  border-bottom: 2px solid var(--query-header-border);
-	  padding: 10px;
-	  font-weight: bold;
-	  color: var(--query-header-text-color);
-	}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--primary-hover-color) !important;
+  border-color: var(--primary-hover-color) !important;
+}
 
-	/* Style the condition buttons (AND, OR) */
-	.rules-group-header .group-conditions .btn-primary {
-	  background-color: var(--primary-color) !important;
-	  border-color: var(--primary-color) !important;
-	  color: var(--text-color-light) !important;
-	  opacity: 1 !important;
-	  cursor: pointer !important;
-	  font-size: var(--btn-small-font-size); /* Use small font size */
-	  padding: var(--btn-small-padding); /* Use small padding */
-	}
+/* Query builder */
+#databaseSearch-query_builder_group_0,
+#databaseSearch-query_builder_group_1,
+#databaseSearch-query_builder_group_2,
+#databaseSearch-query_builder_group_3,
+#predictionsTaxonomy-query_builder_group_0,
+#predictionsTaxonomy-query_builder_group_1,
+#predictionsTaxonomy-query_builder_group_2,
+#predictionsTaxonomy-query_builder_group_3,
+#predictionsMachineLearning-query_builder_group_0,
+#predictionsMachineLearning-query_builder_group_1,
+#predictionsMachineLearning-query_builder_group_2,
+#predictionsMachineLearning-query_builder_group_3 {
+  background-color: var(--query-bg-color);
+  border: 1px solid var(--query-border-color);
+}
 
-	.rules-group-header .group-conditions .btn-primary.disabled,
-	.rules-group-header .group-conditions .btn-primary:disabled {
-	  background-color: var(--primary-color) !important;
-	  border-color: var(--primary-color) !important;
-	  color: var(--text-color-light) !important;
-	  opacity: 1 !important;
-	  cursor: pointer !important;
-	  font-size: var(--btn-small-font-size); /* Use small font size */
-	  padding: var(--btn-small-padding); /* Use small padding */
-	}
+.rules-group-header {
+  background-color: var(--query-header-bg);
+  border-bottom: 2px solid var(--query-header-border);
+  padding: 10px;
+  font-weight: bold;
+  color: var(--query-header-text-color);
+}
 
-	/* Style the buttons for "Add rule", "Add group", and "Delete" */
-	.rules-group-header .group-actions .btn,
-	.rule-actions .btn {
-	  font-size: var(--btn-small-font-size); /* Use small font size */
-	  padding: var(--btn-small-padding); /* Use small padding */
-	}
+.rules-group-header .group-conditions .btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-color-light) !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  font-size: var(--btn-small-font-size);
+  padding: var(--btn-small-padding);
+}
 
-	/* Change the rule container background color */
-	.rule-container {
-	  background-color: var(--query-rule-bg);
-	  border: 1px solid var(--query-rule-border);
-	  margin-bottom: 10px;
-	  padding: 10px;
-	  border-radius: var(--border-radius);
-	}
+.rules-group-header .group-conditions .btn-primary.disabled,
+.rules-group-header .group-conditions .btn-primary:disabled {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-color-light) !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  font-size: var(--btn-small-font-size);
+  padding: var(--btn-small-padding);
+}
 
-	/* Style the select inputs (filter, operator, value) */
-	.rule-filter-container select,
-	.rule-operator-container select,
-	.rule-value-container select {
-	  background-color: var(--query-select-bg);
-	  border: 1px solid var(--query-select-border);
-	  padding: 5px;
-	  border-radius: var(--border-radius);
-	  width: 100%;
-	}
+.rules-group-header .group-actions .btn,
+.rule-actions .btn {
+  font-size: var(--btn-small-font-size);
+  padding: var(--btn-small-padding);
+}
 
-	/* Style the "Delete" button for rules */
-	.rule-actions .btn-danger {
-	  background-color: var(--danger-color);
-	  border-color: var(--danger-color);
-	  color: var(--text-color-light);
-	  font-size: var(--btn-small-font-size); /* Use small font size */
-	  padding: var(--btn-small-padding); /* Use small padding */
-	}
+.rule-container {
+  background-color: var(--query-rule-bg);
+  border: 1px solid var(--query-rule-border);
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: var(--border-radius);
+}
 
-/* Modal (for progress bar) */
+.rule-filter-container select,
+.rule-operator-container select,
+.rule-value-container select {
+  background-color: var(--query-select-bg);
+  border: 1px solid var(--query-select-border);
+  padding: 5px;
+  border-radius: var(--border-radius);
+  width: 100%;
+}
+
+.rule-actions .btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--text-color-light);
+  font-size: var(--btn-small-font-size);
+  padding: var(--btn-small-padding);
+}
+
+/* Modals */
 .modal-dialog {
   top: 50% !important;
   left: 50% !important;
@@ -388,16 +423,16 @@
   max-height: 95vh;
 }
 
-  .modal-content {
-    max-height: 95vh;
-    overflow-y: auto;
-  }
+.modal-content {
+  max-height: 95vh;
+  overflow-y: auto;
+}
 
-  body.modal-open {
-    overflow: hidden !important;
-  }
+body.modal-open {
+  overflow: hidden !important;
+}
 
-/* Container for selectInput elements */
+/* General layout */
 .flex-container {
   display: flex;
   gap: 1rem;
@@ -412,26 +447,86 @@
   display: none !important;
 }
 
-/* Containers for plots */
-.tree-container-style,
-.tsne-container-style,
-.summary-container-style,
-
-.heatmap-container-style, {
-  margin-right: auto;
-  margin-left: auto;
+.tight-heading {
+  margin-bottom: -16px !important;
 }
 
+.form-group {
+  margin-bottom: 0px !important;
+}
+
+.vertical-container > * {
+  display: block;
+}
+
+.vertical-container > *:first-child {
+  margin-bottom: 5px;
+}
+
+.bslib-gap-spacing {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* Plot messages */
+/* Shown in place of a plot when there is nothing to draw, in the same style as
+   the missing-file modals: a bold first line naming the problem, then a line
+   telling the user what to do about it. */
+.plot-message {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: var(--body-small-font-size);
+  color: var(--text-color-gray);
+}
+
+.plot-message-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--body-color);
+}
+
+/* Messages from validate(), which take the place of a plot inside its
+   container.  Given room to sit on their own line so they are not clipped. */
+.shiny-output-error-validation {
+  display: block;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: var(--body-small-font-size);
+  color: var(--text-color-gray);
+}
+
+/* Plot containers */
 .treemap-container-style {
   margin-right: auto;
   margin-left: auto;
 }
 
+.heatmap-container-style,
+.treemap-container-style,
+.tree-container-style,
+.tsne-container-style,
 .network-container-style {
-  height: 50vh; 
+  height: 46vh;
 }
 
-/* Lists with circled numbers*/
+/* Spinners */
+/* The spinner shows the first time an output renders and is held back after
+   that, so redraws change the plot or table in place.  The mark that holds it
+   back is set in custom.js and is cleared when a new job is loaded. */
+.shiny-spinner-output-container[data-spin-once].spinner-rendered .load-container {
+  visibility: hidden;
+}
+
+/* Keep room for the spinner until the output has rendered.  Containers that
+   size to their content have nothing in them at that point, so the spinner
+   would otherwise spill out of the card and be clipped. */
+.shiny-spinner-output-container[data-spin-once]:not(.spinner-rendered) {
+  min-height: 200px;
+}
+
+/* Numbered lists */
 .circled-number-list {
   counter-reset: h5-circle;
 }
@@ -449,24 +544,19 @@
   position: absolute;
   left: 0;
   top: 0.15em;
-
   width: 26px;
   height: 26px;
-
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-weight: 600;
   font-size: 14px;
-
   background-color: var(--list-circle-fill-color);
   border: 2px solid var(--list-circle-border-color);
   color: var(--list-circle-text-color);
 }
 
-/* Lists with circled letters */
 ol.circled-letter-list {
   list-style: none;
   counter-reset: circled-letter;
@@ -486,61 +576,66 @@ ol.circled-letter-list li::before {
   position: absolute;
   left: 0;
   top: 0.15em;
-
   width: 22px;
   height: 22px;
-
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-weight: 600;
   font-size: 13px;
-
-  background-color: var(--list-circle-border-color); 
+  background-color: var(--list-circle-border-color);
   border: 2px solid var(--list-circle-border-color);
   color: white;
 }
 
-/* Header for navset_card_underline */
-.card-header.bslib-navs-card-title {
-  display: block !important;
+/* Home page */
+.home-grid {
+  --home-grid-columns: 3; /* max number of columns of buttons */
+  --home-button-width: 295px; /* width of each button */
+  --home-grid-column-gap: 14px; /* space between buttons */
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--home-button-width));
+  gap: 6px var(--home-grid-column-gap);
+  max-width: calc(
+    var(--home-button-width) * var(--home-grid-columns) +
+    var(--home-grid-column-gap) * (var(--home-grid-columns) - 1)
+  );
+  margin: 0 auto;
+  justify-content: center;
+  align-items: stretch;
 }
 
-.card-header.bslib-navs-card-title > .nav {
-  justify-content: flex-start !important;
-}
-
-/* Left-side title label inside a navset_card_underline tab bar */
-.nav-title {
+.home-section-label {
+  grid-column: 1 / -1;      
+  justify-self: start;      
+  margin: 10px 0 2px;
+  padding: 0;
+  font-size: 13px;
   font-weight: 600;
-  white-space: nowrap;
-  margin-right: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-color);
+  text-align: left;
 }
 
-/* Other styles */
-.tight-heading {
-  margin-bottom: -16px !important;
-}
-
-.form-group {
-  margin-bottom: 0px !important;  /* Default is ~15px; reduce it */
-}
-
-.vertical-container > * {
-  display: block;
-}
-
-.vertical-container > *:first-child {
-  margin-bottom: 5px;
-}
-
-
-/* Buttons on the home page */
-.home-button-box {
-  width: 325px;
+.home-button-grid {
+  display: grid;
+  grid-template-columns: 75px 1fr;
+  width: 100%;
   height: 100%;
+  align-items: center;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.home-button-box {
+  width: var(--home-button-width, 295px);
+  height: 100%;
+  min-height: 74px;
   background-color: transparent;
   transition: 0.5s ease;
   position: relative;
@@ -561,7 +656,7 @@ ol.circled-letter-list li::before {
   border: 0;
   padding-top: 0px;
   object-fit: scale-down;
-  box-shadow:  var(--icon-shadow);
+  box-shadow: var(--icon-shadow);
 }
 
 .home-button-icon:hover {
@@ -586,132 +681,188 @@ ol.circled-letter-list li::before {
   color: var(--gray-color);
 }
 
-.home-button-grid {
-  display: grid;
-  grid-template-columns: 75px 250px;
-  max-width: 325px;
-  min-width: 325px;
-  align-items: center;
-  padding-left: 0px;
-  padding-right: 0px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.home-action-button-right {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 260px;
-  height: 100%;
-  opacity: 0;
-}
-
+.home-action-button-right,
 .home-action-button-left {
   position: absolute;
   top: 0px;
+  left: 0px;
   right: 0px;
-  width: 260px;
+  width: 100%;
   height: 100%;
   opacity: 0;
 }
 
-/* Drop down tabs */
-  .navbar-nav > li > a {
-	padding-top:15px !important; 
-	padding-bottom:15px !important;
-	height: 50px;
-  }
- .navbar {min-height:25px !important;}
-
-/* Caret icons in drop down tabs */
-  /* Disable element */
-		.dropdown-toggle::after {
-	display: none;
-  }
-
- .bslib-gap-spacing {
-        margin-top: 5px;  /* Adjust the spacing above elements */
-        margin-bottom: 5px; /* Adjust the spacing below elements */
-        padding-top: 5px; /* Adjust padding at the top */
-        padding-bottom: 5px; /* Adjust padding at the bottom */
-      }
-
-/* selectizeInput and pickerInput */
+/* Form inputs */
 .selectize-control.multi .selectize-input {
-  max-height: 75px !important;  /* Adjust for two rows */
+  max-height: 75px !important;
   overflow-y: auto !important;
-  white-space: normal !important; /* Allow wrapping */
+  white-space: normal !important;
 }
 
-
-/* Texte for unpredicted traits in dropdowns */
 .trait-not-predicted {
   color: var(--text-color-gray);
   font-style: italic;
 }
 
-/* Dropdowns for plot options */
 .plot-options-container {
-  padding: 0 1rem;
+  padding: 0; /* was 0 1rem; toolbar now sits inside padded card-body header, so no extra horizontal padding (keeps it flush with card title) */
 }
 
-/* Ensure selectizeInput and pickerInput have the same font style */
-.bootstrap-select .btn, 
+/* Sliders in the plot options toolbar */
+/* The min and max labels and the bottom margin are dropped so the slider sits at
+   about the same height as the pickers and switches beside it. */
+.compact-slider .form-group {
+  margin-bottom: 0 !important;
+}
+
+.compact-slider label.control-label {
+  font-family: var(--body-font-family);
+  font-size: var(--body-small-font-size);
+  margin-bottom: 5px;
+}
+
+.compact-slider .irs {
+  font-family: var(--body-font-family);
+  font-size: var(--body-small-font-size);
+}
+
+.compact-slider .irs-min,
+.compact-slider .irs-max {
+  display: none;
+}
+
+/* A slider gets cramped at the 150px the other toolbar items use, and it does
+   not need to stretch the way a picker does, so give it a fixed width. */
+.flex-item-slider {
+  flex: 0 0 220px;
+  min-width: 220px;
+}
+
+/* Plot options toolbar */
+/* The toolbar wraps so the accordion body, which asks for the full width, can
+   drop onto its own line. Aligning to the bottom keeps the accordion button and
+   the switches level with the pickers, whose labels sit above them. */
+.plot-options-container {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* Options accordion, sharing the toolbar above it */
+/* display: contents drops the accordion and its item from the box tree, so the
+   button and the collapsing body become items of the toolbar. The button takes
+   a quarter of the toolbar; the body takes all of it and so wraps to the next
+   line, which is what makes the L.
+
+   The conditional panel wrapping the accordion has to go the same way, or it,
+   rather than the toolbar, becomes the parent of those items. Shiny hides a
+   conditional panel with an inline display: none and shows it by clearing that
+   style, so display: contents is what it falls back to when shown.
+
+   This depends on bslib emitting .accordion > .accordion-item > .accordion-header
+   and .accordion-collapse. A bslib upgrade that changes that markup is what
+   would break the layout. */
+.options-accordion-wrapper,
+.options-accordion-inline,
+.options-accordion-inline .accordion-item {
+  display: contents;
+}
+
+.options-accordion-inline .accordion-header {
+  flex: 0 0 calc(25% - 1rem);
+  min-width: 160px;
+  margin: 0;
+  /* Push the button to the right end of the toolbar when there is space left
+     over.  The pickers grow to fill the toolbar, so this only takes effect when
+     none of them is showing and the button is on its own. */
+  margin-left: auto;
+  align-self: flex-end;
+}
+
+.options-accordion-inline .accordion-collapse {
+  flex: 0 0 100%;
+}
+
+.options-accordion-inline .accordion-button {
+  background-color: var(--white-color);
+  border: 1px solid var(--border-dark-subtle);
+  border-radius: var(--btn-border-radius);
+  box-shadow: none;
+  color: var(--body-color);
+  font-family: var(--body-font-family);
+  font-size: var(--body-small-font-size);
+  padding: var(--btn-small-padding);
+}
+
+.options-accordion-inline .accordion-button:not(.collapsed) {
+  background-color: var(--white-color);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+  color: var(--body-color);
+}
+
+.options-accordion-inline .accordion-body {
+  border-top: 1px solid var(--border-dark-subtle);
+  padding: 0.75rem 0 0 0;
+}
+
+/* Options accordion, on a row of its own */
+.options-accordion-row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.options-accordion-row .accordion-button,
+.options-accordion-row .accordion-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Notes sitting in the plot options area, which are captions rather than
+   controls */
+.plot-options-note {
+  color: var(--gray-color);
+  font-family: var(--body-font-family);
+  font-size: var(--body-small-font-size);
+}
+
+.bootstrap-select .btn,
 .selectize-input {
-  background-color: var(--white-color) !important;  /* White background */
-  border: 1px solid var(--border-dark-subtle) !important;  /* Dark grey border */
-  color: var(--body-color) !important; /* Consistent text color */
-  font-family: var(--body-font-family) !important; /* Match the font */
-  font-size: var(--body-font-size-small) !important; /* Small font size */
-  font-weight: 400 !important; /* Ensure normal font weight */
-  padding: var(--btn-small-padding);  
+  background-color: var(--white-color) !important;
+  border: 1px solid var(--border-dark-subtle) !important;
+  color: var(--body-color) !important;
+  font-family: var(--body-font-family) !important;
+  font-size: var(--body-small-font-size) !important;
+  font-weight: 400 !important;
+  padding: var(--btn-small-padding);
   border-radius: var(--btn-border-radius);
 }
 
-/* Ensure dropdown font style is the same */
 .bootstrap-select .dropdown-menu,
 .selectize-dropdown {
-  background-color: var(--white-color) !important; /* White background */
-  border: 1px solid var(--border-dark-subtle) !important; /* Dark grey border */
+  background-color: var(--white-color) !important;
+  border: 1px solid var(--border-dark-subtle) !important;
 }
 
 .bootstrap-select .dropdown-menu .dropdown-item,
 .selectize-dropdown .selectize-dropdown-content .option {
-  color: var(--body-color) !important; /* Ensure same text color */
+  color: var(--body-color) !important;
   font-family: var(--body-font-family) !important;
-  font-size: var(--body-font-size-small) !important;
-  font-weight: 400 !important; /* Ensure normal font weight */
+  font-size: var(--body-small-font-size) !important;
+  font-weight: 400 !important;
 }
 
-/* Fix hover effect */
 .bootstrap-select .dropdown-menu .dropdown-item:hover,
 .selectize-dropdown .selectize-dropdown-content .option:hover {
   background-color: var(--bg-primary-subtle) !important;
   color: var(--primary-hover-color) !important;
 }
 
-/* Make pickerInput dropdown arrow match selectizeInput */
 .bootstrap-select .btn::after {
   border-top-color: var(--border-dark-subtle) !important;
 }
 
-/* Action buttons */
-.btn-primary {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-border-color) !important;
-  color: var(--primary-text-color) !important;
-}
-
-/* Button hover effect */
-.btn-primary:hover,
-.btn-primary:focus,
-.btn-primary:active {
-  background-color: var(--primary-hover-color) !important;
-  border-color: var(--primary-hover-color) !important;
-}
-
-/* Layout and animation for loading screen */
+/* Loading screen */
 .loading-screen {
   display: flex;
   justify-content: center;
@@ -728,70 +879,65 @@ ol.circled-letter-list li::before {
 }
 
 .fade-svg {
-  opacity: 0; /* hide initially */
+  opacity: 0;
   animation-name: fadeInOut;
   animation-duration: 2s;
-  animation-delay: 0.2s; /* wait 0.2s before first fade-in */
+  animation-delay: 0.2s;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
   animation-fill-mode: forwards;
 }
 
 @keyframes fadeInOut {
-  0%   { opacity: 0.2; }
-  50%  { opacity: 1; }
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
   100% { opacity: 0.2; }
 }
 
-/* === Logo, title, and subtitle text styling === */
-/* Main title text */
+/* Home page logo */
 .logo-text {
-  font-family: 'Roboto Flex', sans-serif;           
-  font-size: 40px;                                  
-  font-variation-settings: 'wght' 1000, 'wdth' 100; 
-  text-align: center;                               
+  font-family: 'Roboto Flex', sans-serif;
+  font-size: 40px;
+  font-variation-settings: 'wght' 1000, 'wdth' 100;
+  text-align: center;
   margin: 0;
   padding: 0;
-  letter-spacing: 1px;                              
-  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.1);   
+  letter-spacing: 1px;
+  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.1);
 }
 
-/* Container for logo and text (centers everything vertically and horizontally) */
 .home-header {
-  text-align: center; 
+  text-align: center;
   margin: 0;
   padding: 0;
 }
 
-/* SVG logo positioning */
 .home-logo {
-  margin-bottom: -5px; 
+  margin-bottom: -5px;
   padding: 0;
 }
 
-/* Subtitle container */
 .logo-subtitle {
-  font-family: 'Roboto Flex', sans-serif; 
-  font-size: 20px;                       
-  color: #6c757d;                         
-  text-align: center;                     
-  margin-top: -10px;                      
+  font-family: 'Roboto Flex', sans-serif;
+  font-size: 20px;
+  color: #6c757d;
+  text-align: center;
+  margin-top: -10px;
 }
 
-/* Blinking cursor animation */
 .blinking-cursor {
   animation: blink 3s step-start infinite;
 }
 
 @keyframes blink {
-  0%, 50%, 100% { opacity: 1; }  
+  0%, 50%, 100% { opacity: 1; }
   25%, 75% { opacity: 0; }
 }
 
-/* === Footer === */
+/* Footer */
 .page-wrapper {
   min-height: 100vh;
-  padding-bottom: 40px;   /* space so content isn't hidden behind footer */
+  padding-bottom: 40px;
 }
 
 .app-footer {
@@ -799,15 +945,12 @@ ol.circled-letter-list li::before {
   bottom: 0;
   left: 0;
   right: 0;
-
   height: 34px;
   padding: 6px 14px;
-
   background: rgba(240, 240, 240, 0.85);
   border-top: 1px solid #ddd;
-
   display: flex;
-  justify-content: flex-end; /* puts icon on the right */
+  justify-content: flex-end;
   align-items: center;
   z-index: 2000;
   font-size: 13px;
@@ -821,30 +964,8 @@ ol.circled-letter-list li::before {
   filter: grayscale(30%);
   transition: 0.2s;
 }
+
 .cc-icon:hover {
   opacity: 1;
   filter: grayscale(0%);
 }
-
-/* === Dropdown menus === */
-/* Uncomment to remove height limit for dropdowns */
-/*
-.selectize-dropdown,
-.selectize-dropdown-content {
-  max-height: none !important;
-  height: auto !important;
-  overflow-y: visible !important;
-}
-
-.bootstrap-select .dropdown-menu,
-.bootstrap-select .dropdown-menu .inner {
-  max-height: none !important;
-  height: auto !important;
-  overflow-y: visible !important;
-}
-
-.selectize-dropdown,
-.bootstrap-select .dropdown-menu {
-  z-index: 3000 !important;
-}
-*/

@@ -33,7 +33,33 @@
               "Hydrogen",
               "Propanoate",
               "Succinate"
-            ]
+            ],
+            "tickmode": "array",
+            "tickvals": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "ticktext": [
+              "(R)-Lactate",
+              "(S)-Lactate",
+              "Acetate",
+              "Butanoic acid",
+              "Ethanol",
+              "Formate",
+              "Hydrogen",
+              "Propanoate",
+              "Succinate"
+            ],
+            "tickfont": {
+              "size": 12
+            }
           },
           "yaxis": {
             "domain": [
@@ -54,13 +80,16 @@
               "Clostridium butyricum",
               "Enterococcus faecalis",
               "Escherichia coli",
-              "Lactiplantibacillus plantarum",
+              "Lactiplantibacillus plan…",
               "Lactococcus lactis lactis",
-              "Propionibacterium freudenreichii",
-              "Pseudobutyrivibrio ruminis",
+              "Propionibacterium freu…",
+              "Pseudobutyrivibrio ru…",
               "Pyrococcus furiosus",
-              "Zymomonas mobilis mobilis"
-            ]
+              "Zymomonas mobilis m…"
+            ],
+            "tickfont": {
+              "size": 12
+            }
           },
           "paper_bgcolor": "rgba(0,0,0,0)",
           "plot_bgcolor": "rgba(0,0,0,0)",
@@ -257,110 +286,110 @@
             "type": "heatmap",
             "z": [
               [
-                1999.9999999790971,
+                1999.9999999999991,
                 0,
-                1999.9999999992106,
+                2000.0000000000009,
                 0,
                 0,
-                1000.0000000001617,
+                1000,
                 0,
-                999.99999999375575,
-                999.99999999921192
+                1000,
+                1000
               ],
               [
-                1999.9999999987799,
-                1999.999999998746,
-                1999.9999998734204,
-                999.99999997876296,
-                1000.0000000000633,
-                999.99999979517816,
-                1000.0000000043642,
+                2000,
+                2000,
+                2000,
+                1000,
+                1000,
+                1000,
+                1000,
                 0,
                 0
               ],
               [
-                1000.0000000001124,
-                999.99999999951149,
-                999.99999999991678,
+                1000,
+                1000,
+                1000,
                 0,
-                999.99999999988484,
-                999.99999999982208,
-                0,
-                0,
-                0
-              ],
-              [
-                2333.3333333321089,
-                1999.9999999955928,
-                2333.3333333311616,
-                0,
-                2000.0000000006739,
-                1000.0000000000911,
-                1000.0000000001567,
-                0,
-                2000.0000000001367
-              ],
-              [
-                999.99999997888585,
-                999.99999999778913,
-                1000.0000000091701,
-                0,
-                1000.000000005931,
-                999.9999999780174,
+                1000,
+                1000,
                 0,
                 0,
                 0
               ],
               [
+                2333.333333333333,
+                2000,
+                2333.3333333333339,
                 0,
-                999.99999996417534,
-                1000.0000000002711,
+                2000,
+                1000,
+                1000,
                 0,
-                1000.0000000002085,
-                999.9999999787168,
+                2000
+              ],
+              [
+                1000,
+                1000,
+                1000,
+                0,
+                1000,
+                1000,
                 0,
                 0,
                 0
               ],
               [
-                999.99999996262511,
-                999.99999999340196,
-                1999.9999999211511,
+                0,
+                1000,
+                1000,
+                0,
+                1000,
+                1000,
                 0,
                 0,
-                0,
-                0,
-                999.99999997935208,
-                999.99999999907459
+                0
               ],
               [
-                1000.0000000000709,
-                999.99999999937347,
-                999.99999999975637,
-                499.99999999953047,
+                1000,
+                1000,
+                2000,
                 0,
-                999.99999999980935,
-                1000.0000000002505,
+                0,
+                0,
+                0,
+                1000,
+                1000
+              ],
+              [
+                1000,
+                1000,
+                1000,
+                500,
+                0,
+                1000,
+                1000,
                 0,
                 0
               ],
               [
                 0,
                 0,
-                999.99999999983265,
+                1000,
                 0,
                 0,
                 0,
-                1000.0000000130769,
+                1000,
                 0,
                 0
               ],
               [
-                1999.9999998772428,
+                2000,
                 0,
                 0,
                 0,
-                999.99999999755642,
+                1000,
                 0,
                 0,
                 0,
@@ -383,12 +412,12 @@
               "Clostridium butyricum",
               "Enterococcus faecalis",
               "Escherichia coli",
-              "Lactiplantibacillus plantarum",
+              "Lactiplantibacillus plan…",
               "Lactococcus lactis lactis",
-              "Propionibacterium freudenreichii",
-              "Pseudobutyrivibrio ruminis",
+              "Propionibacterium freu…",
+              "Pseudobutyrivibrio ru…",
               "Pyrococcus furiosus",
-              "Zymomonas mobilis mobilis"
+              "Zymomonas mobilis m…"
             ],
             "zmin": 0,
             "zmax": 1000,
@@ -416,110 +445,110 @@
             "type": "heatmap",
             "z": [
               [
-                1999.9999999790971,
+                1999.9999999999991,
                 0,
-                1999.9999999992106,
+                2000.0000000000009,
                 0,
                 0,
-                1000.0000000001617,
+                1000,
                 0,
-                999.99999999375575,
-                999.99999999921192
+                1000,
+                1000
               ],
               [
-                1999.9999999987799,
-                1999.999999998746,
-                1999.9999998734204,
-                999.99999997876296,
-                1000.0000000000633,
-                999.99999979517816,
-                1000.0000000043642,
+                2000,
+                2000,
+                2000,
+                1000,
+                1000,
+                1000,
+                1000,
                 0,
                 0
               ],
               [
-                1000.0000000001124,
-                999.99999999951149,
-                999.99999999991678,
+                1000,
+                1000,
+                1000,
                 0,
-                999.99999999988484,
-                999.99999999982208,
-                0,
-                0,
-                0
-              ],
-              [
-                2333.3333333321089,
-                1999.9999999955928,
-                2333.3333333311616,
-                0,
-                2000.0000000006739,
-                1000.0000000000911,
-                1000.0000000001567,
-                0,
-                2000.0000000001367
-              ],
-              [
-                999.99999997888585,
-                999.99999999778913,
-                1000.0000000091701,
-                0,
-                1000.000000005931,
-                999.9999999780174,
+                1000,
+                1000,
                 0,
                 0,
                 0
               ],
               [
+                2333.333333333333,
+                2000,
+                2333.3333333333339,
                 0,
-                999.99999996417534,
-                1000.0000000002711,
+                2000,
+                1000,
+                1000,
                 0,
-                1000.0000000002085,
-                999.9999999787168,
+                2000
+              ],
+              [
+                1000,
+                1000,
+                1000,
+                0,
+                1000,
+                1000,
                 0,
                 0,
                 0
               ],
               [
-                999.99999996262511,
-                999.99999999340196,
-                1999.9999999211511,
+                0,
+                1000,
+                1000,
+                0,
+                1000,
+                1000,
                 0,
                 0,
-                0,
-                0,
-                999.99999997935208,
-                999.99999999907459
+                0
               ],
               [
-                1000.0000000000709,
-                999.99999999937347,
-                999.99999999975637,
-                499.99999999953047,
+                1000,
+                1000,
+                2000,
                 0,
-                999.99999999980935,
-                1000.0000000002505,
+                0,
+                0,
+                0,
+                1000,
+                1000
+              ],
+              [
+                1000,
+                1000,
+                1000,
+                500,
+                0,
+                1000,
+                1000,
                 0,
                 0
               ],
               [
                 0,
                 0,
-                999.99999999983265,
+                1000,
                 0,
                 0,
                 0,
-                1000.0000000130769,
+                1000,
                 0,
                 0
               ],
               [
-                1999.9999998772428,
+                2000,
                 0,
                 0,
                 0,
-                999.99999999755642,
+                1000,
                 0,
                 0,
                 0,
@@ -542,22 +571,400 @@
               "Clostridium butyricum",
               "Enterococcus faecalis",
               "Escherichia coli",
-              "Lactiplantibacillus plantarum",
+              "Lactiplantibacillus plan…",
               "Lactococcus lactis lactis",
-              "Propionibacterium freudenreichii",
-              "Pseudobutyrivibrio ruminis",
+              "Propionibacterium freu…",
+              "Pseudobutyrivibrio ru…",
               "Pyrococcus furiosus",
-              "Zymomonas mobilis mobilis"
+              "Zymomonas mobilis m…"
             ],
             "zmin": 0,
             "zmax": 1000,
             "xgap": 2,
             "ygap": 1,
-            "text": [
-              "structure(function (x, ...) ",
-              "UseMethod(\"text\"), apiSrc = TRUE)"
+            "customdata": [
+              [
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ],
+                [
+                  "Bacteroides fragilis",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ],
+                [
+                  "Clostridium butyricum",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ],
+                [
+                  "Enterococcus faecalis",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ],
+                [
+                  "Escherichia coli",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ],
+                [
+                  "Lactiplantibacillus plantarum",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ],
+                [
+                  "Lactococcus lactis lactis",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ],
+                [
+                  "Propionibacterium freudenreichii",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ],
+                [
+                  "Pseudobutyrivibrio ruminis",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ],
+                [
+                  "Pyrococcus furiosus",
+                  ""
+                ]
+              ],
+              [
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ],
+                [
+                  "Zymomonas mobilis mobilis",
+                  ""
+                ]
+              ]
             ],
-            "hovertemplate": "<b>Endproduct: %{x}<\/b><br><b>Organism: %{y}<\/b><br><b>Flux: %{z:.0f}<\/b><br><extra><\/extra>",
+            "hovertemplate": "<b>Organism: %{customdata[0]}%{customdata[1]}<\/b><br><b>Endproduct: %{x}<\/b><br><b>Flux: %{z:.0f}<\/b><extra><\/extra>",
             "xaxis": "x",
             "yaxis": "y",
             "frame": null
@@ -592,9 +999,14 @@
       "evals": [
 
       ],
-      "jsHooks": [
-
-      ],
+      "jsHooks": {
+        "render": [
+          {
+            "code": "function(el) { truncateAxisTickLabels(el, {axes: [\"x\"], full: {\"x\":[\"(R)-Lactate\",\"(S)-Lactate\",\"Acetate\",\"Butanoic acid\",\"Ethanol\",\"Formate\",\"Hydrogen\",\"Propanoate\",\"Succinate\"]}}); }",
+            "data": null
+          }
+        ]
+      },
       "deps": [
         {
           "name": "setprototypeof",

@@ -36,10 +36,9 @@ RUN R -e 'options(warn=2); install.packages(c( \
   "fs", \
   "htmltools", \
   "igraph", \
-  "import", \
   "jqbr", \
   "jsonlite", \
-  "magrittr", \
+  "mirai", \
   "plotly", \
   "purrr", \
   "randomForest", \
@@ -48,33 +47,37 @@ RUN R -e 'options(warn=2); install.packages(c( \
   "readxl", \
   "remotes", \
   "rlang", \
+  "ROI", \
+  "ROI.plugin.glpk", \
   "rsconnect", \
   "shiny", \
   "shinycssloaders", \
   "shinyjs", \
   "shinyWidgets", \
+  "shiny.destroy", \
   "stringr", \
   "tidyr", \
   "tidyselect", \
-  "uuid" \
+  "this.path", \
+  "uuid", \
+  "zip" \
 ))'
 
 # Install Bioconductor packages
 RUN R -e "options(warn=2); if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager'); BiocManager::install('ggtree', ask=FALSE, update=FALSE)"
 
 # Install GitHub packages
-RUN R -e 'remotes::install_github("maxconway/fbar")'
-RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
+# RUN R -e "remotes::install_github('thackmann/FileLocator', subdir='FileLocator')"
 
 # Verify packages load
 RUN R -e " \
   pkgs <- c( \
     'ape','BiocManager','bslib','caret','colorspace','digest','dplyr', \
-    'DT','fs','htmltools','igraph','import','jqbr','jsonlite', \
-    'magrittr','plotly','purrr','randomForest','reactlog','readr', \
+    'DT','fs','htmltools','igraph','jqbr','jsonlite', \
+    'mirai','plotly','purrr','randomForest','reactlog','readr', \
     'readxl','remotes','rlang','rsconnect','shiny','shinycssloaders', \
-    'shinyjs','shinyWidgets','stringr','tidyr','tidyselect','uuid', \
-    'fbar','FileLocator', \
+    'shinyjs','shinyWidgets','shiny.destroy','stringr','tidyr','tidyselect','this.path','uuid','zip', \
+    'ROI','ROI.plugin.glpk', \
     'ggtree' \
   ); \
   results <- sapply(pkgs, function(p) { \
@@ -105,7 +108,7 @@ EXPOSE 3838
 RUN chown -R shiny:shiny /srv/shiny-server \
     && mkdir -p /srv/shiny-server/jobs \
     && chmod -R 0777 /srv/shiny-server/jobs \
-    && mkdir -p /srv/shiny-server/app_cache \ 
+    && mkdir -p /srv/shiny-server/app_cache \
     && chmod -R 0777 /srv/shiny-server/app_cache \
     && ln -s /srv/shiny-server/jobs /jobs || true
 

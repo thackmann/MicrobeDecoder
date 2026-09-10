@@ -15,11 +15,21 @@ aboutUI <- function(id) {
       # Sidebar
       sidebar = bslib::navset_pill(
         bslib::nav_panel(
+          title = "Citation",
+          value = "Citation",
+          id = "Citation"
+        ),
+        id = ns("subtabs"),
+        bslib::nav_panel(
+          title = "Source Code",
+          value = "Source Code",
+          id = "Source Code"
+        ),
+        bslib::nav_panel(
           title = "Acknowledgements",
           value = "Acknowledgements",
           id = "Acknowledgements"
         ),
-        id = ns("subtabs"),
         bslib::nav_panel(
           title = "Source Code",
           value = "Source Code",
@@ -50,27 +60,45 @@ aboutUI <- function(id) {
 }
 
 # === Define server ===
-aboutServer <- function(input, output, session) {
+aboutServer <- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
   ns <- session$ns
   
   output$about_content <- renderUI({
     switch(input$subtabs,
+           "Citation" = div(
+             h3("Citation"),
+             p(shiny::tagList(
+               "If you use this resource, please cite"
+             )),
+             p(shiny::tagList(
+               "Hackmann TJ, Parris JP, Seshadri R, Lingga C. ",
+               url_MicrobeDecoderPublication,
+               ". Nucleic Acids Res. 2026 May 21:gkag515. doi: 10.1093/nar/gkag515. ",
+               url_MicrobeDecoderPublicationPMID,
+               "."
+             ))
+           ),
+           
            "Acknowledgements" = div(
              h3("Acknowledgements"),
-             p("This resource was developed from another tool (", url_FermentationExplorer, ").  A manuscript describing the current resource is in preparation."),
              p(shiny::tagList(
                "We acknowledge ", 
                url_BacDive, ", ", 
                url_FAPROTAX, ", ",
+               url_FAPROTAX2, ", ",
                url_GOLD, ", ",
                url_GTDB, ", ",
                url_IMG, ", ", 
-               url_LPSN, ", and ", 
-               url_NCBI, 
+               url_LPSN, ", ", 
+               url_NCBI, ", and ", 
+               url_FermentationExplorer,
                " databases for use of their data. Data from ", 
                url_BacDive, ", ", 
+               url_LPSN, ", ",
+               url_FAPROTAX2, ", ", 
                url_GTDB, ", and ", 
-               url_LPSN, 
+               url_FermentationExplorer,
                " appear under the terms of a ", url_CC, ".  Data from ", 
                url_NCBI, 
                " appear under the terms of a ", url_MIT, ". Data from ",
@@ -158,5 +186,6 @@ aboutServer <- function(input, output, session) {
              p("This website is for research purposes and comes with no warranty.")
            )
     )
+  })
   })
 }

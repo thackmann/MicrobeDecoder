@@ -115,8 +115,8 @@
   #' @export
   extract_urls <- function(fp) {
     html_content <- rvest::read_html(fp)
-    urls <- html_content %>%
-      rvest::html_nodes("a") %>%
+    urls <- html_content |>
+      rvest::html_nodes("a") |>
       rvest::html_attr("href")
     urls <- urls[!is.na(urls)]
     return(urls)
@@ -1150,9 +1150,9 @@
   #' @importFrom dplyr group_by filter ungroup
   #' @export
   remove_extra_species <- function(data) {
-    data = data %>%
-      dplyr::group_by(Genus, Species) %>%
-      dplyr::filter(!(is.na(Subspecies) & any(!is.na(Subspecies)))) %>%
+    data = data |>
+      dplyr::group_by(Genus, Species) |>
+      dplyr::filter(!(is.na(Subspecies) & any(!is.na(Subspecies)))) |>
       dplyr::ungroup()
     
     return(data)

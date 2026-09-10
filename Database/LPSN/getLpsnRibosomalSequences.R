@@ -7,7 +7,7 @@
 # Date: 17 December 2024
   
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/LPSN"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -24,7 +24,7 @@
 
 # === Download ribosomal sequences ===
   # Handle most strains (those that are not type subspecies)
-    most_strains <- lpsn_organisms %>%
+    most_strains <- lpsn_organisms |>
       dplyr::filter(is.na(Species) | is.na(Subspecies) | Species != Subspecies)
     addresses <- most_strains$address
     LPSN_ID <- most_strains$LPSN_ID
@@ -56,7 +56,7 @@
 
   # Handle strains of type subspecies
     ## These strains do not have sequences on their own page--instead they are on the page of the parent taxon
-    type_subspecies <- lpsn_organisms %>% dplyr::filter(Species==Subspecies)
+    type_subspecies <- lpsn_organisms |> dplyr::filter(Species==Subspecies)
     addresses <- type_subspecies$address
     LPSN_ID <- type_subspecies$LPSN_ID
     base_url <- "https://lpsn.dsmz.de"
@@ -67,8 +67,8 @@
       body <- get_web_page_body(url = addresses[i], user_agent = "me")
 
       # Extract parent taxon link
-      parent_taxon_link <- body %>%
-        rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") %>%
+      parent_taxon_link <- body |>
+        rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") |>
         rvest::html_attr("href")
 
       if (!is.na(parent_taxon_link) && length(parent_taxon_link) > 0) {

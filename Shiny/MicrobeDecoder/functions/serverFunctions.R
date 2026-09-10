@@ -14,12 +14,11 @@
   #' visibility of UI elements via `shiny::conditionalPanel()`. It assigns a reactive
   #' expression to `output[[output_id]]` that returns TRUE if `value_fun()` is not NULL.
   #'
-  #' @param output The output object from the server function (e.g. `output`)
-  #' @param output_id The name of the output (as string) to assign to
-  #' @param trigger A reactive expression used to trigger reevaluation
-  #' @param value_fun A function that returns the value to test for NULL
-  #' @param label Optional label for debugging (used in eventReactive)
-  #'
+  #' @param output The Shiny output object. Defaults to the current reactive domain's output.
+  #' @param output_id The name of the output (as string) to assign to.
+  #' @param trigger A reactive expression used to trigger reevaluation.
+  #' @param value_fun A function that returns the value to test for NULL.
+  #' @param label Optional label for debugging (used in `eventReactive`).
   #' @return None (side effect: assigns to output)
   #'
   #' @examples
@@ -42,12 +41,11 @@
   #' expression to `output[[output_id]]` that returns TRUE if `value_fun()` has more
   #' than one element (or more than one column, if a data.frame or matrix).
   #'
-  #' @param output The output object from the server function
-  #' @param output_id The name of the output (as string) to assign to
-  #' @param trigger A reactive expression used to trigger reevaluation
-  #' @param value_fun A function that returns a vector, list, or data.frame
-  #' @param label Optional label for debugging (used in eventReactive)
-  #'
+  #' @param output The Shiny output object. Defaults to the current reactive domain's output.
+  #' @param output_id The name of the output (as string) to assign to.
+  #' @param trigger A reactive expression used to trigger reevaluation.
+  #' @param value_fun A function that returns a vector, list, or data.frame.
+  #' @param label Optional label for debugging (used in `eventReactive`).
   #' @return None (side effect: assigns to output)
   #'
   #' @examples
@@ -71,13 +69,123 @@
     shiny::outputOptions(output, output_id, suspendWhenHidden = FALSE)
   }
 
+# === Job status outputs ===
+  #' Create the message shown before job results are available
+  #'
+  #' This function creates the message shown when a saved computation job does
+  #' not yet have results to display.
+  #'
+  #' @param status Character job status.
+  #' @param percent Numeric progress from 0 to 100, or \code{NA} when not known.
+  #' @param error_message Character error message for a failed job, or \code{NA}.
+  #' @return A Shiny \code{div} containing the job message.
+  #' @export
+  create_job_status_message <- function(status,
+                                        percent = NA_real_,
+                                        error_message = NA_character_) {
+    status <- status %||% "missing"
+    
+    message <- switch(
+      status,
+      submitted   = c("Your results are not ready yet",
+                      "Your job has been submitted and is waiting to start."),
+      running     = c("Your results are not ready yet",
+                      if (is.na(percent)) {
+                        "Your job is still running."
+                      } else {
+                        sprintf("Your job is still running (%d%% done).",
+                                max(0, min(100, round(percent))))
+                      }),
+      error       = c("This job did not finish",
+                      "The job stopped with an error before producing results. You can submit it again."),
+      cancelled   = c("This job was cancelled",
+                      "Because the job did not finish, there are no results to show."),
+      interrupted = c("This job was interrupted",
+                      "The job stopped when clicking the back button on the browser or because the app restarted. Please submit it again."),
+      completed   = c("Your results are ready",
+                      "The job has finished."),
+      missing     = c("Job results cannot be found",
+                      "The job may have been deleted or expired."),
+      c("Job results are not available",
+        "These results are not available yet.")
+    )
+    
+    refreshable <- !(status %in% c("error", "cancelled", "interrupted"))
+    refresh_label <- if (identical(status, "completed")) {
+      "Refresh to view your results."
+    } else {
+      "Refresh to check again."
+    }
+    
+    div(
+      class = "job-status-message",
+      shiny::h4(message[[1]]),
+      shiny::p(message[[2]]),
+      if (refreshable) {
+        shiny::p(shiny::tags$a(href = "javascript:window.location.reload();",
+                               refresh_label))
+      },
+      if (identical(status, "error") &&
+          !is.na(error_message) && nzchar(error_message)) {
+        shiny::p(
+          class = "text-muted",
+          style = "margin-top:8px; font-size:0.85em; word-break:break-word; max-width:60ch;",
+          error_message
+        )
+      }
+    )
+  }
+  
+  #' Render the message shown before job results are available
+  #'
+  #' This helper shows the module's normal starting message when the URL does not
+  #' name a job. When a job is named but its result is not available, it reads the
+  #' status file and shows the matching job message.
+  #'
+  #' @param tab_name Name of the module tab.
+  #' @param empty_message Message shown before a job has been selected.
+  #' @param session The Shiny session object.
+  #' @return A Shiny UI renderer.
+  #' @export
+  render_job_status <- function(tab_name,
+                                empty_message,
+                                session = shiny::getDefaultReactiveDomain()) {
+    shiny::renderUI({
+      job_id <- get_query_param(session = session, param_name = "job")
+      
+      if (is.null(job_id)) {
+        return(shiny::h4(empty_message))
+      }
+      
+      user_id <- get_query_param(session = session, param_name = "user")
+      job_dir <- get_job_dir(
+        tab     = tab_name,
+        user_id = user_id,
+        session = session
+      )
+      
+      record <- read_job_status(get_status_filepath(job_dir, job_id))
+      
+      if (is.null(record)) {
+        return(create_job_status_message(status = "missing"))
+      }
+      
+      create_job_status_message(
+        status        = label_job_status(record),
+        percent       = suppressWarnings(
+          as.numeric(record$percent %||% NA_real_)
+        ),
+        error_message = record$error_message %||% NA_character_
+      )
+    })
+  }
+
 # === Reactive triggers ===
   #' Create a reactive trigger based on one or more expressions
   #'
   #' This function is usually used to define a trigger for reactive outputs or observers.
   #'
   #' @param ... Expressions to track. Can be individual inputs or expressions.
-  #'
   #' @return A reactive expression (used to trigger updates)
   #' @examples
   #' my_trigger <- make_trigger(input$go_button, input$some_setting)
@@ -91,11 +199,13 @@
   
   #' Trigger when an action button is clicked
   #'
-  #' @param button_id The ID of the action button
-  #' @param input The Shiny input object. Defaults to `getDefaultReactiveDomain()$input`.
+  #' @param button_id The ID of the action button.
+  #' @param input The Shiny input object. Defaults to the current reactive domain's input.
+  #' @param baseline The baseline click count to compare against. The trigger fires when the button's click count exceeds this value. Default is `0L`.
   #' @return A reactive expression that triggers after clicking the action button
-  make_action_button_trigger <- function(button_id, input = getDefaultReactiveDomain()$input) {
-    make_trigger(req(input[[button_id]] > 0))
+  make_action_button_trigger <- function(button_id, input = getDefaultReactiveDomain()$input,
+                                         baseline = 0L) {
+    make_trigger(req((input[[button_id]] %||% 0L) > baseline))
   }
   
   #' Trigger when a specific tab is selected
@@ -107,13 +217,8 @@
   #'
   #' @param tab_fn A reactive expression that returns the name of the currently selected tab.
   #' @param tab_name A character string specifying the name of the tab to trigger on.
-  #' @param input The Shiny input object. Required if `input_id` is specified.
-  #' @param input_id A character string specifying the input to depend on (e.g.,
-  #'   `"query_builder_valid"`, `"gene_functions_database"`). When provided, the
-  #'   trigger will not fire until both the tab is active and this input fires a
-  #'   new event. The current value of the input at startup is ignored, so the
-  #'   trigger is safe to use with `once = TRUE` in `observeEvent`.
-  #'
+  #' @param input The Shiny input object. Defaults to the current reactive domain's input.
+  #' @param input_id A character string specifying the input to depend on (e.g., `"query_builder_valid"`, `"selected_organisms"`). When provided, the trigger also fires when this input changes.
   #' @return A reactive expression that returns TRUE when the tab matches `tab_name`,
   #'   optionally gated on a new event from `input[[input_id]]`. Returns NULL when
   #'   the selected tab does not match `tab_name`, which prevents downstream
@@ -130,7 +235,7 @@
   #'
   #' # Trigger when 'predictionsMachineLearning' is selected and organism selectize has populated
   #' tab_loaded_trigger <- make_tab_trigger(
-  #'   selected_tab, "predictionsMachineLearning", input, "gene_functions_database"
+  #'   selected_tab, "predictionsMachineLearning", input, "selected_organisms"
   #' )
   #'
   #' @export
@@ -153,10 +258,9 @@
   #' This creates a reactive expression that returns TRUE when a given query parameter (e.g., ?job=xyz)
   #' is present and the tab in the URL matches the expected tab name.
   #'
-  #' @param session The Shiny session object
+  #' @param session The Shiny session object. Defaults to the current reactive domain.
   #' @param param_name The query parameter to look for (default = "job")
-  #' @param tab_name Optional tab name to match against the ?tab=... value in the URL
-  #'
+  #' @param tab_name Optional tab name to match against the `?tab=...` value in the URL.
   #' @return A reactive expression that returns TRUE when both the query parameter is set and the tab matches
   #' @export
   make_url_trigger <- function(session = getDefaultReactiveDomain(), param_name = "job", tab_name = NULL) {
@@ -176,33 +280,17 @@
     })
   }
   
-  #' Create a reactive trigger that returns TRUE if a job was loaded at app initialization
+  #' Create a manually-fired reactive trigger
   #'
-  #' This trigger checks the `?job=` query parameter when the app first loads.
-  #' It can be used by other observers or modules to restore previous inputs or state
-  #' based on whether the user opened the app with a job preloaded.
+  #' This function returns a `trigger`/`reexecute` pair that lets you manually fire
+  #' a reactive expression. The `trigger` is a reactive expression suitable for
+  #' passing to `eventReactive()` or similar; calling `reexecute()` causes
+  #' anything depending on `trigger` to re-evaluate. Implemented via a
+  #' `reactiveVal` counter that is incremented on each manual fire.
   #'
-  #' The result is stored in `session$userData$loaded_job_on_init` during tab synchronization
-  #' (`sync_tabs_with_query()`), and this trigger reads that value reactively.
-  #'
-  #' @param session The Shiny session object.
-  #'
-  #' @return A reactive expression that returns TRUE if a job was loaded at init, else NULL.
-  #' @export
-  make_restore_trigger <- function(session = getDefaultReactiveDomain()) {
-    reactive({
-      val <- session$userData$loaded_job_on_init
-      if (isTRUE(val)) TRUE else NULL
-    })
-  }
-  
-  #' Force re-execution of a reactive expression (trigger)
-  #'
-  #' This works by wrapping the trigger with a reactiveVal counter.
-  #' It assumes the trigger has no side effects and is used only for dependency tracking.
-  #'
-  #' @param trigger A reactive expression created by make_trigger() or similar.
-  #' @return A function that forces the trigger to re-execute.
+  #' @return A list with two elements:
+  #'   \item{trigger}{A reactive expression that invalidates when `reexecute()` is called.}
+  #'   \item{reexecute}{A function that, when called, fires the trigger.}
   #' @export
   make_manual_trigger <- function() {
     counter <- reactiveVal(0)
@@ -231,9 +319,8 @@
   #' that increments on each event, forcing reactivity.
   #'
   #' @param trigger1 A reactive expression (e.g. an eventReactive or reactive)
-  #' @param trigger2 A second reactive expression
-  #' @param label Optional label for debugging/logging
-  #'
+  #' @param trigger2 A second reactive expression.
+  #' @param label Optional label for debugging/logging.
   #' @return A reactive expression that returns an incrementing counter
   #'
   #' @examples
@@ -258,7 +345,7 @@
       counter()
     })
   }
-  
+
 # === Update User Interface (UI) Elements ===
   #' Update Query Builder Filters
   #' 
@@ -276,15 +363,15 @@
   #' 
   #' @examples
   #' update_query_builder("query_builder", choices_traits_taxonomy)
-  update_query_builder <- function(inputId, choices, setRules =  NULL, delay_time = 250) {
-    filters <- load_query_filters()
+  update_query_builder <- function(inputId, choices, setRules = NULL, delay_time = 250) {
+    filters <- load_data("query_filters")
     filters <- purrr::keep(filters, ~ .x$id %in% choices)
     
     shinyjs::delay(delay_time, {
       jqbr::updateQueryBuilder(
-        inputId = inputId,
+        inputId    = inputId,
         setFilters = filters,
-        setRules = setRules
+        setRules   = setRules
       )
     })
   }
@@ -294,7 +381,7 @@
   #' This function updates a Selectize input in a Shiny application. It dynamically sets
   #' the available choices and selects a default value.
   #'
-  #' @param session The Shiny session object.
+  #' @param session The Shiny session object. Defaults to the current reactive domain.
   #' @param inputId A character string specifying the ID of the Selectize input to update.
   #' @param choices A character vector of choices to populate the Selectize input.
   #' @param selected A character vector specifying the default selected choice(s).
@@ -303,7 +390,7 @@
   #' @return Updates the specified Selectize input dynamically.
   #'
   #' @examples
-  #' update_select_input(session, "gene_functions_database", choices = c("Option 1", "Option 2"))
+  #' update_select_input(session, "selected_organisms", choices = c("Option 1", "Option 2"))
   update_select_input <- function(session = getDefaultReactiveDomain(), 
                                   inputId, choices = NULL, selected = NULL, server = TRUE) {
     if (is.null(choices)) choices <- character(0)
@@ -317,10 +404,10 @@
   #' This function updates a Picker input (shinyWidgets) in a Shiny application. It sets
   #' the available choices and selects a default value.
   #'
-  #' @param session The Shiny session object.
+  #' @param session The Shiny session object. Defaults to the current reactive domain.
   #' @param inputId A character string specifying the ID of the Picker input to update.
   #' @param choices A character vector of choices to populate the Picker input.
-  #' @param selected A character vector specifying the default selected choice(s). 
+  #' @param selected A character vector specifying the default selected choice(s).
   #' @param choicesOpt An optional list of options for the choices (e.g., icons, subtext).
   #'
   #' @return Updates the specified Picker input dynamically.
@@ -342,7 +429,7 @@
   #' This function updates a text input field in a Shiny application. It sets the value
   #' of the input dynamically during a session.
   #'
-  #' @param session The Shiny session object (default is the current reactive domain).
+  #' @param session The Shiny session object. Defaults to the current reactive domain.
   #' @param inputId A character string specifying the ID of the text input to update.
   #' @param value A character string specifying the new value for the input.
   #' @param placeholder Optional. A character string for placeholder text if needed.
@@ -363,75 +450,128 @@
   #' This function updates a checkbox group input in a Shiny application. It dynamically sets
   #' the available choices and selects default values.
   #'
-  #' @param session The Shiny session object.
+  #' @param session The Shiny session object. Defaults to the current reactive domain.
   #' @param inputId A character string specifying the ID of the checkbox group input to update.
   #' @param choices A named list or character vector of choices to populate the checkbox group.
-  #' @param selected A character vector specifying the default selected choices. Defaults to NULL.
-  #'
+  #' @param selected A character vector specifying the default selected choices. Defaults to `NULL`.
   #' @return Updates the specified checkbox group input dynamically.
   #'
   #' @examples
-  #' update_checkbox_group(session, "checkboxes_info_organism", choices = c("Genus", "Species"))
+  #' update_checkbox_group(session, "info_organism", choices = c("Genus", "Species"))
   update_checkbox_group <- function(session = getDefaultReactiveDomain(), 
                                     inputId, choices = NULL, selected = NULL) {
     if (is.null(choices)) choices <- character(0)
     
     shiny::updateCheckboxGroupInput(session, inputId = inputId, choices = choices, selected = selected)
   }
+ 
+# === Spinners ===
+  #' Let the spinners in a module fire again
+  #'
+  #' This function clears the mark that keeps a spinner hidden after its output
+  #' has rendered once.  Call it when a new job is loaded so the spinners show
+  #' again while the new results are drawn.
+  #'
+  #' @param session The Shiny session object. Defaults to the current session.
+  #' @return None (side effect: sends a message to the browser)
+  #'
+  #' @examples
+  #' reset_spinners()
+  reset_spinners <- function(session = getDefaultReactiveDomain()) {
+    session$sendCustomMessage("resetSpinners", list(prefix = session$ns("")))
+  }
+
+# === Loading screen ===
+  #' Hide the loading screen
+  #'
+  #' This function hides the loading screen for the app.  It is triggered when 
+  #' the module is ready. It waits until the trigger returns `TRUE`, then calls 
+  #' `on_ready()` once.
+  #'
+  #' @param trigger A reactive expression that returns `TRUE` when the module is
+  #'   ready.
+  #' @param on_ready A function called when the module is ready.
+  #' @param label Optional label for the observer (used for debugging). Defaults
+  #'   to `"hide_loading_screen"`.
+  #'
+  #' @return A Shiny observer (called for its side effect).
+  #'
+  #' @examples
+  #' hide_loading_screen(
+  #'   trigger  = ui_ready,
+  #'   on_ready = on_ready
+  #' )
+  hide_loading_screen <- function(trigger,
+                                  on_ready,
+                                  label = "hide_loading_screen") {
+    shiny::observeEvent(
+      {
+        shiny::req(trigger())
+        TRUE
+      },
+      {
+        on_ready()
+      },
+      once = TRUE,
+      label = label
+    )
+  }
   
-# === Other ====
-  #' Output Modal with Example Data
+# === Modals ===
+  #' Create a Shiny Modal with Download Links
   #'
-  #' This function outputs a modal with example data.  It creates a Shiny observer 
-  #' to detect when the user wants to launch the modal, generates download handlers
-  #' for the files, then launches the modal.  
+  #' This function shows a modal with a list of download links.  An optional help
+  #' link points the user to detailed guidelines on the Help page.
   #'
-  #' @param input The Shiny input object. Defaults to `getDefaultReactiveDomain()$input`.
-  #' @param output The Shiny output object. Defaults to `getDefaultReactiveDomain()$output`.
-  #' @param input_id The ID of the input that triggers the modal (e.g., `gene_functions_modal` in `input$gene_functions_modal`).
-  #' @param output_id The ID that appears in the output file (e.g., `file` in `output$file`).
-  #' @param object_ids A character vector of object IDs that map to `load_` functions.
-  #' @param labels A character vector of human-readable labels corresponding to the `object_ids`.
-  #' @param file_types Optional character vector indicating file type for each object (`"zip"` by default).
-  #' @param ns A namespace function for module compatibility.
-  #' @param title The title to display in the modal.
-  #' @param label An optional label for the observer (for debugging).
-  #'
+  #' @param title The title of the modal.
+  #' @param links A list of links, as in the `example_file_links` catalog.
+  #' @param help_panel The Help panel to open when the link is clicked (matches a navset_pill value).
+  #'   When `NULL`, no help link is shown.
+  #' @return None. The function shows the modal as a side effect.
   #' @export
-  output_download_modal <- function(input = getDefaultReactiveDomain()$input,
-                                    output = getDefaultReactiveDomain()$output,
-                                    input_id, output_id = "file", object_ids, labels,
-                                     file_types = rep("zip", length(object_ids)),
-                                     ns = identity, title = "Example files", label = NULL) {
-    # Create observer
-    shiny::observeEvent(input[[input_id]], {
-      stopifnot(length(object_ids) == length(labels))
-      stopifnot(length(object_ids) == length(file_types))
-      
-      # Generate download handlers for files
-      for (i in seq_along(object_ids)) {
-        local({
-          i_local <- i
-          output_id <- paste0(output_id, "_", i_local)
-          load_func_name <- paste0("load_", object_ids[i_local])
-          
-          output[[output_id]] <- create_download_handler(
-            filename_prefix = object_ids[i_local],
-            data_source = function() do.call(load_func_name, list()),
-            file_type = file_types[i_local]
-          )
-        })
-      }
-
-      downloads_named_list <- stats::setNames(labels, paste0(output_id, "_", seq_along(labels)))
-
-      # Launch modal
-      showDownloadModal(
-        ns = ns,
-        title = title,
-        downloads = downloads_named_list
+  create_download_modal <- function(title = "Example files", links, help_panel = NULL) {
+    # Build optional link to guidelines on the Help page
+    guidelines <- if (!is.null(help_panel)) {
+      htmltools::div("Click ",
+                     htmltools::tags$a(
+                       href = "#",
+                       onclick = sprintf("shinyjs.goToHelpPanel('%s'); return false;", help_panel),
+                       "here"
+                     ),
+                     " to see detailed guidelines."
       )
-    }, label = label)
+    }
+
+    shiny::showModal(shiny::modalDialog(
+      shiny::h3(title),
+      links,
+      guidelines,
+      easyClose = TRUE, footer = NULL
+    ))
+  }
+
+  #' Create a Shiny Modal with an Error Message
+  #'
+  #' This function creates a modal dialog with an error message.
+  #'
+  #' @param ns A namespace function for module compatibility. Default is `identity` for non-modular use.
+  #' @param title The title of the modal. Default is `"Download Unavailable"`.
+  #' @param message The error message text to display.
+  #' @return None. The function shows the modal as a side effect.
+  #' @export
+  create_error_modal <- function(ns = identity,
+                             title = "Download Unavailable",
+                             message = "Data is not available to download.") {
+    shiny::showModal(
+      shiny::modalDialog(
+        shiny::h3(title),
+        htmltools::div(
+          HTML(message)
+        ),
+        easyClose = TRUE,
+        footer = NULL
+      )
+    )
   }
   
   #' Output Modal for Missing Files
@@ -439,13 +579,12 @@
   #' This function creates a Shiny observer that triggers a modal with an error message
   #' when a specific input is activated (e.g., clicking a faux download button).
   #'
-  #' @param input The Shiny input object. Defaults to `getDefaultReactiveDomain()$input`.
+  #' @param input The Shiny input object. Defaults to the current reactive domain's input.
   #' @param input_id The ID of the input that triggers the modal (e.g., `"null_download"`).
   #' @param title The title to display in the modal dialog. Default is `"Download Unavailable"`.
   #' @param message The body text to show in the modal dialog.
-  #' @param ns A namespace function for module compatibility. Use `session$ns` in modules; defaults to `identity` for non-modular use.
+  #' @param ns A namespace function for module compatibility. Default is `identity` for non-modular use.
   #' @param label An optional label for the observer, useful for debugging.
-  #'
   #' @return A Shiny observer that shows an error modal when the input is triggered.
   #' @export
   output_missing_files_modal <- function(input = getDefaultReactiveDomain()$input, 
@@ -456,28 +595,6 @@
                                          label = NULL) {
     observeEvent(input[[input_id]], {
       # Set inputs and outputs
-      showErrorModal(ns = ns, title = title, message = message)
+      create_error_modal(ns = ns, title = title, message = message)
     }, label = label)
-  }
-  
-  #' Navigate User to Help
-  #'
-  #' This function will navigate the user to help when they click on the appropriate link.
-  #' It creates an Shiny observer to detect when the link is clicked, navigates the user, 
-  #' and then closes any active modals.  
-  #'
-  #' @param session The session object
-  #' @param selected_tab The tab to switch to
-  #' @param selected_panel The panel to activate inside navlist
-  #' @param label Optional label for the observer
-  navigate_to_help <- function(input, session, selected_tab, selected_panel, label = NULL) {
-    # Create observer
-    observeEvent(getDefaultReactiveDomain()$input$go_to_help, {
-      # Navigate user to help
-      updateNavbarPage(session = session, inputId = "tabs", selected = selected_tab)
-      updateNavlistPanel(session = session, inputId = "navlist_panel", selected = selected_panel)
-      
-      # Close open modals
-      removeModal()
-    }, label = label %||% "go_to_help")
   }

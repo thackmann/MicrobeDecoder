@@ -21,8 +21,8 @@
   #'
   extract_links <- function(body, tag = "a", attribute = "href") {
     # Extract specified attributes from the specified HTML tags
-    links <- body %>%
-      rvest::html_nodes(tag) %>%
+    links <- body |>
+      rvest::html_nodes(tag) |>
       rvest::html_attr(attribute)
     
     return(links)
@@ -148,12 +148,12 @@
     # Normalize ranks to lowercase for matching
     ranks_lower <- tolower(ranks)
     
-    # Infraspecific ranks → lowercase only last epithet
+    # Infraspecific ranks b lowercase only last epithet
     infra_ranks <- c("species", "subspecies", "variety", "form")
     
     for (item in phylogeny) {
       
-      # Strip any scheme, domain, query, trailing slashes → leave "/rank/name"
+      # Strip any scheme, domain, query, trailing slashes b leave "/rank/name"
       item_path <- sub("^https?://[^/]+", "", item)
       item_path <- sub("\\?.*$", "", item_path)
       item_path <- sub("/+$", "", item_path)
@@ -178,7 +178,7 @@
         parts <- strsplit(name, "-", fixed = TRUE)[[1]]
         value <- tolower(parts[length(parts)])
       } else {
-        # Higher ranks → Title Case (first letter uppercase)
+        # Higher ranks b Title Case (first letter uppercase)
         # Convert slug to a readable form: replace hyphens with spaces, title case, remove spaces
         clean <- gsub("-", " ", name)
         clean <- stringr::str_to_title(clean)
@@ -252,23 +252,23 @@
   extract_lpsn_field <- function(body, label_fragment) {
     
     # Text from parent <p> element
-    parent_text <- body %>%
+    parent_text <- body |>
       rvest::html_nodes(
         xpath = sprintf(
           "//b[contains(normalize-space(.), '%s')]/parent::p",
           label_fragment
         )
-      ) %>%
+      ) |>
       rvest::html_text()
     
     # Text nodes following the <b>Label</b>
-    sibling_text <- body %>%
+    sibling_text <- body |>
       rvest::html_nodes(
         xpath = sprintf(
           "//b[contains(normalize-space(.), '%s')]/following-sibling::text()",
           label_fragment
         )
-      ) %>%
+      ) |>
       rvest::html_text()
     
     # Combine, preferring parent text but keeping siblings as fallback
@@ -279,8 +279,8 @@
     }
     
     # Strip label prefix (e.g., "Name:" or "Record number:") and clean
-    cleaned <- text %>%
-      stringr::str_replace("^\\s*[^:]+:\\s*", "") %>%
+    cleaned <- text |>
+      stringr::str_replace("^\\s*[^:]+:\\s*", "") |>
       stringr::str_squish()
     
     # Remove empty strings
@@ -418,9 +418,9 @@
       ), taxonomic_status_pattern)
     }
     
-    hrefs <- body %>%
-      rvest::html_nodes(xpath = xpath) %>%
-      rvest::html_attr("href") %>%
+    hrefs <- body |>
+      rvest::html_nodes(xpath = xpath) |>
+      rvest::html_attr("href") |>
       unique()
     
     if (length(hrefs) == 0) return(character(0))
@@ -452,7 +452,7 @@
     # Lineage (Phylum / Class / Order / Family / Genus / Species / ...)
     # -------------------------------------------------------------------------
     if (is.null(url_for_parents)) {
-      # No parental lineage provided → fill lineage columns with NA
+      # No parental lineage provided b fill lineage columns with NA
       tax_vec <- stats::setNames(rep(NA_character_, length(ranks)), ranks)
     } else {
       # Extract lineage normally
@@ -511,8 +511,8 @@
     # Authors (crude)
     pub_for_authors <- info$`Effective publication` %||% info$`Valid publication`
     authors <- if (!is.na(pub_for_authors))
-      pub_for_authors %>%
-      stringr::str_extract("^[^\\.]+") %>%
+      pub_for_authors |>
+      stringr::str_extract("^[^\\.]+") |>
       stringr::str_squish()
     else NA_character_
     

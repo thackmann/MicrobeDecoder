@@ -31,3 +31,7 @@ enzyme_cofactors <- c(
   
   "H+", "H2O"
 )
+
+# Messages
+    no_prediction_message <- paste("Make sure that substrates and end products are not identical, 
+                                   then re-run predictions.")

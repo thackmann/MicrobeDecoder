@@ -98,12 +98,11 @@
   # Define required packages
   cran_packages <- unique(c(
     "ape", "dplyr", "httr", "import", "jqbr", "KeyboardSimulator", "magrittr", 
-    "polite", "purrr", "readr", "remotes", "rvest", "stringr", "svMisc", "utils"
+    "polite", "purrr", "readr", "remotes", "rvest", "stringr", "svMisc", 
+    "this.path", "utils"
   ))
   bioc_packages <- c("Biostrings", "ShortRead")
-  github_packages <- c("thackmann/FileLocator" = "FileLocator")
   
   # Install missing packages
   install_missing_cran_packages(cran_packages)
   install_missing_bioc_packages(bioc_packages)
-  install_missing_github_packages(github_packages)

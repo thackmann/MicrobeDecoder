@@ -20,8 +20,8 @@ Click [here](https://www.youtube.com/watch?v=W1_e6f9_7x4) to watch.
 3. Open browser with address http://localhost:3838/. 
 4. Refresh browser periodically until app loads.
 
-### More information
-Hackmann TJ, Zhang B. The phenotype and genotype of fermentative prokaryotes Sci Adv. 2023 Sep 29;9(39):eadg8687. doi: 10.1126/sciadv.adg8687 [PMID: 37756392](https://pubmed.ncbi.nlm.nih.gov/37756392/)
+### Citation
+Hackmann TJ, Parris JP, Seshadri R, Lingga C. Microbe Decoder uncovers functional traits of microbes in microbiome datasets. Nucleic Acids Res. 2026 May 21. doi: 10.1093/nar/gkag515. [PMID: 42163722](https://pubmed.ncbi.nlm.nih.gov/42163722/)
 
 This work is licensed under a
 [Creative Commons Attribution 4.0 International License][cc-by].
@@ -31,4 +31,4 @@ This work is licensed under a
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
 [cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17553516.svg)](https://doi.org/10.5281/zenodo.17553515)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17553515.svg)](https://doi.org/10.5281/zenodo.17553515)

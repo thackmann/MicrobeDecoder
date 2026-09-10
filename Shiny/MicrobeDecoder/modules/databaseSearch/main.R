@@ -1,47 +1,39 @@
 # Define the Search Database Module in Shiny App
 # This script defines the user interface (UI) and server for the search database module.
 # Author: Timothy Hackmann
-# Date: 23 Mar 25
+# Date: 22 May 2026
 
 # === Define user interface (UI) ===
   # Search database tab
   databaseSearchUI <- function(id) {
     ns <- NS(id)
     shiny::tagList(
-        #Call JavaScript functions
-        inject_js_resize(ns, "treemap-container"),
-        inject_query_builder_js(ns, "query_builder"),
-        
-        # --- Loading screen ---
-        create_loading_screen("search-loading-screen"), 
-        
-        # --- Main UI (initially hidden ) ---
-        shinyjs::hidden(
-          div(id = "search-wrapper",
-  
-          #Title
+          # Title
           create_title_div("Search database"),
           
           bslib::layout_sidebar(
             #Sidebar
             sidebar = bslib::sidebar(
               id = ns("sidebar"),
+              open = get_sidebar_state(id),
               width = "30%",
               
-              create_query_builder(ns = ns, input_id = "query_builder", label = "Build query"),
+              create_query_builder(ns = ns, input_id = "query_builder", label = "Query"),
               
-              shiny::actionButton(ns("make_predictions"), "Perform search", class = "btn btn-primary")
+              shiny::actionButton(ns("run_search"), "Run search", class = "btn btn-primary")
             ),
-            #Main content area
+            # Main content area
             shiny::div(
               id = ns("results_page"),
     
+              # Before results are available
               shiny::conditionalPanel(
                 condition = "!output.flag_results",
                 ns = ns,
-                h4("Please make selections at left")
+                create_job_status_output(ns("job_status"))
               ),
               
+              # After results are available
               shiny::conditionalPanel(
                 condition = "output.flag_results",
                 ns = ns,
@@ -63,22 +55,34 @@
                   bslib::nav_spacer(),
                   
                   # Plot options
-                  div(
-                    class = "plot-options-container",
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Treemap'",
-                      ns = ns, 
-                      create_picker_input(inputId = ns("variable_to_display"), label = "Variable")
+                  # The variable picker stays in the toolbar; the tree layout
+                  # goes in the accordion, which hides itself on the tabs where
+                  # no option applies.  The note below is a caption rather than a
+                  # control, so it sits outside both.
+                  header = shiny::tagList(
+                    div(
+                      class = "flex-container plot-options-container",
+                      create_conditional_flex_item(ns,
+                                                   "input.results_tabs === 'Treemap'",
+                                                   create_picker_input(inputId = ns("variable_to_display"), label = "Variable")
+                      ),
+                      create_options_accordion(
+                        div(
+                          class = "flex-container plot-options-container",
+                          create_conditional_flex_item(ns,
+                                                       "input.results_tabs === 'Tree'",
+                                                       create_picker_input(inputId = ns("tree_layout"), label = "Layout")
+                          )
+                        ),
+                        ns = ns,
+                        condition = "input.results_tabs === 'Tree'"
+                      )
                     ),
                     shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Tree'",
-                      ns = ns, 
-                      create_picker_input(inputId = ns("set_tree_layout"), label = "Layout")
-                    ),
-                    shiny::conditionalPanel(
-                      condition = "input.results_tabs == 'Tree' | input.results_tabs == `t-SNE`",
-                      ns = ns, 
+                      condition = "input.results_tabs === 'Tree' || input.results_tabs === 't-SNE'",
+                      ns = ns,
                       div(
+                        class = "plot-options-note",
                         "Matching organisms are those that are fully colored. Only organisms with genome sequences are shown."
                       )
                     )
@@ -86,8 +90,8 @@
                   
                   # Panels
                   create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-                  create_plot_panel(ns, "tree", "Tree", use_spinner = TRUE), 
-                  create_plot_panel(ns, "tsne", "t-SNE", use_spinner = TRUE)
+                  create_plot_panel(ns, "tree", "Tree"), 
+                  create_plot_panel(ns, "tsne", "t-SNE")
                 ),
                   
                 # Detailed results
@@ -97,139 +101,104 @@
                   create_data_table(inputId = ns("table")),
                   bslib::layout_column_wrap(
                     width = 1/4, 
-                    shiny::checkboxGroupInput(inputId = ns("checkboxes_info_organism"), label = "Organism"),
-                    shiny::checkboxGroupInput(inputId = ns("checkboxes_info_databases"), label = "Databases"),
-                    shiny::checkboxGroupInput(inputId = ns("checkboxes_info_metabolism"), label = "Metabolism"),
-                    shiny::checkboxGroupInput(inputId = ns("checkboxes_info_traits"), label = "Metabolism")
+                    shiny::checkboxGroupInput(inputId = ns("info_organism"), label = "Organism"),
+                    shiny::checkboxGroupInput(inputId = ns("info_databases"), label = "Databases"),
+                    shiny::checkboxGroupInput(inputId = ns("info_metabolism"), label = "Metabolism"),
+                    shiny::checkboxGroupInput(inputId = ns("info_traits"), label = "Traits")
                   )
                 )
               )
             )
         )
-      )
-      )
     )
   }
 
 # === Define server ===
-  databaseSearchServer <- function(input, output, session, x, selected_tab) {
-    # Set namespace
+  databaseSearchServer <- function(id, selected_tab, on_ready) {
+    shiny::moduleServer(id, function(input, output, session) {
+    # --- Set namespace ----
     ns <- session$ns
+  
+    # --- Run Javascript functions ----
+    shinyjs::runjs(sprintf(
+      "shinyjs.resizeWidthFromHeight('%s', 1.045296);", ns("treemap-container")
+    ))
+    shinyjs::runjs(sprintf(
+      "registerQueryBuilderSelectizeStyling('%s');", ns("query_builder")
+    ))
+    shinyjs::runjs(sprintf(
+      "registerQueryBuilderFiltersSetSignal('%s');", ns("query_builder")
+    ))
+      
+    # --- Set variables ----
+    ui_ready <- shiny::reactiveVal(FALSE) # For storing status of user interface (UI)
+    loading_screen_hidden <- shiny::reactiveVal(FALSE) # For storing status of loading screen
     
     # --- Define triggers for reactive expressions ---
     tab_selected_trigger <- make_tab_trigger(selected_tab, "databaseSearch")
 
-    tab_loaded_trigger <- make_tab_trigger(
-      selected_tab, "databaseSearch", input, "query_builder_valid"
-    )
-    
-    make_predictions_trigger <- make_action_button_trigger("make_predictions")
-
     url_change_trigger <- make_url_trigger(param_name = "job")
-    
+
     build_table_trigger <- make_other_trigger(
       url_change_trigger(),
-      input$checkboxes_info_organism,
-      input$checkboxes_info_databases,
-      input$checkboxes_info_metabolism,
-      input$checkboxes_info_traits
+      input$info_organism,
+      input$info_databases,
+      input$info_metabolism,
+      input$info_traits
     )
     
     get_tree_trigger <- make_other_trigger(url_change_trigger(), 
-                                           input$set_tree_layout)
+                                           input$tree_layout)
     
     # --- Get user input (events) ---
-    # Get query
-    get_inputs <- shiny::eventReactive(make_predictions_trigger(), {
-      # Launch modal
-      display_modal(ns = ns, message = "Getting inputs")
-      
-      # Compile inputs
+    # Plain function, not eventReactive. The job helper calls this in the
+    # delayed submit phase after the modal has already been shown/flushed.
+    get_inputs <- function() {
       get_search_inputs(query_string = input$query_builder)
-    }, label = "get_inputs")
-    
-    # --- Process input ---
-    # Create job for computation
-    create_job <- shiny::eventReactive(make_predictions_trigger(), {
-      # Create job ID
-      job_id <- create_job_id()
-      
-      # Update URL with the  ID
-      url <- create_job_url(job_id = job_id, tab = "databaseSearch")
-      shiny::updateQueryString(sub(".*\\?", "?", url), mode = "push")
-      
-      # Update progress   
-      display_modal(ns = ns, message = "Creating job for computation", value = 0, url = url)
-      cat("Job created:", job_id)
-      
-      return(job_id)
-      
-    }, label = "create_job")
-    
-    # --- Perform computations ---
-    # Perform computations
-    compute_job <- shiny::eventReactive({make_predictions_trigger()},
-    {
-      results <- compute_search_results(
-        data = load_database(),
-        col_name = "LPSN Taxonomy",
-        query_string = get_inputs()$query_string,
-        ns = ns
-      )
-      
-      return(results)
-    },
-    label="compute_job")
+    }
 
-    # --- Save and get results ---
-    # Save results
-    shiny::observeEvent({make_predictions_trigger()},
-    {
-      job_id <- create_job()
-      job_dir <- get_job_dir(tab = "databaseSearch")
-      
-      results <-
-        list(
-          filter_data = compute_job()
-        )
-     
-      # Update progress
-      display_modal(ns = ns, message = "Saving results", value = 100)
-      
-      # Save result
-      save_job_result(job_id = job_id, result = results, job_dir = job_dir)
-      
-      # Update progress
-      hide_modal_with_progress()
-    },
-    label="save_results")
-    
-    # Get results
+    # --- Perform computations ---
+    setup_computation_jobs(
+      ns              = ns,
+      session         = session,
+      submit_button   = "run_search",
+      get_inputs      = get_inputs,
+      compute_fn_name = "run_job_search",
+      tab_name        = "databaseSearch",
+      submit_message  = "Creating job for search",
+      working_message = "Performing search",
+      cancel_message  = "Search canceled"
+    )
+
+    # --- Get results ---
     get_results <- eventReactive({ url_change_trigger() }, {
       job_id <- get_query_param()
       user_id <- get_query_param(param_name = "user")
       job_dir <- get_job_dir(tab = "databaseSearch", user_id = user_id)
       load_job_result(job_id, job_dir)
-    })
+    }, label = "get_results")
 
     # --- Process results ----
     # Build data table
-    build_table <- shiny::eventReactive({build_table_trigger()}, {
+    build_table <- eventReactive({build_table_trigger()}, {
       # Get data
       data <- get_results()$filter_data
       
+      # Check required conditions
+      req(!is.null(data))
+      
       # Rename columns with links
-      data <- data %>%
+      data <- data |>
         rename_and_overwrite(" link$", "") # Remove " link" and overwrite
       
       # Dynamically get names of selected columns from checkboxes
       selected_columns <- lapply(names(choices_checkboxes_search), function(category) {
-        selected_vals <- input[[paste0("checkboxes_info_", category)]]
+        selected_vals <- input[[paste0("info_", category)]]
         selected_vals[!is.na(selected_vals)]
-      }) %>% unlist()
+      }) |> unlist()
       
       # Keep only selected columns
-      data <- data %>% dplyr::select(dplyr::all_of(selected_columns))
+      data <- data |> dplyr::select(dplyr::all_of(selected_columns))
 
       # Print status to log
       cat(file = stderr(), paste0("Ended search at ", Sys.time(), "\n"))
@@ -239,28 +208,33 @@
     label = "build_table")
     
     # Plot phylogenetic tree
-    plot_tree <- shiny::eventReactive({get_tree_trigger()}, {
-      layout_type <- input$set_tree_layout
+    plot_tree <- eventReactive({get_tree_trigger()}, {
+      layout_type <- input$tree_layout
       
       # Get layouts
       layout <- switch(layout_type,
-                       "Daylight" = load_layout_tree_daylight(),
-                       "Equal angle" = load_layout_tree_equal_angle(),
-                       "Rectangular" = load_layout_tree_rectangular())
+                       "Daylight" = load_data("layout_tree_daylight"),
+                       "Equal angle" = load_data("layout_tree_equal_angle"),
+                       "Rectangular" = load_data("layout_tree_rectangular"))
       
       branches_all <- switch(layout_type,
-                             "Daylight" = load_plot_branches_all_daylight(),
-                             "Equal angle" = load_plot_branches_all_equal_angle(),
-                             "Rectangular" = load_plot_branches_all_rectangular())
+                             "Daylight" = load_data("plot_branches_all_daylight"),
+                             "Equal angle" = load_data("plot_branches_all_equal_angle"),
+                             "Rectangular" = load_data("plot_branches_all_rectangular"))
       
       tips_all <- switch(layout_type,
-                         "Daylight" = load_plot_tips_all_daylight(),
-                         "Equal angle" = load_plot_tips_all_equal_angle(),
-                         "Rectangular" = load_plot_tips_all_rectangular())
+                         "Daylight" = load_data("plot_tips_all_daylight"),
+                         "Equal angle" = load_data("plot_tips_all_equal_angle"),
+                         "Rectangular" = load_data("plot_tips_all_rectangular"))
+      
+      # Get data
+      data <- get_results()$filter_data
+      
+      # Check required conditions
+      req(!is.null(data))
       
       # Get matching data and filter layout
-      data <- get_results()$filter_data
-      nodes_to_root <- load_nodes_to_root()
+      nodes_to_root <- load_data("nodes_to_root")
       layout_filtered <- filter_tree_layout(layout, data, nodes_to_root, id_column = "IMG Genome ID max quality")
       
       # Parameters for matching plots
@@ -279,10 +253,10 @@
       )
       
       # Format tips layout
-      tips_matching_layout <- layout %>%
-        dplyr::filter(isTip == TRUE) %>%
-        add_taxonomy_to_layout(layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG Genome ID max quality") %>%
-        add_fill_to_layout(group = "Phylum", lighten_amount = 0.2) %>%
+      tips_matching_layout <- layout |>
+        dplyr::filter(isTip == TRUE) |>
+        add_taxonomy_to_layout(layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG Genome ID max quality") |>
+        add_fill_to_layout(group = "Phylum", lighten_amount = 0.2) |>
         add_color_to_layout(group = "Phylum", lighten_amount = 0)
       
       # Plot matching tips
@@ -305,13 +279,18 @@
     }, label = "plot_tree")
 
     # Plot t-SNE scatterplot
-    plot_tsne <- shiny::eventReactive({url_change_trigger()}, {
+    plot_tsne <- eventReactive({url_change_trigger()}, {
       # Load full plot
-      plot_all <- load_plot_tsne_all()
+      plot_all <- load_data("plot_tsne_all")
       
-      # Load layout and data for matching plot
-      layout <- load_layout_tsne()
+      # Load layout for matching plot
+      layout <- load_data("layout_tsne")
+      
+      # Get data
       data <- get_results()$filter_data
+      
+      # Check required conditions
+      req(!is.null(data))
       
       # Format layout with taxonomy and colors
       layout <- add_taxonomy_to_layout(layout = layout, layout_ID = "IMG_Genome_ID_max_genes", # debug
@@ -342,97 +321,101 @@
     }, label = "plot_tsne")
     
     # --- Update user interface (UI) elements ---
-    # Update query builder
-    shiny::observeEvent({tab_selected_trigger()}, {
-      update_query_builder(inputId = "query_builder", choices = choices_traits_search)
-    }, label = "update_query_builder")
-    
-    # Hide loading screen
-    shiny::observeEvent({tab_loaded_trigger()}, {
-      shinyjs::runjs("shinyjs.hide('search-loading-screen'); shinyjs.show('search-wrapper');")
-    }, once = TRUE, label = "hide_loading_screen")
-    
-    # Update variable to display
-    shiny::observeEvent({tab_selected_trigger()},
-    {
-      choices <- choices_traits_search
-      selected = "Phylum"
-      update_picker_input(inputId = "variable_to_display", choices = choices, selected = selected)
-    },
-    label="update_variable_to_display")
-    
-    # Update tree layout
-    shiny::observeEvent({tab_selected_trigger()},
-    {
-      choices <- c("Equal angle", "Daylight", "Rectangular")
-      update_picker_input(inputId = "set_tree_layout", choices = choices)
-    },
-    label="update_set_tree_layout")
-
-    # Update checkboxes
-    shiny::observeEvent({tab_selected_trigger()},
-    {
-      choices = choices_checkboxes_search$organism$choices
-      selected = intersect(c("Genus", "Species"),
-                           choices_checkboxes_search$organism$choices)
-      update_checkbox_group(inputId = "checkboxes_info_organism", choices = choices, selected = selected)
-
-      choices = choices_checkboxes_search$databases$choices
-      selected = intersect(c(
-                            "LPSN Page", "Bergey Article",
-                            "GTDB ID", "NCBI Taxonomy ID", "GOLD Organism ID",
-                            "IMG Genome ID", "BacDive ID"
-                            ),
-                            choices_checkboxes_search$database$choices)
-      update_checkbox_group(inputId = "checkboxes_info_databases", choices = choices, selected = selected)
+    # Update UI after loading module
+    observeEvent({tab_selected_trigger()}, {
       
-      choices = choices_checkboxes_search$metabolism$choices
-      update_checkbox_group(inputId = "checkboxes_info_metabolism", choices = choices)
-
-      choices = choices_checkboxes_search$traits$choices
-      update_checkbox_group(inputId = "checkboxes_info_traits", choices = choices)
-    },
-    label="update_checkboxes")
-    
-    # Toggle sidebar closed (when loading saved job)
-    shiny::observeEvent(tab_selected_trigger(), 
-    {
-      if (isTRUE(session$userData$loaded_job_on_init)) {
-        # Toggle side bar closed
-        bslib::sidebar_toggle("sidebar")
+      # Update query builder
+        update_query_builder(inputId = "query_builder", choices = choices_traits_search)
+  
+      # Update variable to display
+        update_variable_to_display_search(session = session)
+      
+      # Update tree layout
+        update_tree_layout_search(session = session)
+  
+      # Update checkboxes for organisms
+        update_info_organism_search(session = session)
+  
+      # Update checkboxes for databases
+        update_info_databases_search(session = session)
         
-        # Reset restore so it does not toggle side bar closed again
-        session$userData$loaded_job_on_init <- FALSE
-      }
-    })
+      # Update checkboxes for metabolism
+        update_info_metabolism_search(session = session)
+  
+      # Update checkboxes for traits
+        update_info_traits_search(session = session)
+        
+      # Signal user interface has been updated
+        ui_ready(TRUE)
+        
+    },
+    label="update_UI_after_loading")
+  
+    # Update UI after computing results
+    observeEvent(url_change_trigger(), {
+      # Update (reset) spinners for plots and tables 
+      reset_spinners()
+    },
+    label="update_UI_after_results")
+    
+    # Update UI after user changes input
+    # No logic for this module
+    
+    # Make other updates
+    # Signal module is ready (hide loading screen)
+    hide_loading_screen(
+      trigger = shiny::reactive({
+        isTRUE(ui_ready()) &&
+          !is.null(input$query_builder_ready)
+      }),
+      on_ready = on_ready
+    )
+
     
     # --- Generate outputs ---
     # Output number of matching organisms
-    output$summary_text <- shiny::renderText(
-      paste0("Query matched ", nrow(get_results()$filter_data), " organisms")
-    )
+    output$summary_text <- shiny::renderText({
+      # Get data
+      data <- get_results()$filter_data
+      
+      # Check required conditions
+      req(!is.null(data))
+      
+      # Create summary
+      paste0("Query matched ", nrow(data), " organisms")
+    })
        
     # Create output flags
     flag_if_not_null(output, "flag_results", trigger = url_change_trigger, 
          value_fun = function() get_results())
     
+    
+    # Output message before results are available
+    output$job_status <- render_job_status(
+      tab_name      = "databaseSearch",
+      empty_message = "Please make selections at left"
+    )
+    
     # Output overview plots
+    # shiny::observeEvent({list(url_change_trigger(), input$variable_to_display)},
+    # {
       # Treemap plot
       output$treemap_plot <- plotly::renderPlotly({
-        #Get data
-        df = get_results()$filter_data
+        # Get data
+        df <- get_results()$filter_data
+        var_name <- input$variable_to_display
         
-        #Format variable name
-        var_name = input$variable_to_display
-        var_name_display = var_name
+        # Check required conditions
+        req(!is.null(df))
+        req(!is.null(var_name))
         
-        df = search_results_to_plot(df = df, plot_type="treemap", var_name = var_name)
+        # Load plot config
+        cfg_treemap <- get_plot_config("databaseSearch", "treemap")
         
-        hovertemplate = paste0("<b>",var_name_display,": %{label}</b><br><b>% of matching organisms: %{value:.2f}</b><br><extra></extra>")
+        df <- search_results_to_plot(df = df, plot_type = "treemap", var_name = var_name)
         
-        # Plot treemap
-        plot = plot_treemap(df, 
-                            hovertemplate = hovertemplate)
+        plot_treemap(df,
+                     hovertemplate = build_hovertemplate(cfg_treemap$hovertemplate, var_name))
       })
       
       # Tree plot
@@ -445,17 +428,26 @@
          plot = plot_tsne()
       })
 
-    # Output table with matching organisms and columns
-    output$table <- DT::renderDataTable({
-      table = build_table()
-    }, escape = FALSE, options = list(scrollX = TRUE))
-    
-    # Output downloadable csv with matching results
-    output$download_data <- create_download_handler(
-      filename_prefix = "results",
-      data_source = function() {
-        get_results()$filter_data %>%
-        dplyr::select(-dplyr::ends_with("link"))
-      }
-    )
-}
+      # Output table with matching organisms and columns
+      output$table <- DT::renderDataTable({
+        table = build_table()
+      }, escape = FALSE, options = list(scrollX = TRUE))
+      
+      # Output downloadable csv with matching results
+      output$download_data <- create_download_handler(
+        filename_prefix = "results",
+        data_source = function() {
+          # Get data
+          data <- get_results()$filter_data
+          
+          # Check required conditions
+          req(!is.null(data))
+          
+          # Remove link columns
+          data |>
+            dplyr::select(-dplyr::ends_with("link"))
+        }
+      )
+    # })
+    })
+  }

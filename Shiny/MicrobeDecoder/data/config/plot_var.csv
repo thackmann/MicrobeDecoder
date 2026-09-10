@@ -1,0 +1,130 @@
+module,plot_type,var,value
+databaseSearch,treemap,hovertemplate,<b>%s: %%{label}</b><br><b>%% of matching organisms: %%{value:.2f}</b><br><extra></extra>
+predictionsMachineLearning,summary,x_col,Organism name
+predictionsMachineLearning,summary,y_col,Model
+predictionsMachineLearning,summary,z_col,Probability
+predictionsMachineLearning,summary,var_col,
+predictionsMachineLearning,summary,drop_extra_y,FALSE
+predictionsMachineLearning,summary,z_percentage,TRUE
+predictionsMachineLearning,summary,coord_fixed,TRUE
+predictionsMachineLearning,summary,hovertemplate,<b>Trait: %{x}</b><br><b>% organisms positive: %{z:.2f}</b><br><extra></extra>
+predictionsMachineLearning,summary,legend_labels,0;25;50;75;100
+predictionsMachineLearning,summary,legend_title,% organisms positive
+predictionsMachineLearning,tile,x_col,Organism name
+predictionsMachineLearning,tile,y_col,Model
+predictionsMachineLearning,tile,z_col,Probability
+predictionsMachineLearning,tile,var_col,Trait category
+predictionsMachineLearning,tile,drop_extra_y,TRUE
+predictionsMachineLearning,tile,z_percentage,TRUE
+predictionsMachineLearning,tile,display_threshold,1
+predictionsMachineLearning,tile,legend_title,% organisms positive
+predictionsMachineLearning,tile,label_header,Trait category
+predictionsMachineLearning,tile,tile_header,Trait
+predictionsMachineLearning,treemap,x_col,Organism name
+predictionsMachineLearning,treemap,y_col,Model
+predictionsMachineLearning,treemap,z_col,Probability
+predictionsMachineLearning,treemap,var_col,
+predictionsMachineLearning,treemap,drop_extra_y,TRUE
+predictionsMachineLearning,treemap,z_percentage,TRUE
+predictionsMachineLearning,treemap,hovertemplate,<b>Trait: %{label}</b><br><b>% total: %{value:.2f}</b><br><extra></extra>
+predictionsMachineLearning,heatmap,x_col,Organism name
+predictionsMachineLearning,heatmap,y_col,Model
+predictionsMachineLearning,heatmap,z_col,Probability
+predictionsMachineLearning,heatmap,var_col,
+predictionsMachineLearning,heatmap,drop_extra_y,FALSE
+predictionsMachineLearning,heatmap,z_percentage,TRUE
+predictionsMachineLearning,heatmap,hovertemplate,<b>Organism: %{y}</b><br><b>Trait: %{x}</b><br><b>% probability: %{z:.2f}</b><extra></extra>
+predictionsMachineLearning,heatmap,legend_labels,0;25;50;75;100
+predictionsMachineLearning,heatmap,legend_title,% probability
+predictionsNetwork,summary,x_col,Organism name
+predictionsNetwork,summary,y_col,End product
+predictionsNetwork,summary,z_col,Flux
+predictionsNetwork,summary,var_col,Substrate
+predictionsNetwork,summary,drop_extra_y,FALSE
+predictionsNetwork,summary,z_percentage,TRUE
+predictionsNetwork,summary,coord_fixed,TRUE
+predictionsNetwork,summary,hovertemplate,<b>Endproduct: %{x}</b><br><b>% organisms positive: %{z:.2f}</b><br><extra></extra>
+predictionsNetwork,summary,legend_labels,0;25;50;75;100
+predictionsNetwork,summary,legend_title,% organisms positive
+predictionsNetwork,tile,x_col,Organism name
+predictionsNetwork,tile,y_col,End product
+predictionsNetwork,tile,z_col,Flux
+predictionsNetwork,tile,var_col,Substrate
+predictionsNetwork,tile,drop_extra_y,TRUE
+predictionsNetwork,tile,z_percentage,TRUE
+predictionsNetwork,tile,display_threshold,1
+predictionsNetwork,tile,legend_title,% organisms positive
+predictionsNetwork,tile,label_header,Substrates
+predictionsNetwork,tile,tile_header,Endproducts
+predictionsNetwork,tile,hover_value_label,Flux
+predictionsNetwork,tile,hover_value_scale,1
+predictionsNetwork,tile,hover_value_suffix,
+predictionsNetwork,tile,hover_value_digits,0
+predictionsNetwork,treemap,x_col,Organism name
+predictionsNetwork,treemap,y_col,End product
+predictionsNetwork,treemap,z_col,Flux
+predictionsNetwork,treemap,var_col,Substrate
+predictionsNetwork,treemap,drop_extra_y,TRUE
+predictionsNetwork,treemap,z_percentage,TRUE
+predictionsNetwork,treemap,hovertemplate,<b>Endproduct: %{label}</b><br><b>% total: %{value:.2f}</b><br><extra></extra>
+predictionsNetwork,heatmap,x_col,Organism name
+predictionsNetwork,heatmap,y_col,End product
+predictionsNetwork,heatmap,z_col,Flux
+predictionsNetwork,heatmap,var_col,Substrate
+predictionsNetwork,heatmap,drop_extra_y,FALSE
+predictionsNetwork,heatmap,z_percentage,FALSE
+predictionsNetwork,heatmap,hovertemplate,<b>Organism: %{y}</b><br><b>Endproduct: %{x}</b><br><b>Flux: %{z:.0f}</b><extra></extra>
+predictionsNetwork,heatmap,legend_labels,0;250;500;750;1000
+predictionsNetwork,heatmap,legend_title,Flux
+predictionsNetwork,heatmap,zmax,1000
+predictionsTaxonomy,summary,x_col,Organism name
+predictionsTaxonomy,summary,y_col,Trait name
+predictionsTaxonomy,summary,z_col,Probability
+predictionsTaxonomy,summary,var_col,Trait category
+predictionsTaxonomy,summary,drop_extra_y,TRUE
+predictionsTaxonomy,summary,z_percentage,TRUE
+predictionsTaxonomy,summary,coord_fixed,TRUE
+predictionsTaxonomy,summary,hovertemplate,<b>%s: %%{x}</b><br><b>%% organisms positive: %%{z:.2f}</b><br><extra></extra>
+predictionsTaxonomy,summary,legend_labels,0;25;50;75;100
+predictionsTaxonomy,summary,legend_title,% organisms positive
+predictionsTaxonomy,tile,x_col,Organism name
+predictionsTaxonomy,tile,y_col,Trait name
+predictionsTaxonomy,tile,z_col,Probability
+predictionsTaxonomy,tile,var_col,Trait category
+predictionsTaxonomy,tile,drop_extra_y,TRUE
+predictionsTaxonomy,tile,z_percentage,TRUE
+predictionsTaxonomy,tile,display_threshold,1
+predictionsTaxonomy,tile,legend_title,% organisms positive
+predictionsTaxonomy,tile,label_header,Trait category
+predictionsTaxonomy,tile,tile_header,Trait
+predictionsTaxonomy,treemap,x_col,Organism name
+predictionsTaxonomy,treemap,y_col,Trait name
+predictionsTaxonomy,treemap,z_col,Probability
+predictionsTaxonomy,treemap,var_col,Trait category
+predictionsTaxonomy,treemap,drop_extra_y,TRUE
+predictionsTaxonomy,treemap,z_percentage,TRUE
+predictionsTaxonomy,treemap,hovertemplate,<b>%s: %%{label}</b><br><b>%% total: %%{value:.2f}</b><br><extra></extra>
+predictionsTaxonomy,heatmap,x_col,Organism name
+predictionsTaxonomy,heatmap,y_col,Trait name
+predictionsTaxonomy,heatmap,z_col,Probability
+predictionsTaxonomy,heatmap,var_col,Trait category
+predictionsTaxonomy,heatmap,drop_extra_y,TRUE
+predictionsTaxonomy,heatmap,z_percentage,TRUE
+predictionsTaxonomy,heatmap,data_are_binary,TRUE
+predictionsTaxonomy,heatmap,hovertemplate,<b>Organism: %{y}</b><br><b>Trait: %{x}</b><br><b>% probability: %{z:.2f}</b><extra></extra>
+predictionsTaxonomy,heatmap,legend_labels,0;25;50;75;100
+predictionsTaxonomy,heatmap,legend_title,% probability
+predictionsMachineLearning,tree,match_hover_label,Organism
+predictionsMachineLearning,tree,label,match_key;z
+predictionsMachineLearning,tree,branch_color_mode,split
+predictionsMachineLearning,tree,node_border_follows_branch,TRUE
+predictionsMachineLearning,tree,min_color,#F2F2F2
+predictionsMachineLearning,tree,max_color,#00B050
+predictionsMachineLearning,tree,axis_title,Distance
+predictionsNetwork,tree,match_hover_label,Organism
+predictionsNetwork,tree,label,match_key;z
+predictionsNetwork,tree,branch_color_mode,split
+predictionsNetwork,tree,node_border_follows_branch,TRUE
+predictionsNetwork,tree,min_color,#F2F2F2
+predictionsNetwork,tree,max_color,#00B050
+predictionsNetwork,tree,axis_title,Distance

@@ -12,7 +12,7 @@
 # Date: 13 February 2025
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/FAPROTAX"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
   
@@ -28,7 +28,7 @@
 
 # === Format data for FAPROTAX ===
   # Get taxonomy
-    taxonomy <- lpsn_phylogeny %>%
+    taxonomy <- lpsn_phylogeny |>
     dplyr::select(Phylum, Class, Order, Family, Genus, Species)
     
   # Make names consistent with FAPROTAX

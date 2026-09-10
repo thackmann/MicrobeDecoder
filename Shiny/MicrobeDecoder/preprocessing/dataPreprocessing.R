@@ -10,22 +10,23 @@
 Sys.setlocale("LC_ALL", "C")
 
 # === Get app directory ===
-  app_directory <- FileLocator::getCurrentFileLocation()
+  app_directory <- this.path::this.dir()
   app_directory <- dirname(app_directory)
   
 # === Load external R files ===
   # Load external R files
   setwd(app_directory)
-  source("functions//helperFunctions.R", local = TRUE)
-  source("functions//loadDataFunctions.R", local = TRUE)
+  source("functions//helperFunctions.R", local = TRUE) 
+  source("functions//loadDataFunctions.R", local = TRUE) 
   source("functions//plotFunctions.R", local = TRUE) 
-  source("modules//predictionsMachineLearning//functions.R", local = TRUE)
-  source("preprocessing//functions.R", local = TRUE)
+  source("modules//predictionsMachineLearning//functions.R", local = TRUE) 
+  source("variables//variables.R", local = TRUE) 
+  source("preprocessing//functions.R", local = TRUE) 
   
 # === Preprocess data ===
   # --- Clean database file and add links ---
     # Get data
-      data <- load_raw_database(force_reload = TRUE)
+      data <- load_database("raw", force_reload = TRUE)
 
     # Clean data
       data[] <- lapply(data, as.character)
@@ -39,7 +40,7 @@ Sys.setlocale("LC_ALL", "C")
                      "BacDive_Pathogenicity_plant", "BacDive_Salt_concentration", "BacDive_Salt_concentration_unit",
                      "BacDive_Spore_formation", "BacDive_Temperature_for_growth", "BacDive_Voges_proskauer",
                      "BacDive_Isolation_category_1", "BacDive_Isolation_category_2", "BacDive_Isolation_category_3",
-                     "FAPROTAX_Type_of_metabolism")
+                     "FAPROTAX_Type_of_metabolism", "FAPROTAX2_Type_of_metabolism")
 
       is_numeric_vars <- c(FALSE, FALSE, TRUE,
                            FALSE, TRUE, TRUE,
@@ -50,7 +51,7 @@ Sys.setlocale("LC_ALL", "C")
                            FALSE, TRUE, FALSE,
                            FALSE, TRUE, FALSE,
                            FALSE, FALSE, FALSE,
-                           FALSE)
+                           FALSE, FALSE)
 
       data[data_vars] <- mapply(clean_external_data, x = data[data_vars], is_numeric = is_numeric_vars, SIMPLIFY = FALSE)
 
@@ -71,7 +72,7 @@ Sys.setlocale("LC_ALL", "C")
                               negative_value="negative")
 
       # Type of metabolism (Fermentation Explorer)
-        data <- data %>%
+        data <- data |>
         dplyr::mutate(Fermentation_Explorer_Type_of_metabolism = dplyr::coalesce(
           Literature_Type_of_metabolism,
           VPI_Type_of_metabolism,
@@ -79,7 +80,7 @@ Sys.setlocale("LC_ALL", "C")
         ))
 
       # Metabolites produced (Fermentation Explorer)
-      data <- data %>%
+      data <- data |>
         dplyr::mutate(
           Fermentation_Explorer_Major_metabolites_produced = dplyr::coalesce(Literature_Major_end_products, VPI_Major_end_products, Bergey_Major_end_products),
           Fermentation_Explorer_Minor_metabolites_produced = dplyr::if_else(
@@ -91,7 +92,7 @@ Sys.setlocale("LC_ALL", "C")
 
       data$Fermentation_Explorer_Major_metabolites_produced[data$Fermentation_Explorer_Major_metabolites_produced == "NA"] <- NA
       data$Fermentation_Explorer_Minor_metabolites_produced[data$Fermentation_Explorer_Minor_metabolites_produced == "NA"] <- NA
-      data <- data %>%
+      data <- data |>
         dplyr::mutate(
           Fermentation_Explorer_Metabolites_produced = dplyr::case_when(
             is.na(Fermentation_Explorer_Major_metabolites_produced) ~ Fermentation_Explorer_Minor_metabolites_produced,
@@ -102,7 +103,7 @@ Sys.setlocale("LC_ALL", "C")
       
 
       # Metabolites utilized (Fermentation Explorer)
-      data <- data %>%
+      data <- data |>
         dplyr::mutate(Fermentation_Explorer_Metabolites_utilized = dplyr::coalesce(
           Literature_Substrates_for_end_products,
           Bergey_Substrates_for_end_products
@@ -149,7 +150,7 @@ Sys.setlocale("LC_ALL", "C")
       data$Bergey_Article_link <- createLinkButton(data$Bergey_Article_link)
 
     # Keep only columns used in app
-      data <- data %>% dplyr::select(
+      data <- data |> dplyr::select(
         "Genus", "Species", "Subspecies", "Strain",
         "LPSN_ID", "LPSN_Page_link", "LPSN_Taxonomy",
         "GTDB_ID", "GTDB_ID_link", "GTDB_Taxonomy",
@@ -168,7 +169,8 @@ Sys.setlocale("LC_ALL", "C")
         "Fermentation_Explorer_Type_of_metabolism", "Fermentation_Explorer_Major_metabolites_produced", 
         "Fermentation_Explorer_Minor_metabolites_produced", "Fermentation_Explorer_Metabolites_produced", 
         "Fermentation_Explorer_Metabolites_utilized",
-        "FAPROTAX_Type_of_metabolism"
+        "FAPROTAX_Type_of_metabolism",
+        "FAPROTAX2_Type_of_metabolism",
       )
 
       # Simplify column names
@@ -226,6 +228,7 @@ Sys.setlocale("LC_ALL", "C")
         
         # Physiology/Function
         create_query_filter("Type of metabolism (FAPROTAX)", data, delimited = TRUE),
+        create_query_filter("Type of metabolism (FAPROTAX2)", data, delimited = TRUE),
         create_query_filter("Type of metabolism (Fermentation Explorer)", data, delimited = TRUE),
         create_query_filter("Metabolites produced (Fermentation Explorer)", data, delimited = TRUE),
         create_query_filter("Major metabolites produced (Fermentation Explorer)", data, delimited = TRUE),
@@ -324,7 +327,7 @@ Sys.setlocale("LC_ALL", "C")
         data <- load_database()
 
         # Format layout
-        layout_tips <- layout %>% dplyr::filter(isTip == TRUE)
+        layout_tips <- layout |> dplyr::filter(isTip == TRUE)
         layout_tips <- add_taxonomy_to_layout(layout = layout_tips, layout_ID = "label", taxonomy = data, taxonomy_ID = "IMG_Genome_ID_max_quality")
         layout_tips <- add_fill_to_layout(layout = layout_tips, group = "Phylum", lighten_amount = 0.95)
         layout_tips <- add_color_to_layout(layout = layout_tips, group = "Phylum", lighten_amount = 0.9)
@@ -352,7 +355,7 @@ Sys.setlocale("LC_ALL", "C")
   # --- Generate files for t-SNE plot ---
       # Plot scatter plot for all organisms
         # Load layout and data
-        layout <- load_layout_tsne()
+        layout <- load_data("layout_tsne")
         data <- load_database()
 
         #Format layout
@@ -378,15 +381,16 @@ Sys.setlocale("LC_ALL", "C")
               # Type of metabolism
               "fermentation" = "grepl(\"(?<=^|;)Fermentation(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
               "methanogenesis" = "grepl(\"(?<=^|;)Methanogenesis(?=;|$)\", `Type of metabolism (Fermentation Explorer)`, perl = TRUE)",
-              "aerobic_chemoheterotrophy" = "grepl(\"(?<=^|;)aerobic chemoheterotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "phototrophy" = "grepl(\"(?<=^|;)phototrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "photoautotrophy" = "grepl(\"(?<=^|;)photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "nitrate_reduction" = "grepl(\"(?<=^|;)nitrate reduction(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "sulfur_compound_respiration" = "grepl(\"(?<=^|;)respiration of sulfur compounds(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "sulfate_respiration" = "grepl(\"(?<=^|;)sulfate respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "sulfur_respiration" = "grepl(\"(?<=^|;)sulfur respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "iron_respiration" = "grepl(\"(?<=^|;)iron respiration(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
-              "oxygenic_photoautotrophy" = "grepl(\"(?<=^|;)oxygenic photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)",
+              "aerobic_chemoheterotrophy" = "grepl(\"(?<=^|;)aerobic chemoheterotrophy(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "nitrate_reduction" = "grepl(\"(?<=^|;)nitrate reduction(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "sulfur_compound_respiration" = "grepl(\"(?<=^|;)respiration of sulfur compounds(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "sulfate_respiration" = "grepl(\"(?<=^|;)sulfate respiration(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "sulfur_respiration" = "grepl(\"(?<=^|;)sulfur respiration(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "iron_respiration" = "grepl(\"(?<=^|;)iron respiration(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "phototrophy" = "grepl(\"(?<=^|;)phototrophy(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "oxygenic_photoautotrophy" = "grepl(\"(?<=^|;)oxygenic photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "anoxygenic_photoautotrophy" = "grepl(\"(?<=^|;)anoxygenic photoautotrophy(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
+              "anoxygenic_photoautotrophy_S_oxidizing" = "grepl(\"(?<=^|;)anoxygenic photoautotrophy S oxidizing(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)",
               
               # Metabolites produced
               "acetate" = "grepl(\"(?<=^|;)acetate(?=;|$)\", `Metabolites produced (Fermentation Explorer)`, perl = TRUE)",
@@ -414,34 +418,48 @@ Sys.setlocale("LC_ALL", "C")
               "slow_growth" = "`Incubation period in days (BacDive)` > 7"
             )
             
-          # Process each variable
-          for (i in seq_along(variables)) {
-            var_name <- names(variables)[i]
-            query_string <- variables[[i]]
-            
-            generate_rf(
-              var_name = var_name,
-              query_string = query_string,
-              predictors_to_keep = 1
+            # Define options
+            rf_options <- list(
+              "oxygenic_photoautotrophy" = list(balance_classes = TRUE)
             )
             
-            svMisc::progress(i, max.value = length(variables))
-          }
+            # Process each variable
+            for (i in seq_along(variables)) {
+              var_name <- names(variables)[i]
+              query_string <- variables[[i]]
+              
+              # Set arguments
+              args <- list(
+                var_name = var_name,
+                query_string = query_string,
+                predictors_to_keep = 1
+              )
+              
+              args <- utils::modifyList(args, as.list(rf_options[[var_name]]))
+              
+              do.call(generate_rf, args)
+              
+              svMisc::progress(i, max.value = length(variables))
+            }
             
-        # FAPROTAX variables
-          # Uncomment below to run
+          # FAPROTAX2 variables
+            # Uncomment below to run
             # Define variables and query strings
-            # query_filters <- load_query_filters()
-            # idx = which(sapply(query_filters, function(x) x$id) == "Type of metabolism (FAPROTAX)")
+            # query_filters <- load_data("query_filters")
+            # idx = which(sapply(query_filters, function(x) x$id) == "Type of metabolism (FAPROTAX2)")
             # ids <- purrr::map_chr(query_filters[[idx]]$plugin_config$options, "id")
-            # names <- gsub(" ", "_", ids)
+            # var_names <- paste0(gsub(" ", "_", ids), "_FAPROTAX2")
             # 
             # variables <- setNames(
             #   paste0(
-            #     "grepl(\"(?<=^|;)", ids, "(?=;|$)\", `Type of metabolism (FAPROTAX)`, perl = TRUE)"
+            #     "grepl(\"(?<=^|;)", ids, "(?=;|$)\", `Type of metabolism (FAPROTAX2)`, perl = TRUE)"
             #   ),
-            #   names
+            #   var_names
             # )
+            # 
+            # # Load the database and gene functions once for all variables
+            # database <- load_database(force_reload = TRUE)
+            # gene_functions <- load_data("gene_functions")
             # 
             # # Process each variable
             # for (i in seq_along(variables)) {
@@ -449,10 +467,17 @@ Sys.setlocale("LC_ALL", "C")
             #   query_string <- variables[[i]]
             #   
             #   generate_rf(
+            #     data = database,
+            #     gene_functions = gene_functions,
             #     var_name = var_name,
             #     query_string = query_string,
-            #     predictors_to_keep = 1
+            #     predictors_to_keep = 1,
+            #     ntree = 500,
+            #     maxnodes = NULL,
+            #     balance_classes = TRUE,
+            #     mtry = 300
             #   )
             #   
             #   svMisc::progress(i, max.value = length(variables))
             # }
+            

@@ -89,12 +89,12 @@ flatten_groups <- function(groups) {
 #' @importFrom dplyr group_by summarize select
 #' @export
 concatenate_groups_by_taxonomy <- function(df) {
-  df %>%
-    dplyr::group_by(taxonomy) %>%
+  df |>
+    dplyr::group_by(taxonomy) |>
     dplyr::summarize(
       group = paste(sort(unique(group)), collapse = ";"),
       .groups = "drop"
-    ) %>%
+    ) |>
     dplyr::select(group, taxonomy)
 }
 

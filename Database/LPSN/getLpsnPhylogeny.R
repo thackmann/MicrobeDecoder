@@ -7,7 +7,7 @@
 # Date: 17 November 2024
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/LPSN"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -34,8 +34,8 @@
         body <- get_web_page_body(url = url)
 
       # Extract link after "Parent taxon:"
-          parent_taxon_link <- body %>%
-            rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") %>%
+          parent_taxon_link <- body |>
+            rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") |>
             rvest::html_attr("href")
 
       # Get first parent taxon
@@ -56,8 +56,8 @@
         body <- get_web_page_body(url = url)
 
         # Extract the parent taxon link
-        parent_taxon_link <- body %>%
-          rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") %>%
+        parent_taxon_link <- body |>
+          rvest::html_nodes(xpath = "//b[contains(text(), 'Parent taxon:')]/following-sibling::a[1]") |>
           rvest::html_attr("href")
 
         # Stop if no parent taxa are found

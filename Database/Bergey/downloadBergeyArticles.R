@@ -11,7 +11,7 @@
 # Date: 13 February 2025
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/Bergey"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 

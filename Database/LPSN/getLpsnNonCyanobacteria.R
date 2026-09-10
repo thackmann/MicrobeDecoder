@@ -7,7 +7,7 @@
 # Date: 17 December 2024
 
 # === Get database directory ===
-  database_directory <- FileLocator::getCurrentFileLocation()
+  database_directory <- this.path::this.dir()
   subdirectory <- "/LPSN"
   database_directory <- gsub(paste0(subdirectory, "$"), "", database_directory)
 
@@ -25,18 +25,18 @@
 # === Format data ===
   # Select type strains with correct name
   df = lpsn_data
-  df = df %>% dplyr::filter(grepl(pattern = "correct name", x = status, ignore.case = TRUE))
-  df = df %>% dplyr::filter(sp_epithet!="")
+  df = df |> dplyr::filter(grepl(pattern = "correct name", x = status, ignore.case = TRUE))
+  df = df |> dplyr::filter(sp_epithet!="")
 
   # Rename columns
-  df = df %>% dplyr::select(genus_name, sp_epithet, subsp_epithet, nomenclatural_type, status, record_no, address)
-  df = df %>% dplyr::rename(Genus = "genus_name", Species = "sp_epithet", Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
+  df = df |> dplyr::select(genus_name, sp_epithet, subsp_epithet, nomenclatural_type, status, record_no, address)
+  df = df |> dplyr::rename(Genus = "genus_name", Species = "sp_epithet", Subspecies = "subsp_epithet", Strain = nomenclatural_type, Status = status, LPSN_ID = record_no)
 
   # Replace blank values with NA
-  df = df %>% dplyr::mutate_all(~ifelse(. == "", NA, .))
+  df = df |> dplyr::mutate_all(~ifelse(. == "", NA, .))
 
   # For subspecies, keep only entries that have subspecies specified (e.g., keep Selenomonas ruminantium lactilytica but not Selenomonas ruminantium)
-  df <- df %>% dplyr::group_by(Genus, Species) %>% dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) %>% dplyr::ungroup()
+  df <- df |> dplyr::group_by(Genus, Species) |> dplyr::filter(!(dplyr::n_distinct(Subspecies) > 1 & Subspecies == "")) |> dplyr::ungroup()
 
 # === Export ===
   write.csv(df, paste0(database_directory, "\\LPSN\\data\\lpsn_non_cyanobacteria.csv"), row.names = FALSE)
