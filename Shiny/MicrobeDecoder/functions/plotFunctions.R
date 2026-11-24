@@ -312,7 +312,8 @@
       tickmode = NULL,
       tickvals = NULL,
       ticktext = NULL,
-      tickfont = NULL
+      tickfont = NULL,
+      constraintoward = NULL
     )
     
     # Extract settings for each axis
@@ -2292,6 +2293,7 @@
         showticklabels.y = FALSE,
         title.x = "",
         title.y = "",
+        constraintoward.y = "top",
         coord_fixed = coord_fixed
       )
       
@@ -2300,7 +2302,7 @@
           showlegend = showlegend,
           xaxis = axis_settings$xaxis,
           yaxis = axis_settings$yaxis,
-          margin = list(t = 100),
+          margin = list(t = 40),
           hovermode = "closest"
         )
     } else if (ncol(layout) == 3) {
@@ -2326,7 +2328,7 @@
             yaxis = axis_settings$yaxis,
             zaxis = axis_settings$zaxis
           ),
-          margin = list(t = 100),
+          margin = list(t = 40),
           hovermode = "closest"
         )
     }

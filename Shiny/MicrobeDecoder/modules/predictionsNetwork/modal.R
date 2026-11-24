@@ -80,6 +80,10 @@ modalServer <- function(input, output, session) {
   # --- Generate outputs ---
   # Output plot for network
   output$network_plot <- plotly::renderPlotly({
+    nothing_to_plot_message <- "There is nothing to plot.  Select a component or turn off Hide cofactors (Advanced settings)."
+    
+    shiny::validate(shiny::need(input$network_configuration, nothing_to_plot_message))
+    
     configured_network <- configure_network()
     
     to_remove <- get_metabolites_to_remove(
@@ -88,6 +92,9 @@ modalServer <- function(input, output, session) {
     )
     
     g <- make_network_graph(configured_network, add_flux = FALSE, to_remove = to_remove, add_underscore = TRUE)
+    
+    shiny::validate(shiny::need(igraph::vcount(g) > 0, nothing_to_plot_message))
+    
     layout <- set_network_layout(g, type = "FR", dimensions = 2)
     g <- format_network_graph(g, show_flux = FALSE, show_modules = TRUE, vertex_default_size = 12)
     

@@ -71,19 +71,27 @@
       install.packages("remotes")
     }
     
+    # Get repo paths and subdirectories
+    # Named elements hold the repo in the name and the subdirectory in the value
+    element_names <- names(packages)
+    if (is.null(element_names)) {
+      element_names <- rep("", length(packages))
+    }
+    repos <- ifelse(element_names != "", element_names, packages)
+    subdirs <- ifelse(element_names != "", packages, "")
+    
     # Extract package names from repo paths (strip the "username/" prefix)
-    repo_names <- ifelse(names(packages) != "", sub(".*/", "", names(packages)), sub(".*/", "", packages))
+    repo_names <- sub(".*/", "", repos)
     
-    missing_github <- packages[!(repo_names %in% installed.packages()[, "Package"])]
+    missing <- !(repo_names %in% installed.packages()[, "Package"])
     
-    if (length(missing_github) > 0) {
-      message("Installing missing GitHub packages: ", paste(names(missing_github), collapse = ", "))
-      for (repo in names(missing_github)) {
-        subdir <- missing_github[repo]
-        if (subdir == "") {
-          remotes::install_github(repo)
+    if (any(missing)) {
+      message("Installing missing GitHub packages: ", paste(repos[missing], collapse = ", "))
+      for (i in which(missing)) {
+        if (subdirs[i] == "") {
+          remotes::install_github(repos[i])
         } else {
-          remotes::install_github(repo, subdir = subdir)
+          remotes::install_github(repos[i], subdir = subdirs[i])
         }
       }
     } else {

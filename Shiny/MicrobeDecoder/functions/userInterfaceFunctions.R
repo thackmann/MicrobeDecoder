@@ -125,6 +125,7 @@ create_query_builder <- function(ns,
 #' @param proxy.height Height of the spinner proxy element shown while the UI element loads. Default is `400`.
 #' @param use_fill_carrier Logical indicating whether to apply `bslib::as_fill_carrier()`. Default is `TRUE`.
 #' @param fires_once Logical indicating whether the spinner should show on the first render only. Default is `FALSE`.
+#' @param fill Logical indicating whether the output stretches to fill its card. A filling output already has room for the spinner, so it is marked to skip the placeholder height that content-sized outputs need. Default is `FALSE`.
 #' @param ... Additional arguments passed to `shinycssloaders::withSpinner()`.
 #' @return The UI element wrapped with a loading spinner.
 #'
@@ -132,7 +133,7 @@ create_query_builder <- function(ns,
 #' add_spinner(plotly::plotlyOutput("plot"))
 #' add_spinner(DT::dataTableOutput("table"))
 add_spinner <- function(ui_element, color = "#3C8DBC", proxy.height = 400, use_fill_carrier = TRUE,
-                        fires_once = FALSE, ...) {
+                        fires_once = FALSE, fill = FALSE, ...) {
   spinner <- shinycssloaders::withSpinner(ui_element, color = color, proxy.height = proxy.height,
                                           hide.ui = !fires_once, ...)
   
@@ -141,11 +142,45 @@ add_spinner <- function(ui_element, color = "#3C8DBC", proxy.height = 400, use_f
     spinner <- htmltools::tagAppendAttributes(spinner, `data-spin-once` = "true")
   }
   
+  # Mark a filling output so it keeps its own height while the spinner shows
+  if (fill) {
+    spinner <- htmltools::tagAppendAttributes(spinner, `data-spin-fill` = "true")
+  }
+  
   if (use_fill_carrier) {
     spinner <- bslib::as_fill_carrier(spinner)
   }
   
   spinner
+}
+
+
+#' Create a Plot Output with Optional Spinner
+#'
+#' This function wraps `plotly::plotlyOutput()` and optionally applies a spinner using `add_spinner()`.
+#'
+#' @param ns A namespace function for module compatibility. Default is `identity` for non-modular use.
+#' @param inputId The input ID for the plot.
+#' @param width The width of the plot. Default is `"100%"`.
+#' @param height The height of the plot (default: "100%").
+#' @param use_spinner Logical, whether to wrap the output in a loading spinner (default: TRUE).
+#' @param fill Logical, whether the plot stretches to fill its card (default: TRUE). Passed to `add_spinner()`, which uses it to decide whether the spinner needs a placeholder height.
+#' @return A `plotlyOutput`, optionally wrapped with a loading spinner.
+#'
+#' @examples
+#' create_plot_output(ns, ns("plot"))
+#' create_plot_output(ns, ns("plot"), use_spinner = FALSE)
+#' create_plot_output(ns, ns("plot"), width = "80%", height = "400px")
+create_plot_output <- function(ns, inputId, width = "100%", height = "100%", use_spinner = TRUE,
+                               fill = TRUE) {
+  plot_output <- plotly::plotlyOutput(inputId, width = width, height = height)
+  
+  if (use_spinner) {
+    plot_output <- add_spinner(plot_output, use_fill_carrier = TRUE, fires_once = TRUE,
+                               fill = fill)
+  }
+  
+  plot_output
 }
 
 #' Create a Plot Container
@@ -166,33 +201,9 @@ create_plot_div <- function(ns, plot_type, width = "100%", height = "40vh") {
   div(
     id = ns(paste0(plot_type, "-container")),
     class = paste0(plot_type, "-container-style"),
-    plotly::plotlyOutput(ns(paste0(plot_type, "_plot")), width = width, height = height)
+    create_plot_output(ns, ns(paste0(plot_type, "_plot")), width = width, height = height,
+                       fill = FALSE)
   )
-}
-
-#' Create a Plot Output with Optional Spinner
-#'
-#' This function wraps `plotly::plotlyOutput()` and optionally applies a spinner using `add_spinner()`.
-#'
-#' @param ns A namespace function for module compatibility. Default is `identity` for non-modular use.
-#' @param inputId The input ID for the plot.
-#' @param width The width of the plot. Default is `"100%"`.
-#' @param height The height of the plot (default: "100%").
-#' @param use_spinner Logical, whether to wrap the output in a loading spinner (default: TRUE).
-#' @return A `plotlyOutput`, optionally wrapped with a loading spinner.
-#'
-#' @examples
-#' create_plot_output(ns, ns("plot"))
-#' create_plot_output(ns, ns("plot"), use_spinner = FALSE)
-#' create_plot_output(ns, ns("plot"), width = "80%", height = "400px")
-create_plot_output <- function(ns, inputId, width = "100%", height = "100%", use_spinner = TRUE) {
-  plot_output <- plotly::plotlyOutput(inputId, width = width, height = height)
-  
-  if (use_spinner) {
-    plot_output <- add_spinner(plot_output, use_fill_carrier = TRUE, fires_once = TRUE)
-  }
-  
-  plot_output
 }
 
 #' Create a Navigation Panel with Optional Empty-State Message
@@ -311,23 +322,29 @@ create_nav_panel <- function(ns, title, ..., max_height = "50vh", centered = FAL
 #'   is shown (default: NULL, always show the plot).
 #' @param message_title Bold first line of the message shown when `flag_id` is FALSE.
 #' @param message_body Instruction line shown below `message_title`.
+#' @param download_button A download button placed below the plot, such as one from
+#'   `create_download_button()` (default: NULL, no button).  It is hidden along with
+#'   the plot when `flag_id` is FALSE.
 #'
 #' @return A `nav_panel` containing a `bslib::card` with a `plotlyOutput`.
 #'
 #' @examples
 #' create_plot_panel(ns, "summary", "Summary")
 #' create_plot_panel(ns, "treemap", "Treemap", max_height = "60vh", centered = TRUE)
+#' create_plot_panel(ns, "network", "Metabolic network",
+#'                   download_button = create_download_button(ns("download_network_model"), "Download network model"))
 create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "100%", 
                               max_height = "50vh", centered = FALSE, 
                               use_spinner = TRUE, full_screen = TRUE, fill = TRUE,
-                              flag_id = NULL, message_title = NULL, message_body = NULL) {
+                              flag_id = NULL, message_title = NULL, message_body = NULL,
+                              download_button = NULL) {
   # Define the container ID
   container_id <- ns(paste0(plot_type, "-container"))
   
   # Create the plot output
   plot_output <- create_plot_output(ns, ns(paste0(plot_type, "_plot")),
                                     width = width, height = height,
-                                    use_spinner = use_spinner)
+                                    use_spinner = use_spinner, fill = fill)
   
   # Wrap plot in a resizable div container
   plot_container <- div(
@@ -336,11 +353,96 @@ create_plot_panel <- function(ns, plot_type, title, width = "100%", height = "10
     plot_output
   )
   
-  create_nav_panel(ns, title = title, plot_container,
+  # Add the download button below the plot.  The plot and button are wrapped
+  # together, so the plot container has to carry the fill itself to keep
+  # stretching to the card.
+  plot_content <- plot_container
+  if (!is.null(download_button)) {
+    if (fill) {
+      plot_container <- plot_container |> bslib::as_fill_carrier()
+    }
+    plot_content <- div(plot_container, download_button)
+  }
+  
+  create_nav_panel(ns, title = title, plot_content,
                    max_height = max_height, centered = centered,
                    full_screen = full_screen, fill = fill,
                    flag_id = flag_id, message_title = message_title,
                    message_body = message_body)
+}
+
+#' Create the Model Tab
+#'
+#' This function builds the Model tab used by the prediction modules.  The tab
+#' has two sections.  The Model section shows a summary line and a button for
+#' downloading the model, and is always shown.  The Evaluation section shows a
+#' summary line, a confusion matrix, a table of detailed metrics, and a button
+#' for downloading the metrics.  A message is shown in place of the evaluation
+#' results when the `flag_evaluation` output is FALSE.
+#'
+#' @param ns A namespace function for module compatibility.
+#' @param title The tab title.
+#' @param message_body Instruction line shown when no evaluation is available.
+#' @param download_button A download button placed under the model summary line, such as
+#'   one for downloading the model (default: NULL, no button).
+#'
+#' @return A `nav_panel` containing a `bslib::card`.
+#'
+#' @examples
+#' create_evaluation_panel(ns, "Evaluation", "Please enable evaluation of predictions (advanced settings) and re-run predictions.")
+#' create_evaluation_panel(ns, "Model", "The selected models have no evaluation results.",
+#'                         download_button = create_download_button(ns("download_model"), "Download model"))
+create_evaluation_panel <- function(ns, title, message_body, download_button = NULL) {
+  # Create model section
+  model_section <- div(
+    # shiny::tags$h5("Model"),
+    shiny::textOutput(ns("model_summary")),
+    download_button
+  )
+  
+  # Create evaluation section
+  evaluation_results <- shiny::conditionalPanel(
+    condition = "output.flag_evaluation",
+    ns = ns,
+    class = "vstack gap-3",
+    shiny::textOutput(ns("evaluation_summary")),
+    div(
+      "Confusion matrix",
+      create_plot_div(ns = ns, plot_type = "confusion_matrix", height = "30vh"),
+      "Values in cells refer to number of organisms in the evaluation set.  Higher values in green cells are better."
+    ),
+    div(
+      "Detailed metrics",
+      create_plot_div(ns = ns, plot_type = "metrics", height = "220px"),
+      "Higher values are better."
+    ),
+    div(
+      create_download_button(ns("download_confusion_matrix"), label = "Download evaluation metrics")
+    )
+  )
+
+  evaluation_message <- shiny::conditionalPanel(
+    condition = "!output.flag_evaluation",
+    ns = ns,
+    div(
+      class = "plot-message",
+      div("No evaluation available", class = "plot-message-title"),
+      div(message_body)
+    )
+  )
+
+  evaluation_section <- div(
+    # shiny::tags$h5("Evaluation"),
+    evaluation_results,
+    evaluation_message
+  )
+  
+  # Create panel
+  create_nav_panel(ns, title = title,
+    model_section,
+    evaluation_section,
+    max_height = "none",
+    fill = FALSE)
 }
 
 #' Create a DataTable with Optional Spinner

@@ -1870,6 +1870,7 @@
 	#' Process Gene Functions from the Database
 	#'
 	#' This function processes gene functions for selected organisms, filtering and reshaping the data accordingly.
+	#' Organisms whose genomes have no gene functions are left out.
 	#'
 	#' @param gene_functions A data frame. The gene functions data.
 	#' @param organism_by_genome A data frame. The data frame mapping organisms to genomes.
@@ -1883,6 +1884,10 @@
 	    dplyr::filter(Organism %in% selected_organisms)
 	  
 	  filtered_data$Genome <- as.character(filtered_data$Genome)
+	  
+	  # Keep organisms whose genomes have gene functions
+	  filtered_data <- filtered_data |>
+	    dplyr::filter(Genome %in% gene_functions$Genome)
 	  
 	  gene_functions <- gene_functions |>
 	    dplyr::filter(Genome %in% filtered_data$Genome) |>

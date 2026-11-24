@@ -181,4 +181,4 @@ server <- function(input, output, session) {
 # options(shiny.reactlog = TRUE)
 
 # === Run app ===
-shiny::shinyApp(ui = ui, server = server)
+  shiny::shinyApp(ui = ui, server = server)

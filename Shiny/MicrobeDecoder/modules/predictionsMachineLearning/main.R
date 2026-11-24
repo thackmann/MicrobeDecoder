@@ -128,9 +128,6 @@
             bslib::nav_spacer(),
             
             # Plot options
-            # The model pickers stay in the toolbar; the threshold and the tree
-            # options go in the accordion.  The accordion is hidden on the Model
-            # tab, where none of its controls applies.
             header = div(
               class = "flex-container plot-options-container",
               create_conditional_flex_item(ns,
@@ -160,16 +157,12 @@
                                                create_switch_input(inputId = ns("tree_scale_bar"), label = "Scale bar",
                                                                    value = FALSE, label_position = "above")
                   ),
-                  # One picker covers the axis, since the tick numbers are only
-                  # meaningful once the axis is drawn
                   create_conditional_flex_item(ns,
                                                "input.results_tabs === 'Tree'",
                                                create_picker_input(inputId = ns("tree_axis"), label = "x-axis",
                                                                    choices = c("Off", "Forward", "Backward"),
                                                                    selected = "Backward")
                   ),
-                  # Separate switches so each plot can default differently: the
-                  # tree starts binary, the heatmap starts continuous
                   create_conditional_flex_item(ns,
                                                "input.results_tabs === 'Heatmap'",
                                                create_switch_input(inputId = ns("heatmap_binary"), label = "Values are binary",
@@ -190,28 +183,11 @@
             create_plot_panel(ns, "tile", "Summary", fill = FALSE, height = "auto"),
             create_plot_panel(ns, "heatmap", "Heatmap"),
             create_plot_panel(ns, "treemap", "Treemap", centered = TRUE),
-            create_nav_panel(ns, "Model",
-              div(
-                shiny::textOutput(ns("training_summary")),
-                create_conditional_download_button(
-                  condition = "output.flag_models", inputId = "download_model",
-                  label = "Download model", ns = ns)
-              ),
-              div(
-                "Confusion matrix",
-                create_plot_div(ns = ns, plot_type = "confusion_matrix", height = "30vh"),
-                "Values in cells refer to number of organisms in the evaluation set.  Higher values in green cells are better."
-              ),
-              div(
-                "Detailed metrics",
-                create_plot_div(ns = ns, plot_type = "metrics", height = "220px"),
-                "Higher values are better."
-              ),
-              div(
-                create_download_button(ns('download_confusion_matrix'), label = "Download evaluation metrics")
-              ),
-              max_height = "none",
-              fill = FALSE),
+            create_evaluation_panel(ns, "Model", 
+                              message_body = "The selected models have no evaluation results.",
+                              download_button = create_conditional_download_button(
+                              condition = "output.flag_models", inputId = "download_model",
+                              label = "Download model", ns = ns)),
             create_plot_panel(ns, "tree", "Tree",
                               flag_id = "flag_tree",
                               message_title = "No plot available",
@@ -456,6 +432,14 @@
     flag_if_not_null(output, "flag_tree", trigger = url_change_trigger, 
                      value_fun = function() get_results()$tree) 
     
+    flag_if_not_null(output, "flag_evaluation", trigger = url_change_trigger,
+                     value_fun = function() {
+                       metadata <- get_results()$get_model_metadata
+                       # Return nothing when no model has evaluation results, which turns the flag off
+                       has_evaluation <- vapply(metadata, function(m) !is.null(m$evaluation), logical(1))
+                       if (any(has_evaluation)) metadata else NULL
+                     })
+    
     # Output message before results are available
     output$job_status <- render_job_status(
       tab_name      = "predictionsMachinelearning",
@@ -646,8 +630,8 @@
     })
       
     # Model download and evaluation
-    # Get data
-    get_evaluation_data <- eventReactive(list(url_change_trigger(), input$model_to_display), 
+    # Get data for the model
+    get_model_data <- eventReactive(list(url_change_trigger(), input$model_to_display), 
     {
       # Get data
       metadata <- get_results()$get_model_metadata
@@ -661,30 +645,44 @@
       model_to_display <- assign_if_invalid(input$model_to_display, model_names[1])
       info <- metadata[[model_to_display]]
       
-      eval <- info$evaluation
-      if(!is.null(eval)){
-        # Format the matrix for plotting
-        eval$table = eval$table
-        rownames(eval$table) <- c("Negative", "Positive")
-        colnames(eval$table) <- c("Negative", "Positive")
-        eval$table <- eval$table[c("Positive", "Negative"), c("Positive", "Negative")]
-      }
-      
       list(
         model_to_display = model_to_display,
         n_predictors = info$n_predictors,
         n_responses_train = info$n_responses,
-        n_responses_eval = sum(eval$table),
-        evaluation = eval
+        evaluation = info$evaluation
       )
     })
     
-    # Output training summary
-    output$training_summary <- shiny::renderText({
+    # Get data for the evaluation
+    get_evaluation_data <- shiny::reactive({
+      # Get data
+      eval <- get_model_data()$evaluation
+      
+      # Check required conditions
+      req(!is.null(eval))
+      
+      # Format the matrix for plotting
+      rownames(eval$table) <- c("Negative", "Positive")
+      colnames(eval$table) <- c("Negative", "Positive")
+      eval$table <- eval$table[c("Positive", "Negative"), c("Positive", "Negative")]
+      
+      list(
+        n_responses_eval = sum(eval$table),
+        evaluation = eval
+      )
+    }, label = "get_evaluation_data")
+    
+    # Output model summary
+    output$model_summary <- shiny::renderText({
+      model_data <- get_model_data()
+      paste0("Model trained with ", model_data$n_responses_train, " responses (organisms) and ", 
+             model_data$n_predictors, " predictors (gene functions).")
+    })
+    
+    # Output evaluation summary
+    output$evaluation_summary <- shiny::renderText({
       evaluation_data <- get_evaluation_data()
-      paste0("Model trained with ", evaluation_data$n_responses_train, " responses (organisms) and ", 
-             evaluation_data$n_predictors, " predictors (gene functions). Model evaluated with an additional ",
-             evaluation_data$n_responses_eval, " responses (organisms).")
+      paste0("Model evaluated with an additional ", evaluation_data$n_responses_eval, " responses (organisms).")
     })
     
     # Plot confusion matrix

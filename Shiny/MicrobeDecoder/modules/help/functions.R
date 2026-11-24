@@ -16,8 +16,6 @@
 #' @return Invisibly returns the URL that was opened.
 #' @export
 open_demo_job <- function(session, demo_tab, demo_user = "demo_user", demo_job) {
-  cd <- session$clientData
-  
   # Build query string (?tab=...&user=...&job=...)
   tab_query <- paste0(
     "?tab=", demo_tab,
@@ -28,5 +26,5 @@ open_demo_job <- function(session, demo_tab, demo_user = "demo_user", demo_job) 
   # Open URL
   shinyjs::runjs(sprintf("window.open('%s', '_blank');", tab_query))
   
-  invisible(url)
+  invisible(tab_query)
 }
