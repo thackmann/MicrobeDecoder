@@ -106,6 +106,7 @@
     nodes_to_root                 = "data/tree/nodes_to_root.rds",
     config_reference_networks     = "data/config/reference_networks.csv",
     config_network_layout         = "data/config/network_layout.csv",
+    config_network_evaluation     = "data/config/network_evaluation.csv",
     config_plots                  = "data/config/plot_var.csv"
   )  
  
