@@ -85,6 +85,41 @@
     return(reference_network)
   }
 
+  #' Get Names of Reference Networks
+  #'
+  #' This function returns the names of the reference networks used for predictions.
+  #' A network from the database takes its name from the database.  An uploaded
+  #' network takes the name of its file (without extension).  A network built
+  #' in-session is named "Custom network".  The names are what the module predicts,
+  #' as are model names in the machine learning module and trait names in the
+  #' taxonomy module.
+  #'
+  #' @param network_from_database Logical. Use database source?
+  #' @param network_from_builder Logical. Use in-session network builder?
+  #' @param network_from_upload Logical. Use uploaded file?
+  #' @param selected_network A character vector of reference networks selected from the database.
+  #' @param upload_name Name of the uploaded network file (if using upload source).
+  #' @param custom_name Name given to a network built in-session. Default is "Custom network".
+  #' @return A character vector of reference network names.
+  get_network_names <- function(network_from_database,
+                                network_from_builder,
+                                network_from_upload,
+                                selected_network = NULL,
+                                upload_name = NULL,
+                                custom_name = "Custom network") {
+    if (network_from_database) {
+      network_names <- selected_network
+    } else if (network_from_builder) {
+      network_names <- custom_name
+    } else if (network_from_upload) {
+      network_names <- tools::file_path_sans_ext(upload_name)
+    } else {
+      stop("No valid source specified for reference network.")
+    }
+
+    return(network_names)
+  }
+
   #' Get Inputs for Metabolic Networks Module
   #'
   #' This is the main function for getting all inputs for the module
@@ -98,6 +133,7 @@
   #' @param selected_organisms A character vector of selected organism IDs.
   #' @param gene_functions_upload_path File path to uploaded gene functions (if any).
   #' @param reference_network_upload_path File path to uploaded network (if any).
+  #' @param reference_network_upload_name File name of uploaded network (if any).
   #' @param selected_reference_network Character or list of reference network IDs from database.
   #' @param substrates Character vector of selected substrates.
   #' @param products Character vector of selected products.
@@ -105,6 +141,8 @@
   #' @param all_subunits Logical. Whether to consider all subunits for module completion.
   #' @param tree_upload A Shiny file upload object holding a phylogenetic tree, or NULL.
   #' @param metadata_upload A Shiny file upload object holding organism metadata, or NULL.
+  #' @param evaluate_predictions Logical. Whether predictions are to be evaluated.  Only
+  #'   reference networks from the database are evaluated.
   #'
   #' @return A list of processed inputs.
   get_network_inputs <- function(
@@ -117,13 +155,15 @@
       selected_organisms,
       gene_functions_upload_path,
       reference_network_upload_path,
+      reference_network_upload_name = NULL,
       selected_reference_network,
       substrates,
       products,
       unbalanced_intermediates,
       all_subunits,
       tree_upload = NULL,
-      metadata_upload = NULL
+      metadata_upload = NULL,
+      evaluate_predictions = FALSE
   ) {
     # Load gene functions
     gene_functions <- get_gene_functions(
@@ -155,11 +195,21 @@
     metadata <- get_metadata_from_upload(
       metadata_upload = metadata_upload
     )
-    
+
+    # Get reference network names
+    network_names <- get_network_names(
+      network_from_database = network_from_database,
+      network_from_builder = network_from_builder,
+      network_from_upload = network_from_upload,
+      selected_network = selected_reference_network,
+      upload_name = reference_network_upload_name
+    )
+
     # Validate substrates and products
     run_validation_modal(shiny::need(substrates != "", "Please choose at least one substrate"))
     run_validation_modal(shiny::need(products != "", "Please choose at least one product"))
-    
+
+
     # Compile and return input list
     list(
       gene_functions = gene_functions,
@@ -170,7 +220,10 @@
       unbalanced_intermediates = unbalanced_intermediates,
       all_subunits = all_subunits,
       tree = tree,
-      metadata = metadata
+      metadata = metadata,
+      network_names = network_names,
+      network_from_database = network_from_database,
+      evaluate_predictions = evaluate_predictions
     )
   }
 
@@ -1176,13 +1229,43 @@
   #' @param products Character vector of products.
   #' @param unbalanced_intermediates Character vector of unbalanced intermediates.
   #' @param all_subunits Logical, whether all enzyme subunits are required for activity.
+  #' @param network_names A character vector of reference network names.
+  #' @param network_from_database Logical. Whether the reference network comes from the database.
+  #' @param evaluate_predictions Logical. Whether predictions are to be evaluated.
   #' @param progress_file Path to a progress \code{.rds} file (typically created
   #'   by \code{create_job_filepaths()}), or \code{NULL} to disable progress
   #'   reporting.  Default is \code{NULL}.
-  #' @return A named list with solved models and fluxes.
+  #' @return A named list with solved models, fluxes, the reaction table, fluxes of
+  #'   organisms used to evaluate predictions (or NULL), and known traits of those
+  #'   organisms (or NULL).
   #' @export
   compute_network_predictions <- function(reference_network, gene_functions, substrates, products, unbalanced_intermediates, all_subunits,
+                                          network_names = NULL, network_from_database = FALSE,
+                                          evaluate_predictions = FALSE,
                                           progress_file = NULL) {
+    # Update progress
+    write_progress(progress_file, 0, "Getting evaluation data")
+    
+    # Add data for evaluating predictions
+    evaluation <- list()
+    if (isTRUE(evaluate_predictions)) {
+      evaluation <- get_evaluation_inputs(
+        evaluate_predictions = evaluate_predictions,
+        network_from_database = network_from_database,
+        network_names = network_names
+      )
+    }
+    
+    if (!is.null(evaluation$gene_functions)) {
+      n_rows <- max(nrow(gene_functions), nrow(evaluation$gene_functions))
+      pad_rows <- function(df) {
+        df <- df[seq_len(n_rows), , drop = FALSE]
+        rownames(df) <- NULL
+        df
+      }
+      gene_functions <- cbind(pad_rows(gene_functions), pad_rows(evaluation$gene_functions))
+    }
+
     # Update progress
     write_progress(progress_file, 0, "Getting reference network model")
     
@@ -1216,10 +1299,22 @@
                                        progress_file = progress_file)
     fluxes <- get_fluxes(solved_models, organism_names, substrates, products)
 
+    # Split off results for evaluation
+    evaluation_fluxes <- NULL
+    if (!is.null(evaluation$organism_names)) {
+      evaluation_fluxes <- fluxes |>
+        dplyr::filter(`Organism name` %in% evaluation$organism_names) |>
+        dplyr::mutate(`Organism name` = substring(`Organism name`, nchar(evaluation$prefix) + 1))
+      fluxes <- fluxes |>
+        dplyr::filter(!(`Organism name` %in% evaluation$organism_names))
+    }
+
     # Update progress
     cat(file = stderr(), paste0("Ended prediction at ", Sys.time(), "\n"))
     
-    return(list(solved_models = solved_models, fluxes = fluxes, reaction_table = reaction_table))
+    return(list(solved_models = solved_models, fluxes = fluxes, reaction_table = reaction_table,
+                evaluation_fluxes = evaluation_fluxes,
+                evaluation_known_traits = evaluation$known_traits))
   }
 
   #' Pack solved models into a compact form for saving
@@ -1343,6 +1438,9 @@
   #' @param all_subunits Logical.
   #' @param tree A phylo object to plot the results on, or NULL.
   #' @param metadata A data frame of organism metadata to show in the tree hover text, or NULL.
+  #' @param network_names A character vector of reference network names.
+  #' @param network_from_database Logical. Whether the reference network comes from the database.
+  #' @param evaluate_predictions Logical. Whether predictions are to be evaluated.
   #' @param job_id Character job id.
   #' @param job_dir Directory where the result file is to be written.
   #' @param progress_file Path to the progress \code{.rds} file, or \code{NULL}.
@@ -1351,14 +1449,21 @@
   run_job_network <- function(reference_network, gene_functions, organism_names,
                                        substrates, products, unbalanced_intermediates,
                                        all_subunits, tree = NULL, metadata = NULL,
+                                       network_names = NULL,
+                                       network_from_database = FALSE,
+                                       evaluate_predictions = FALSE,
                                        job_id, job_dir, progress_file = NULL) {
-    result <- compute_network_predictions(
+    
+	result <- compute_network_predictions(
       reference_network        = reference_network,
       gene_functions           = gene_functions,
       substrates               = substrates,
       products                 = products,
       unbalanced_intermediates = unbalanced_intermediates,
       all_subunits             = all_subunits,
+      network_names            = network_names,
+      network_from_database    = network_from_database,
+      evaluate_predictions     = evaluate_predictions,
       progress_file            = progress_file
     )
 
@@ -1367,10 +1472,16 @@
       get_input_substrates         = substrates,
       get_input_products           = products,
       get_unbalanced_intermediates = unbalanced_intermediates,
+      get_input_network            = reference_network,
       get_solved_models            = pack_solved_models(result$solved_models, result$reaction_table),
       predict_fluxes               = result$fluxes,
       tree                         = tree,
-      organism_metadata            = metadata
+      organism_metadata            = metadata,
+      network_names                = network_names,
+      network_from_database        = network_from_database,
+      evaluate_predictions         = evaluate_predictions,
+      evaluation_fluxes            = result$evaluation_fluxes,
+      evaluation_known_traits      = result$evaluation_known_traits
     )
 
     save_job_result(job_id = job_id, result = payload, job_dir = job_dir)
@@ -1378,7 +1489,138 @@
     invisible(TRUE)
   }
   
-# === Generating user interface (UI) ===  
+# === Evaluating predictions ===
+  #' Get Reason Predictions Are Not Evaluated
+  #'
+  #' This function checks whether predictions for a reference network can be
+  #' evaluated.  Only networks from the database are evaluated, and only those
+  #' with organisms of known traits in the configuration file.  Predictions are
+  #' also evaluated only if the user asks for it.  It is used both when running
+  #' the computation job and when showing results to the user.
+  #'
+  #' @param evaluate_predictions Logical. Whether predictions are to be evaluated.
+  #' @param network_from_database Logical. Whether the reference network comes from the database.
+  #' @param network_name The name of the reference network.
+  #' @param known_traits A data frame of known traits, with one column per type of metabolism.
+  #' @return Text saying why predictions cannot be evaluated, or NULL if they can be.
+  #' @export
+  get_evaluation_skip_reason <- function(evaluate_predictions, network_from_database,
+                                         network_name, known_traits) {
+    # Return a message if the reference network is built or uploaded
+    if (!isTRUE(network_from_database)) {
+      return(paste0("Predictions can be evaluated only for reference networks ",
+                    "from the database, not ones from the user."))
+    }
+
+    # Return a message if the selected reference network has no known traits
+    if (!isTRUE(network_name %in% colnames(known_traits))) {
+      return(paste0("Predictions for this reference network cannot be evaluated ", 
+                    "since no organisms with known traits are available for it."))
+    }
+
+    # Return a message if predictions are not to be evaluated
+    if (!isTRUE(evaluate_predictions)) {
+      return("Please enable evaluation of predictions (advanced settings) and re-run predictions.")
+    }
+
+    NULL
+  }
+
+  #' Get Inputs for Evaluating Predictions
+  #'
+  #' This function gets the organisms used to evaluate predictions from metabolic
+  #' networks.  These are organisms whose types of metabolism are known from the
+  #' literature.  Their known traits come from a configuration file, which has one
+  #' row per organism and one column per type of metabolism.  The column names
+  #' match the names of reference networks in the database.  Their gene functions
+  #' come from the database.  Only networks that pass
+  #' \code{get_evaluation_skip_reason()} are evaluated.
+  #'
+  #' @param evaluate_predictions Logical. Whether predictions are to be evaluated.
+  #' @param network_from_database Logical. Whether the reference network comes from the database.
+  #' @param network_names A character vector of reference network names.
+  #' @param prefix Text added to the start of each organism name.  This keeps the names
+  #'   from clashing with names of organisms chosen or uploaded by the user, since
+  #'   predictions are made for all organisms at once.  Default is "Evaluation: ".
+  #' @return A list with \code{gene_functions} (a data frame with one column per organism),
+  #'   \code{organism_names} (names of organisms, with the prefix), \code{prefix},
+  #'   \code{known_traits} (a data frame of known traits), and \code{networks} (names of
+  #'   the reference networks to evaluate), or an empty list if no network can be evaluated.
+  #' @export
+  get_evaluation_inputs <- function(evaluate_predictions, network_from_database, network_names,
+                                    prefix = "Evaluation: ") {
+    # Get known traits
+    known_traits <- load_data("config_network_evaluation")
+
+    # Get reference networks that can be evaluated
+    networks <- Filter(function(network_name) {
+      is.null(get_evaluation_skip_reason(
+        evaluate_predictions = evaluate_predictions,
+        network_from_database = network_from_database,
+        network_name = network_name,
+        known_traits = known_traits
+      ))
+    }, network_names)
+
+    # Return an empty list if no reference network can be evaluated
+    if (length(networks) == 0) {
+      return(list())
+    }
+
+    # Get gene functions
+    gene_functions <- get_gene_functions_from_database(known_traits$Organism)
+
+    # Add prefix to organism names
+    colnames(gene_functions) <- paste0(prefix, colnames(gene_functions))
+
+    list(
+      gene_functions = gene_functions,
+      organism_names = colnames(gene_functions),
+      prefix = prefix,
+      known_traits = known_traits,
+      networks = networks
+    )
+  }
+
+  #' Evaluate Predictions from Metabolic Networks
+  #'
+  #' This function compares predictions from metabolic networks against the known
+  #' traits of organisms.  An organism is predicted positive if any of its fluxes
+  #' (for any substrate or end product) is at or above the threshold.  It returns a
+  #' confusion matrix, as for evaluating machine learning models.
+  #'
+  #' @param fluxes A data frame of fluxes from \code{get_fluxes()}.
+  #' @param known_traits A data frame of known traits, with an \code{Organism} column and
+  #'   one column per type of metabolism holding "positive" or "negative".
+  #' @param trait The name of the column in \code{known_traits} to compare against.
+  #' @param threshold The flux at or above which a prediction is positive. Default is `1`.
+  #' @return A confusion matrix from \code{caret::confusionMatrix()}.
+  #' @export
+  #' @importFrom caret confusionMatrix
+  evaluate_network_predictions <- function(fluxes, known_traits, trait, threshold = 1) {
+    # Get largest flux for each organism
+    # Fluxes that are missing (no prediction) are treated as no flux
+    predicted <- fluxes |>
+      dplyr::group_by(`Organism name`) |>
+      dplyr::summarise(Flux = suppressWarnings(max(Flux, na.rm = TRUE)), .groups = "drop") |>
+      dplyr::mutate(Flux = ifelse(is.finite(Flux), Flux, 0))
+
+    # Match predictions with known traits
+    df <- known_traits |>
+      dplyr::select(Organism, Known = dplyr::all_of(trait)) |>
+      dplyr::inner_join(predicted, by = c("Organism" = "Organism name"))
+
+    # Convert to classes
+    predicted_classes <- factor(ifelse(df$Flux >= threshold, "1", "0"), levels = c("0", "1"))
+    known_classes <- factor(ifelse(df$Known == "positive", "1", "0"), levels = c("0", "1"))
+
+    # Create a confusion matrix
+    confusion_matrix <- caret::confusionMatrix(predicted_classes, known_classes, positive = "1")
+
+    return(confusion_matrix)
+  }
+
+# === Generating user interface (UI) ===
   #' Create a Custom File Input UI with Modal Trigger
   #'
   #' This function creates a UI element that mimics a Shiny file input box but instead launches a modal dialog 
@@ -1911,7 +2153,7 @@
     update_picker_input(session = session, inputId = "organism_to_display",
                         choices = data)
   }
-  
+
   #' Update Choices for Tree Layout (Network Module)
   #'
   #' Populates the \code{tree_layout} picker input with the layouts the tree can

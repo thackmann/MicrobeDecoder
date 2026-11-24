@@ -75,7 +75,13 @@
                     value = "settings",
                     
                     create_selectize_input(inputId = ns("unbalanced_intermediates"), label = "Unbalanced intermediates"),
-                    create_switch_input(inputId = ns("all_subunits"), label = "Enzymes must have all subunits")
+                    create_switch_input(inputId = ns("all_subunits"), label = "Enzymes must have all subunits"),
+
+                    shiny::conditionalPanel(
+                      condition = "input.reaction_tabs == 'Database'",
+                      ns = ns,
+                      create_switch_input(inputId = ns("evaluate_predictions"), label = "Evaluate predictions", value = FALSE)
+                    )
                   ),
                   
                   bslib::accordion_panel(
@@ -126,12 +132,6 @@
                       bslib::nav_spacer(),
                       
                       # Plot options
-                      # The pickers choosing what is plotted stay in the toolbar.
-                      # Everything that changes how it is drawn goes in the
-                      # options accordion, whose button shares the toolbar and
-                      # whose body opens across the row below it.  No condition
-                      # is given because the flux threshold shows on every tab,
-                      # so the accordion is never empty.
                       header = div(
                         class = "flex-container plot-options-container",
                         create_conditional_flex_item(ns,
@@ -142,9 +142,6 @@
                                                      "input.results_tabs == 'Metabolic network' && output.flag_multiple_substrates",
                                                      create_picker_input(ns("substrate_to_display"), "Substrate")
                         ),
-                        # The heatmap and the treemap share a picker of their own
-                        # because they are the plots that can show every substrate
-                        # at once, which the network tab cannot
                         create_conditional_flex_item(ns,
                                                      "(input.results_tabs == 'Heatmap' || input.results_tabs == 'Treemap') && output.flag_multiple_substrates",
                                                      create_picker_input(ns("plot_substrate_to_display"), "Substrate")
@@ -164,9 +161,6 @@
                         create_options_accordion(
                           div(
                             class = "flex-container plot-options-container",
-                            # Shown on every tab: the threshold sets which fluxes count as
-                            # a prediction, so it drives the plots, the summary text, and
-                            # the substrate choices for the tree
                             div(class = "flex-item flex-item-slider",
                                 create_slider_input(ns("flux_threshold"), "Flux threshold",
                                                     min = 0, max = 1000, value = 1)
@@ -195,16 +189,14 @@
                                                          "input.results_tabs == 'Tree'",
                                                          create_switch_input(ns("tree_scale_bar"), "Scale bar", value = FALSE, label_position = "above")
                             ),
-                            # One picker covers the axis, since the tick numbers are only
-                            # meaningful once the axis is drawn
+                            
                             create_conditional_flex_item(ns,
                                                          "input.results_tabs === 'Tree'",
                                                          create_picker_input(inputId = ns("tree_axis"), label = "x-axis",
                                                                              choices = c("Off", "Forward", "Backward"),
                                                                              selected = "Backward")
                             ),
-                            # Separate switches so each plot can default differently: the
-                            # tree starts binary, the heatmap starts continuous
+
                             create_conditional_flex_item(ns,
                                                          "input.results_tabs == 'Heatmap'",
                                                          create_switch_input(ns("heatmap_binary"), "Values are binary", value = FALSE, label_position = "above")
@@ -235,6 +227,10 @@
                                         flag_id = "flag_predictions",
                                         message_title = "No plot available",
                                         message_body = no_prediction_message),
+                      create_evaluation_panel(ns, "Evaluation",
+                                        message_body = shiny::textOutput(ns("evaluation_message")),
+                                        # download_button = create_download_button(ns("download_input_network"), "Download input network")
+                                        ),
                       create_plot_panel(ns, "tree", "Tree",
                                         flag_id = "flag_tree",
                                         message_title = "No plot available",
@@ -311,13 +307,15 @@
         selected_organisms = input$selected_organisms,
         gene_functions_upload_path = input$gene_functions$datapath,
         reference_network_upload_path = input$reference_network_upload$datapath,
+        reference_network_upload_name = input$reference_network_upload$name,
         selected_reference_network = input$reference_network,
         substrates = input$substrates,
         products = input$products,
         unbalanced_intermediates = input$unbalanced_intermediates,
         all_subunits = input$all_subunits,
         tree_upload = input$tree_upload,
-        metadata_upload = input$metadata_upload
+        metadata_upload = input$metadata_upload,
+        evaluate_predictions = input$evaluate_predictions
       )
 
       # Shape into save function's signature
@@ -330,7 +328,10 @@
         unbalanced_intermediates = inputs$unbalanced_intermediates,
         all_subunits             = inputs$all_subunits,
         tree                     = inputs$tree,
-        metadata                 = inputs$metadata
+        metadata                 = inputs$metadata,
+        network_names            = inputs$network_names,
+        network_from_database    = inputs$network_from_database,
+        evaluate_predictions     = inputs$evaluate_predictions
       )
     }
 
@@ -455,8 +456,6 @@
         reset_spinners()
       
       # Update choices for product and organism to display
-      # Runs before the threshold check because the choices ignore the threshold,
-      # and the slider is not ready when the tab loads from History
         update_product_to_display_network(session = session,
                                           data = get_results()$get_input_products)
         
@@ -467,7 +466,7 @@
         
         update_organism_to_display_network(session = session,
                                            data = get_results()$get_organism_names)
-      
+
       # Check for required conditions
         req(!is.null(input$flux_threshold))
       
@@ -647,8 +646,10 @@
                      df <- get_results()$predict_fluxes
                      # Return nothing when every flux is missing, which turns the flag off
                      if (is.null(df) || all(is.na(df$Flux))) NULL else df
-                   }) 
-  
+                   })
+  flag_if_not_null(output, "flag_evaluation", trigger = url_change_trigger,
+                   value_fun = function() get_results()$evaluation_fluxes)
+
   
   # Output message before results are available
   output$job_status <- render_job_status(
@@ -686,7 +687,90 @@
     filename_prefix = "fluxes",
     data_source = function() get_results()$predict_fluxes
   )
-  
+
+  # Model evaluation
+  # Get data
+  get_evaluation_data <- eventReactive(list(url_change_trigger(), input$flux_threshold),
+  {
+    # Get data
+    results <- get_results()
+    fluxes <- results$evaluation_fluxes
+    known_traits <- results$evaluation_known_traits
+
+    # Check required conditions
+    req(!is.null(fluxes), !is.null(known_traits), !is.null(input$flux_threshold))
+
+    # Get types of metabolism to evaluate, which are the ones named after the reference networks
+    traits <- intersect(results$network_names, colnames(known_traits))
+    req(length(traits) > 0)
+
+    # Evaluate predictions for each type of metabolism
+    evaluations <- lapply(traits, function(trait) {
+      eval <- evaluate_network_predictions(fluxes = fluxes, known_traits = known_traits,
+                                           trait = trait, threshold = input$flux_threshold)
+
+      # Format the matrix for plotting
+      rownames(eval$table) <- c("Negative", "Positive")
+      colnames(eval$table) <- c("Negative", "Positive")
+      eval$table <- eval$table[c("Positive", "Negative"), c("Positive", "Negative")]
+
+      list(
+        trait = trait,
+        n_organisms = sum(eval$table),
+        evaluation = eval
+      )
+    })
+    names(evaluations) <- traits
+
+    evaluations
+  },
+  label = "get_evaluation_data")
+
+  # Output message when predictions were not evaluated
+  output$evaluation_message <- shiny::renderText({
+    results <- get_results()
+
+    # Use the saved message for jobs saved before network names were saved
+    if (is.null(results$network_names)) {
+      return(results$evaluation_message %||%
+               "Please enable evaluation of predictions (advanced settings) and re-run predictions.")
+    }
+
+    get_evaluation_skip_reason(
+      evaluate_predictions = results$evaluate_predictions,
+      network_from_database = results$network_from_database,
+      network_name = results$network_names[[1]],
+      known_traits = load_data("config_network_evaluation")
+    )
+  })
+
+  # Output evaluation summary
+  output$evaluation_summary <- shiny::renderText({
+    evaluation_data <- get_evaluation_data()[[1]]
+    paste0("Predictions evaluated with ", evaluation_data$n_organisms,
+           " organisms whose type of metabolism is known.")
+  })
+
+  # Plot confusion matrix
+  output$confusion_matrix_plot <- plotly::renderPlotly({
+    evaluation_data <- get_evaluation_data()[[1]]
+    plot_confusion_matrix(df = evaluation_data$evaluation)
+  })
+
+  # Plot metrics table
+  output$metrics_plot <- plotly::renderPlotly({
+    evaluation_data <- get_evaluation_data()[[1]]
+    plot_metrics_table(df = evaluation_data$evaluation)
+  })
+
+  # Output downloadable evaluation metrics
+  output$download_confusion_matrix <- create_download_handler(
+    filename_prefix = reactive(get_evaluation_data()[[1]]$trait),
+    data_source = function() {
+      capture.output(print(get_evaluation_data()[[1]]$evaluation))
+    }
+  )
+
   # Output overview plots
   get_plot_data <- eventReactive(list(url_change_trigger(), input$plot_substrate_to_display, 
                                       input$flux_threshold), 
@@ -711,8 +795,6 @@
     substrate_to_display <- assign_if_invalid(input$plot_substrate_to_display, "Any")
     
     # Combine data
-    # "Any" stands for every substrate. Leaving it out of the filter keeps a
-    # cell with several fluxes, which the plots reduce to the largest of them.
     list(
       df = df,
       substrate_to_keep = if (identical(substrate_to_display, "Any")) NULL else substrate_to_display,
@@ -845,14 +927,10 @@
     plot_data <- get_plot_data()
     layout <- get_tree_layout_cached()
     
-    # Fall back to "Any" before the pickers have been populated, which is what
-    # they start on once they are.
+    # Fall back to "Any" before the pickers have been populated
     substrate_to_display <- assign_if_invalid(input$tree_substrate_to_display, "Any")
     product_to_display <- assign_if_invalid(input$tree_product_to_display, "Any")
     
-    # "Any" stands for every value of a variable. Leaving it out of the list
-    # below skips the filter on it, which leaves a node with several fluxes and
-    # draws the largest of them.
     var_to_keep <- list(
       var1 = if (identical(substrate_to_display, "Any")) NULL else substrate_to_display,
       var2 = if (identical(product_to_display, "Any")) NULL else product_to_display

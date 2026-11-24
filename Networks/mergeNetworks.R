@@ -202,6 +202,12 @@
       new_rn = "R1.21.99.A"
     )
   
+  merged_network <- merged_network |>
+    fill_info(
+      rn_match = "R10572",
+      new_ko = "K22174"
+    )
+  
   # Correct wrong information
   merged_network <- merged_network |>
     fill_info(

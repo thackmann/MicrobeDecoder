@@ -11,8 +11,6 @@
 # |
 # start_job()
 # |
-# prepare_job()
-# |
 # setup_workers()
 # |
 # submit_job_to_worker()
@@ -49,7 +47,7 @@
 # +-- finalize_job_status()
 # +-- <update URL>
 # +-- <close modal>
-# +-- reset_job()
+# +-- clear_out_job()
 # |
 # <module sees URL change>
 # |
@@ -66,19 +64,13 @@
   #' another. The ID is included in file names and URLs so that the app can save,
   #' retrieve, monitor, and cancel the correct job.
   #'
-  #' By default, the function creates a full UUID. It can optionally create a
-  #' shorter hash when a compact ID is preferred.
+  #' The ID is a full UUID.
   #'
-  #' @param short Logical. Whether to create a short hash instead of a full UUID.
   #' @return A character string containing the new job ID.
   #' @export
-  create_job_id <- function(short = FALSE) {
-      if (short) {
-        digest::digest(Sys.time(), algo = "xxhash32", serialize = FALSE)
-      } else {
-        uuid::UUIDgenerate()
-      }
-    }
+  create_job_id <- function() {
+    uuid::UUIDgenerate()
+  }
 
   #' Create a URL for a saved computation job
   #'
@@ -589,8 +581,8 @@
   #' small RDS file. A worker calls it at checkpoints during a long computation,
   #' and the main Shiny process reads the file to update the progress modal.
   #'
-  #' The progress value is limited to the range from 0 to 1 and is also saved as
-  #' a percentage from 0 to 100.
+  #' The progress value is limited to the range from 0 to 1 and is saved as a
+  #' percentage from 0 to 100.
   #'
   #' The update is written to a temporary file and then renamed into place, so
   #' the main process never opens a half-written file.
@@ -599,14 +591,13 @@
   #'   to disable progress reporting.
   #' @param progress Numeric fraction in \code{[0, 1]}.  Clamped to range.
   #' @param message Optional character status message.
-  #' @param detail Optional list of additional structured detail.
   #' @param retries Number of times to retry writing the file when it is briefly
   #'   blocked by the reader. Default is 5.
   #' @param wait Seconds to pause between retries. Default is 0.01.
   #' @return Invisibly returns the progress record, or \code{NULL} when progress
   #'   reporting is disabled.
   #' @export
-  write_progress <- function(progress_file, progress, message = NULL, detail = NULL,
+  write_progress <- function(progress_file, progress, message = NULL,
                              retries = 5L, wait = 0.01) {
     if (is.null(progress_file)) {
       return(invisible(NULL))
@@ -615,10 +606,8 @@
     progress <- max(0, min(1, progress))
 
     progress_data <- list(
-      progress = progress,
       percent  = round(progress * 100),
       message  = message %||% "",
-      detail   = detail,
       time     = as.character(Sys.time())
     )
 
@@ -677,72 +666,6 @@
     }
 
     NULL
-  }
-
-# === Store active job state ===
-  #' Create a record for tracking an active computation job
-  #'
-  #' This function creates the reactive values used to track one module's active
-  #' computation job. The record stores the job ID, file paths, worker handle,
-  #' status, timing information, and observer handles.
-  #'
-  #' Each module receives its own job-state record so that its computation can be
-  #' monitored, canceled, and cleaned up independently.
-  #'
-  #' The `status` slot takes one of three values. "idle" means the module has no
-  #' job. "preparing" means a job has been created and the module is collecting
-  #' its inputs; the update observer skips a module in this state. "running"
-  #' means the job has been sent to a worker.
-  #'
-  #' @return A reactiveValues object used by one module's job observers.
-  #' @export
-  create_job_state <- function() {
-    state <-  shiny::reactiveValues(
-                handle        = NULL,
-                job_id        = NULL,
-                job_dir       = NULL,
-                input_file    = NULL,
-                progress_file = NULL,
-                last_progress = NULL,
-                status        = "idle",
-                submitted_at  = NULL,
-                status_submitted_at = NULL,
-                status_heartbeat_at = NULL,
-                status_percent = NA_real_,
-                obs_submit    = NULL,
-                obs_cancel    = NULL,
-                obs_update    = NULL
-              )
-    
-    return(state)
-  }
-
-  #' Clear the stored state of a computation job
-  #'
-  #' This function resets a module's job-state record after a computation
-  #' finishes, fails, or is canceled. It removes references to the worker handle,
-  #' job ID, file paths, progress updates, and timing information.
-  #'
-  #' This function changes only the stored state. It does not cancel a running
-  #' worker, remove files, close a modal, or destroy observers. Those actions are
-  #' handled by `end_job()` or `reset_job()`.
-  #'
-  #' @param state A reactiveValues object from create_job_state().
-  #' @return Invisibly NULL.
-  #' @export
-  clear_job_state <- function(state) {
-    state$handle        <- NULL
-    state$job_id        <- NULL
-    state$job_dir       <- NULL
-    state$input_file    <- NULL
-    state$progress_file <- NULL
-    state$last_progress <- NULL
-    state$status        <- "idle"
-    state$submitted_at  <- NULL
-    state$status_submitted_at <- NULL
-    state$status_heartbeat_at <- NULL
-    state$status_percent <- NA_real_
-    invisible(NULL)
   }
 
 # === Start and stop workers ===
@@ -877,7 +800,6 @@
       session_setup_file = session_setup_file
     )
     .worker_state$started <- TRUE
-    .worker_state$app_dir <- normalizePath(app_dir, winslash = "/", mustWork = FALSE)
 
     # Stop workers (on app exit)
     shiny::onStop(function() {
@@ -888,54 +810,6 @@
   }
 
 # === Submit and run computation jobs ===
-  #' Prepare a computation job for submission to a worker
-  #'
-  #' This function prepares the information needed to run one computation job in
-  #' a worker. It creates the job directory, saves the potentially
-  #' large computation inputs as an RDS file, and returns a smaller list of job
-  #' instructions.
-  #'
-  #' The main Shiny process sends only this smaller instruction list to the
-  #' worker. The worker then loads the full inputs from the saved RDS file. This
-  #' avoids sending large R objects directly between processes.
-  #'
-  #' @param inputs Named list of compute-function arguments.
-  #' @param compute_fn_name Character name of the compute function.
-  #' @param tab_name Tab name for result storage.
-  #' @param app_dir Root directory of the app.
-  #' @param job_id Job ID.
-  #' @param job_dir Directory where result and input files are stored.
-  #' @param progress_file Temporary progress file path.
-  #' @param input_file Optional input RDS path. If NULL, one is created in job_dir.
-  #' @return A named list with job metadata and file paths.
-  #' @export
-  prepare_job <- function(inputs,
-                          compute_fn_name,
-                          tab_name,
-                          app_dir = getwd(),
-                          job_id = create_job_id(),
-                          job_dir = get_job_dir(tab = tab_name),
-                          progress_file = create_progress_filepath(job_id)$progress_file,
-                          input_file = NULL) {
-    dir.create(job_dir, recursive = TRUE, showWarnings = FALSE)
-
-    if (is.null(input_file)) {
-      input_file <- file.path(job_dir, paste0(job_id, "_inputs.rds"))
-    }
-
-    saveRDS(inputs, file = input_file)
-
-    list(
-      app_dir         = normalizePath(app_dir, winslash = "/", mustWork = TRUE),
-      job_id          = job_id,
-      job_dir         = job_dir,
-      input_file      = normalizePath(input_file, winslash = "/", mustWork = TRUE),
-      progress_file   = progress_file,
-      compute_fn_name = compute_fn_name,
-      tab_name        = tab_name
-    )
-  }
-
   #' Run a computation job inside a worker
   #'
   #' This function runs one computation job inside a worker. It checks
@@ -945,7 +819,7 @@
   #' The computation function receives the saved inputs and the paths needed to
   #' report progress and save its result.
   #'
-  #' @param job_spec Named list created by \code{prepare_job()}.
+  #' @param job_spec Named list containing job metadata and file paths.
   #' @return Invisibly returns \code{TRUE}.
   #' @export
   run_job_in_worker <- function(job_spec) {
@@ -955,8 +829,7 @@
       "job_dir",
       "input_file",
       "progress_file",
-      "compute_fn_name",
-      "tab_name"
+      "compute_fn_name"
     )
 
     missing <- setdiff(required, names(job_spec))
@@ -1004,7 +877,7 @@
   #' cancel the job later.
   #'
   #' @param state ReactiveValues job state.
-  #' @param job_spec Plain job specification from prepare_job().
+  #' @param job_spec Plain job specification with metadata and file paths.
   #' @return Invisibly returns the mirai handle.
   #' @export
   submit_job_to_worker <- function(state, job_spec) {
@@ -1013,8 +886,6 @@
     state$input_file    <- job_spec$input_file
     state$progress_file <- job_spec$progress_file
     state$last_progress <- NULL
-    state$status        <- "running"
-    state$submitted_at  <- Sys.time()
 
     handle <- mirai::mirai(
       {
@@ -1030,7 +901,7 @@
       job_dir      = job_spec$job_dir,
       job_id       = job_spec$job_id,
       status       = "running",
-      submitted_at = shiny::isolate(state$status_submitted_at %||% state$submitted_at),
+      submitted_at = shiny::isolate(state$status_submitted_at),
       percent      = 0
     )
     state$status_heartbeat_at <- Sys.time()
@@ -1086,114 +957,6 @@
     paste(utils::capture.output(print(value)), collapse = "\n")
   }
 
-  #' Refresh the progress modal for a running job
-  #'
-  #' This function redraws the progress modal from the latest progress record.
-  #' It redraws only when there is a new record and the modal is on screen. A
-  #' record is identified by its percentage, message, and time, so an unchanged
-  #' record does not cause a redraw.
-  #'
-  #' @param state A `reactiveValues` object created by `create_job_state()`.
-  #' @param ns Function used to apply the module namespace to input IDs.
-  #' @param session The Shiny session object.
-  #' @param progress A progress record from `read_progress()`, or NULL.
-  #' @param working_message Character. Message shown when the worker has not
-  #'   written one of its own.
-  #' @return Invisibly `TRUE` if the modal was redrawn.
-  refresh_job_modal <- function(state, ns, session, progress, working_message) {
-    if (is.null(progress) || !is_modal_open(session)) {
-      return(invisible(FALSE))
-    }
-
-    progress_key <- paste(
-      progress$percent,
-      progress$message,
-      progress$time,
-      sep = "|"
-    )
-
-    if (identical(progress_key, state$last_progress)) {
-      return(invisible(FALSE))
-    }
-
-    state$last_progress <- progress_key
-
-    display_modal(
-      ns      = ns,
-      message = progress$message %||% working_message,
-      value   = progress$percent
-    )
-
-    invisible(TRUE)
-  }
-
-  #' Rewrite the status file of a job at a fixed interval
-  #'
-  #' This function rewrites the status file of a running job on a timer. The
-  #' History tab treats a job whose status file has stopped changing as
-  #' interrupted, so a running job has to keep reporting.
-  #'
-  #' @param state A `reactiveValues` object created by `create_job_state()`.
-  #' @param now The current time.
-  #' @param heartbeat_seconds Minimum number of seconds between updates.
-  #' @return Invisibly `TRUE` if the status file was written.
-  rewrite_job_status <- function(state, now, heartbeat_seconds) {
-    last_heartbeat <- state$status_heartbeat_at
-
-    due <- is.null(last_heartbeat) ||
-      as.numeric(difftime(now, last_heartbeat, units = "secs")) >= heartbeat_seconds
-
-    if (!isTRUE(due)) {
-      return(invisible(FALSE))
-    }
-
-    write_job_status(
-      job_dir      = state$job_dir,
-      job_id       = state$job_id,
-      status       = "running",
-      submitted_at = state$status_submitted_at %||% state$submitted_at,
-      percent      = state$status_percent
-    )
-
-    state$status_heartbeat_at <- now
-    invisible(TRUE)
-  }
-
-  #' Get the final outcome of a job
-  #'
-  #' This function decides whether a finished job completed or failed. A job
-  #' that reported an error failed. A job with no error but no saved result also
-  #' failed, because the worker stopped before writing its result.
-  #'
-  #' @param state A `reactiveValues` object created by `create_job_state()`.
-  #' @return A list with elements `status` and `error_message`.
-  get_job_outcome <- function(state) {
-    # Check for a worker error
-    error_message <- job_error_message(state$handle)
-
-    if (!is.null(error_message)) {
-      return(list(status = "error", error_message = error_message))
-    }
-
-    # Check for the saved result
-    result_path <- file.path(
-      state$job_dir,
-      paste0(state$job_id, ".rds")
-    )
-
-    if (!file.exists(result_path)) {
-      return(list(
-        status = "error",
-        error_message = paste0(
-          "Prediction finished, but the result file was not found: ",
-          result_path
-        )
-      ))
-    }
-
-    list(status = "completed", error_message = NULL)
-  }
-
   #' Manage a running computation job
   #'
   #' This is the main function for managing a computation job
@@ -1206,7 +969,7 @@
   #' The job is read once at the start of each call, so every branch below sees
   #' the same view of the job.
   #'
-  #' @param state A `reactiveValues` object created by `create_job_state()`.
+  #' @param state A `reactiveValues` object created by `setup_computation_jobs()`.
   #' @param ns Function used to apply the module namespace to input IDs.
   #' @param tab_name Character. The name of the app tab that started the job.
   #' @param session The Shiny session object.
@@ -1259,15 +1022,69 @@
         return(invisible(FALSE))
       }
 
-      # Update the modal and the status file of running jobs
-      refresh_job_modal(state, ns, session, progress, working_message)
-      rewrite_job_status(state, now, heartbeat_seconds)
+      # Refresh job modal
+      if (!is.null(progress) && is_modal_open(session)) {
+        progress_key <- paste(
+          progress$percent,
+          progress$message,
+          progress$time,
+          sep = "|"
+        )
+
+        if (!identical(progress_key, state$last_progress)) {
+          state$last_progress <- progress_key
+
+          display_modal(
+            ns      = ns,
+            message = progress$message %||% working_message,
+            value   = progress$percent
+          )
+        }
+      }
+
+      # Rewrite job status
+      last_heartbeat <- state$status_heartbeat_at
+      due <- is.null(last_heartbeat) ||
+        as.numeric(difftime(now, last_heartbeat, units = "secs")) >= heartbeat_seconds
+
+      if (isTRUE(due)) {
+        write_job_status(
+          job_dir      = state$job_dir,
+          job_id       = state$job_id,
+          status       = "running",
+          submitted_at = state$status_submitted_at,
+          percent      = state$status_percent
+        )
+
+        state$status_heartbeat_at <- now
+      }
 
       return(invisible(TRUE))
     }
 
-    # End jobs that are no longer running
-    outcome <- get_job_outcome(state)
+    # Get job outcome
+    error_message <- job_error_message(state$handle)
+
+    if (!is.null(error_message)) {
+      outcome <- list(status = "error", error_message = error_message)
+    } else {
+      result_path <- file.path(
+        state$job_dir,
+        paste0(state$job_id, ".rds")
+      )
+
+      if (!file.exists(result_path)) {
+        outcome <- list(
+          status = "error",
+          error_message = paste0(
+            "Prediction finished, but the result file was not found: ",
+            result_path
+          )
+        )
+      } else {
+        outcome <- list(status = "completed", error_message = NULL)
+      }
+    }
 
     end_job(
       state         = state,
@@ -1316,7 +1133,7 @@
     save_object_safely(record, get_cancel_filepath(job_dir, job_id))
   }
 
-  #' Reset the local state for a computation job
+  #' Clear out the computation job
   #'
   #' Removes temporary files and clears the module's local job state. It does
   #' not stop an active worker or write a final status.
@@ -1324,12 +1141,13 @@
   #' @param state ReactiveValues job state.
   #' @return Invisibly NULL.
   #' @export
-  reset_job <- function(state) {
+  clear_out_job <- function(state) {
     job_id <- shiny::isolate(state$job_id)
     job_dir <- shiny::isolate(state$job_dir)
     input_file <- shiny::isolate(state$input_file)
     progress_file <- shiny::isolate(state$progress_file)
 
+    # Delete temporary job files
     if (!is.null(progress_file) && file.exists(progress_file)) {
       unlink(progress_file, recursive = TRUE, force = TRUE)
     }
@@ -1345,7 +1163,16 @@
       }
     }
 
-    clear_job_state(state)
+    # Clear job state
+    state$handle        <- NULL
+    state$job_id        <- NULL
+    state$job_dir       <- NULL
+    state$input_file    <- NULL
+    state$progress_file <- NULL
+    state$last_progress <- NULL
+    state$status_submitted_at <- NULL
+    state$status_heartbeat_at <- NULL
+    state$status_percent <- NA_real_
     invisible(NULL)
   }
 
@@ -1431,8 +1258,7 @@
     job_id <- shiny::isolate(state$job_id)
     job_dir <- shiny::isolate(state$job_dir)
     handle <- shiny::isolate(state$handle)
-    submitted_at <- shiny::isolate(state$status_submitted_at) %||%
-      shiny::isolate(state$submitted_at)
+    submitted_at <- shiny::isolate(state$status_submitted_at)
 
     cat(file = stderr(), paste0("Ended computation job ", job_id,
                                " at ", Sys.time(), " (", status, ")\n"))
@@ -1467,7 +1293,7 @@
       overwrite_final = overwrite_final
     )
 
-    # Point the browser to the saved result only after successful completion.
+    # Point the browser to the saved result
     if (isTRUE(update_url) &&
         identical(status, "completed") &&
         !is.null(tab_name) &&
@@ -1485,7 +1311,7 @@
       )
     }
 
-    # Close the modal before clearing the local state
+    # Close the modal
     if (isTRUE(remove_modal)) {
       close_job_modal(
         session     = session,
@@ -1494,7 +1320,9 @@
       )
     }
 
-    reset_job(state)
+    # Clear the job
+    clear_out_job(state)
+    
     invisible(written)
   }
 
@@ -1642,24 +1470,26 @@
                         tab_name,
                         submit_message) {
     handle <- shiny::isolate(state$handle)
-    status <- shiny::isolate(state$status)
+    job_id <- shiny::isolate(state$job_id)
 
-    if (!is.null(handle) || identical(status, "preparing")) {
+    # Ignore a new submission while a job is preparing or running. A preparing
+    # job has a job ID but no worker handle yet.
+    if (!is.null(handle) || !is.null(job_id)) {
       return(invisible(NULL))
     }
-
-    reset_job(state)
-
+    
+    # Clear out any existing job
+    clear_out_job(state)
+    
+    # Update job state and status
     job_id <- create_job_id()
     files <- create_progress_filepath(job_id)
     job_dir <- get_job_dir(tab = tab_name)
     submitted_at <- Sys.time()
-
+    
     state$job_id <- job_id
     state$job_dir <- job_dir
     state$progress_file <- files$progress_file
-    state$status <- "preparing"
-    state$submitted_at <- submitted_at
     state$last_progress <- NULL
     state$status_submitted_at <- submitted_at
     state$status_heartbeat_at <- NULL
@@ -1673,6 +1503,7 @@
       percent      = 0
     )
 
+    # Update modal
     display_modal(
       ns              = ns,
       message         = submit_message,
@@ -1681,7 +1512,7 @@
       cancel_input_id = ns("cancel_job")
     )
 
-    # Collect inputs only after the modal has reached the browser.
+    # Wait until modal finishes updating, then start job
     session$onFlushed(
       function() {
         if (!identical(shiny::isolate(state$job_id), job_id)) {
@@ -1693,6 +1524,7 @@
           error = identity
         )
 
+        # Abort any jobs that are cancelled or in error
         final_status <- NULL
         error_message <- NULL
 
@@ -1722,16 +1554,22 @@
           return(invisible(NULL))
         }
 
-        job_spec <- prepare_job(
-          inputs          = inputs,
-          compute_fn_name = compute_fn_name,
-          tab_name        = tab_name,
-          app_dir         = getwd(),
+        # Save inputs to disk
+        dir.create(job_dir, recursive = TRUE, showWarnings = FALSE)
+        input_file <- file.path(job_dir, paste0(job_id, "_inputs.rds"))
+        saveRDS(inputs, file = input_file)
+
+        # Get job specifications
+        job_spec <- list(
+          app_dir         = normalizePath(getwd(), winslash = "/", mustWork = TRUE),
           job_id          = job_id,
           job_dir         = job_dir,
-          progress_file   = files$progress_file
+          input_file      = normalizePath(input_file, winslash = "/", mustWork = TRUE),
+          progress_file   = files$progress_file,
+          compute_fn_name = compute_fn_name
         )
 
+        # Start workers and submit job
         setup_workers(app_dir = getwd())
         submit_job_to_worker(state = state, job_spec = job_spec)
 
@@ -1856,12 +1694,8 @@
       {
         shiny::invalidateLater(250, session)
 
-        # Wait until input preparation has finished.
-        if (identical(state$status, "preparing")) {
-          return(invisible(NULL))
-        }
-
-        # Do nothing when the module has no active worker.
+        # Do nothing when the module has no active worker. This also skips
+        # jobs that are still preparing, which have no handle yet.
         if (is.null(state$handle)) {
           return(invisible(NULL))
         }
@@ -1918,8 +1752,21 @@
       stop("setup_computation_jobs() requires submit_button.")
     }
 
-    # Create the shared state used by this module's job helpers.
-    state <- create_job_state()
+    # Create job state
+    state <- shiny::reactiveValues(
+      handle        = NULL,
+      job_id        = NULL,
+      job_dir       = NULL,
+      input_file    = NULL,
+      progress_file = NULL,
+      last_progress = NULL,
+      status_submitted_at = NULL,
+      status_heartbeat_at = NULL,
+      status_percent = NA_real_,
+      obs_submit    = NULL,
+      obs_cancel    = NULL,
+      obs_update    = NULL
+    )
 
     # Register cleanup for jobs interrupted by user
     register_job_cleanup(

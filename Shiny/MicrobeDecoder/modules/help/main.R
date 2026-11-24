@@ -178,11 +178,11 @@ helpServer <- function(id, x, selected_tab) {
              p("Click here to show additional settings (optional)."),
              tags$i("Unbalanced intermediates"),
              p("Metabolites chosen here are allowed to be produced (or consumed) in infinite quantities. NADH and ATP are examples of metabolites usually chosen to be unbalanced. In the metabolic model, these can accumulate without needing to be regenerated to NAD+ or ADP. This simplifies the model, as reactions for consuming NADH and ATP do not have to be included."),
-             # tags$i("Flux threshold"),
-             # p("When this slider is set to 1, only end products with a flux of at least 1 are shown."),
              tags$i("Enzymes must have all subunits"),
              p("When turned on, a biochemical reaction is included in the network only if its enzyme has all subunits (KO IDs).  Turning it off will lead to more reactions being included."),
-
+             tags$i("Evaluate predictions"),
+             p("When turned on, predictions for the reference network will be evaluated with independent data (100 model isolates of bacteria and archaea).  Turning it on will slow down predictions."),
+             
              tags$h5("Advanced inputs"),
              p("Click here to show additional inputs (optional)."),
              tags$i("Phylogenetic tree"),
@@ -202,7 +202,7 @@ helpServer <- function(id, x, selected_tab) {
              tags$h5("Download results"),
              p("Click here to download a .csv of the results (fluxes for network model).  The higher the fluxes, the faster the reaction or more product that is formed. The flux of substrate is initially set to -1000."),
              
-             tags$h5("Summary|Heatmap|Treemap|Metabolic network|Tree"),
+             tags$h5("Summary|Heatmap|Treemap|Metabolic network|Evaluation|Tree"),
              p("Click these tabs to explore results in interactive plots and tables."), 
              tags$i("Summary"),
              p("This plot shows the percentage of organisms with positive fluxes for each end product."),
@@ -212,6 +212,8 @@ helpServer <- function(id, x, selected_tab) {
              p("This plot shows the relative abundance of each end product (percentage of organisms with positive fluxes for the end product relative to all end products)."),
              tags$i("Metabolic network"),
              p("This plot shows the predicted metabolic network for the organism.   Positive fluxes are highlighted."),
+             tags$i("Evaluation"),
+             p("This panel shows statistics for evaluating the reference network with independent data (100 model isolates of bacteria and archaea)."),
              tags$i("Tree"),
              p("This plot shows a phylogenetic tree colored by traits predicted for each organism.  To use this plot, a tree must be uploaded under Advanced inputs.")
            )

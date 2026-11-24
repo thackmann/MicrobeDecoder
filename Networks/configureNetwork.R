@@ -353,10 +353,13 @@
       "Redox balance"
     ),
     "Acetogenesis" = c(
-      "Wood Ljungdahl",
+      "Wood Ljungdahl in bacteria",
+      "Wood Ljungdahl in archaea",
       "Acetate formation",
-      "NADH reduction by ferredoxin",
       "Hydrogen oxidation",
+      "Carbon monoxide oxidation",
+      "Quinone reduction by coenzyme F420",
+      "NADH reduction by ferredoxin",
       "Redox balance"
     ),
     "Nitrogen fixation" = c(
